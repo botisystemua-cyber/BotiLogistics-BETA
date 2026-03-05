@@ -34,8 +34,9 @@ AUTH_API_URL = AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4kkt4-pVqQmpE452vciAzD0tiF62AF
 
 ### Пасажири (CRM)
 ```
-API_URL = AKfycbxXVqoG5NZrSXOYx1uj3IYup5GhotV95Y-DwavSi6WJoxtfXq4WbYPzQBuMm2QUXkkV
+API_URL = AKfycbx2R5XM8jXHwsSlhkseJr3a4PdbGHuDYvlm-2gmhNdAcSZQxMpOuhD2MZIV8IcpGeqnng
 Скрипт: script-passangers.gs
+Таблиця: Logistics-Passengers
 ```
 
 ### Посилки (CRM)

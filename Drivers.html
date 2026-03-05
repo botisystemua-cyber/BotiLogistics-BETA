@@ -1730,41 +1730,43 @@
         }
         async function submitAddLead() {
             var isDelivery = currentRouteType === 'delivery';
-            var payload;
+            var body;
             if (isDelivery) {
                 var phone = document.getElementById('addPhone').value.trim();
                 var address = document.getElementById('addAddress').value.trim();
                 if (!phone && !address) { showToast('Введіть телефон або адресу'); return; }
-                payload = {
-                    action: 'addPackageToRoute',
+                body = {
+                    action: 'addPackage',
                     companyId: getCompanyId(),
-                    payload: {
-                        vehicleName: currentSheet,
+                    sheet: currentSheet,
+                    fields: {
                         phone: phone,
                         address: address,
                         name: document.getElementById('addName').value.trim(),
                         ttn: document.getElementById('addTtn').value.trim(),
                         weight: document.getElementById('addWeight').value.trim(),
                         amount: document.getElementById('addAmount').value.trim(),
-                        note: document.getElementById('addNote').value.trim()
+                        note: document.getElementById('addNote').value.trim(),
+                        vehicle: currentSheet
                     }
                 };
             } else {
                 var name = document.getElementById('addName').value.trim();
                 var phone = document.getElementById('addPhone').value.trim();
                 if (!name && !phone) { showToast("Введіть ім'я або телефон"); return; }
-                payload = {
-                    action: 'addPassengerToRoute',
+                body = {
+                    action: 'addPassenger',
                     companyId: getCompanyId(),
                     payload: {
-                        sheetName: currentSheet,
+                        companyId: getCompanyId(),
                         name: name,
                         phone: phone,
                         from: document.getElementById('addFrom').value.trim(),
                         to: document.getElementById('addTo').value.trim(),
                         date: document.getElementById('addDate').value.trim(),
                         seats: document.getElementById('addSeats').value.trim() || '1',
-                        note: document.getElementById('addNote').value.trim()
+                        note: document.getElementById('addNote').value.trim(),
+                        vehicle: currentSheet
                     }
                 };
             }
@@ -1774,16 +1776,18 @@
                 var response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(body)
                 });
-                var data = await response.json();
-                if (data.success) {
+                var result = await response.json();
+                if (result.success) {
                     showToast('&#9989; Додано!');
                     closeAddLead();
                     lastUpdateTime = 0;
                     await fetchDeliveries();
+                } else if (result.error === 'duplicate') {
+                    showToast('&#9888; ' + (result.message || 'Знайдено дублікат'));
                 } else {
-                    showToast('&#10060; ' + (data.error || 'Помилка'));
+                    showToast('&#10060; ' + (result.error || 'Помилка'));
                 }
             } catch (err) {
                 showToast('&#10060; ' + err.message);

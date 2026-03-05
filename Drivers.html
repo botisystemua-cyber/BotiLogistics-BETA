@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <meta name="description" content="Yura Transportation Driver App">
-    <title id="pageTitle">Yura Transportation - Driver App</title>
+    <meta name="description" content="BOTI Logistics Driver App">
+    <title id="pageTitle">BOTI Logistics - Driver App</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Raleway:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbSS6XSCJ3MafbrSp-rIX1-x130bwzevo&libraries=routes,places"></script>
     <style>
@@ -673,7 +673,7 @@
 <body>
     <div id="loginScreen" class="screen active">
         <div class="login-container">
-            <div class="login-title">YURA TRANSPORTATION</div>
+            <div class="login-title" style="color:#10b981;">BOTI LOGISTICS</div>
             <div class="login-brand">DRIVER PANEL</div>
             <div class="login-subtitle">BOTI_DRIVER</div>
             <div class="login-form">
@@ -688,7 +688,7 @@
     </div>
     <div id="routeScreen" class="screen">
         <div class="routes-container">
-            <div class="header-title">YURA TRANSPORTATION</div>
+            <div class="header-title" style="color:#10b981;">BOTI LOGISTICS</div>
             <div class="header-brand">DRIVER APP</div>
             <div class="header-driver-subtitle">BOTI_DRIVER</div>
             <div class="driver-info" id="driverInfoDisplay">&#128100; Водій: -</div>
@@ -759,7 +759,7 @@
     <div class="toast" id="toast"></div>
     <script>
         const CONFIG = {
-            COMPANY_NAME: 'Юра Транспортейшн',
+            COMPANY_NAME: 'BOTI Logistics',
             DELIVERY_SPREADSHEET_ID: '1Pd3nv3fbwZ_0YSzdG4cda-q52BQT57E0hDe7eQej6z8',
             // Маршрут Посилки API v1.0
             DELIVERY_API_URL: 'https://script.google.com/macros/s/AKfycbwlo9O9RO_LUDmtTGD3GL8e1i1jkklM6heaypRGMZF_QidhBsDmagflqUhAMmwwguLYwg/exec',
@@ -810,9 +810,28 @@
                 }
             }
         }
+        // ═══ СЕСІЯ ═══
+        var botiSession = null;
+        function checkSession() {
+            try {
+                var raw = sessionStorage.getItem('boti_auth');
+                if (raw) botiSession = JSON.parse(raw);
+            } catch(e) {}
+            if (!botiSession || !botiSession.companyId) {
+                // Немає сесії — редірект на логін
+                window.location.href = 'Login.html';
+                return false;
+            }
+            return true;
+        }
+        function getCompanyId() {
+            return botiSession ? botiSession.companyId : '';
+        }
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('pageTitle').textContent = CONFIG.COMPANY_NAME + ' - Driver Panel';
-            document.querySelector('.login-brand').textContent = CONFIG.COMPANY_NAME.toUpperCase();
+            if (!checkSession()) return;
+            // Використовуємо назву компанії з сесії
+            var companyName = botiSession.companyName || CONFIG.COMPANY_NAME;
+            document.getElementById('pageTitle').textContent = companyName + ' - Driver Panel';
             var loginButton = document.getElementById('loginButton');
             if (loginButton) {
                 loginButton.addEventListener('click', handleLogin);
@@ -837,7 +856,7 @@
                 var response = await fetch(CONFIG.ROUTES_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'getAvailableRoutes' })
+                    body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
                 });
                 var data = await response.json();
                 if (data.success && data.routes && data.routes.length > 0) {
@@ -989,6 +1008,7 @@
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
                             action: 'getRoutePassengers',
+                            companyId: getCompanyId(),
                             payload: { vehicleName: currentSheet }
                         })
                     });
@@ -1004,6 +1024,7 @@
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
                             action: 'getRoutePassengers',
+                            companyId: getCompanyId(),
                             payload: { sheetName: currentSheet }
                         })
                     });
@@ -1361,6 +1382,7 @@
             if (!delivery) return;
             var deliveryId = delivery.internalNumber;
             var logData = {
+                companyId: getCompanyId(),
                 date: new Date().toLocaleDateString('uk-UA'),
                 time: new Date().toLocaleTimeString('uk-UA'),
                 driverId: driverName,
@@ -1412,6 +1434,7 @@
             renderDeliveries();
             updateStats();
             var logData = {
+                companyId: getCompanyId(),
                 date: new Date().toLocaleDateString('uk-UA'),
                 time: new Date().toLocaleTimeString('uk-UA'),
                 driverId: driverName,
@@ -1451,6 +1474,7 @@
             if (!delivery) return;
             var deliveryId = delivery.internalNumber;
             var logData = {
+                companyId: getCompanyId(),
                 date: new Date().toLocaleDateString('uk-UA'),
                 time: new Date().toLocaleTimeString('uk-UA'),
                 driverId: driverName,
@@ -1496,6 +1520,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'updateDriverStatus',
+                    companyId: getCompanyId(),
                     driverId: driverName,
                     routeName: currentSheet,
                     passengerId: passenger.id || '',
@@ -1537,6 +1562,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'updateDriverStatus',
+                    companyId: getCompanyId(),
                     driverId: driverName,
                     routeName: currentSheet,
                     passengerId: passenger.id || '',
@@ -1573,6 +1599,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'updateDriverStatus',
+                    companyId: getCompanyId(),
                     driverId: driverName,
                     routeName: currentSheet,
                     passengerId: passenger ? (passenger.id || '') : '',
@@ -1719,6 +1746,7 @@
                 if (!phone && !address) { showToast('Введіть телефон або адресу'); return; }
                 payload = {
                     action: 'addPackageToRoute',
+                    companyId: getCompanyId(),
                     payload: {
                         vehicleName: currentSheet,
                         phone: phone,
@@ -1736,6 +1764,7 @@
                 if (!name && !phone) { showToast("Введіть ім'я або телефон"); return; }
                 payload = {
                     action: 'addPassengerToRoute',
+                    companyId: getCompanyId(),
                     payload: {
                         sheetName: currentSheet,
                         name: name,

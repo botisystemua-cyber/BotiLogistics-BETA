@@ -177,9 +177,11 @@
       width: 48px; height: 48px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
+    .login-icon.driver-icon { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.2); }
     .login-icon.manager-icon { background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.2); }
     .login-icon.owner-icon { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.2); }
     .login-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; }
+    .login-title.driver-title { color: var(--driver); }
     .login-title.manager-title { color: var(--manager); }
     .login-title.owner-title { color: var(--owner); }
     .form-group { margin-bottom: 18px; }
@@ -196,6 +198,7 @@
     }
     .form-input:focus { border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.07); }
     .form-input::placeholder { color: rgba(255, 255, 255, 0.2); font-weight: 400; }
+    .form-input.driver-input:focus { border-color: rgba(245, 158, 11, 0.4); }
     .form-input.manager-input:focus { border-color: rgba(59, 130, 246, 0.4); }
     .form-input.owner-input:focus { border-color: rgba(16, 185, 129, 0.4); }
     .form-select {
@@ -216,6 +219,8 @@
     }
     .btn-login:active { transform: scale(0.98); }
     .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-login.driver-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .btn-login.driver-btn:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3); }
     .btn-login.manager-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
     .btn-login.manager-btn:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3); }
     .btn-login.owner-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; }
@@ -432,14 +437,14 @@
     <!-- ═══ ЕКРАН 1: ВИБІР РОЛІ ═══ -->
     <div class="screen active" id="screenRoles">
       <div class="cards">
-        <a href="index_driver.html" class="card card--driver">
+        <div class="card card--driver" onclick="showLogin('driver')">
           <div class="card-icon">🚛</div>
           <div class="card-content">
             <h2 class="card-title">Водій</h2>
             <p class="card-desc">Маршрути, посилки, пасажири та навігація</p>
           </div>
           <div class="card-arrow">Увійти <span class="arrow-icon">→</span></div>
-        </a>
+        </div>
         <div class="card card--manager" onclick="showLogin('manager')">
           <div class="card-icon">📋</div>
           <div class="card-content">
@@ -456,6 +461,26 @@
           </div>
           <div class="card-arrow">Увійти <span class="arrow-icon">→</span></div>
         </div>
+      </div>
+    </div>
+    <!-- ═══ ЕКРАН: ЛОГІН ВОДІЯ ═══ -->
+    <div class="screen" id="screenDriverLogin">
+      <div class="login-box">
+        <div class="login-header">
+          <div class="login-icon driver-icon">🚛</div>
+          <h2 class="login-title driver-title">ВОДІЙ</h2>
+        </div>
+        <div class="error-msg" id="driverError"></div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input driver-input" id="driverEmail" placeholder="Введіть ваш email" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input type="password" class="form-input driver-input" id="driverPass" placeholder="Введіть пароль" autocomplete="off">
+        </div>
+        <button class="btn-login driver-btn" id="driverLoginBtn" onclick="doLogin('driver')">Увійти</button>
+        <button class="btn-back" onclick="showRoles()">← Назад до вибору ролі</button>
       </div>
     </div>
     <!-- ═══ ЕКРАН 2: ЛОГІН МЕНЕДЖЕРА ═══ -->
@@ -596,11 +621,12 @@
     // ═══════════════════════════════════════
     const AUTH_API_URL = 'https://script.google.com/macros/s/AKfycbzZ6QAMEANL2DI5cbBgSpcg5KaW9xW8643u5SEkbQplljr4fh3BU_bek4WBQH6ikO34ww/exec';
     const REDIRECT = {
+      'Водій': 'Drivers.html',
       'Менеджер': 'manager/index_pass_19v.html',
       'Власник': 'manager/index_pass_19v.html'
     };
     // Дані поточного сеансу
-    let currentUser = { email: '', name: '', password: '', role: '', companyName: '', spreadsheetId: '' };
+    let currentUser = { email: '', name: '', password: '', role: '', companyName: '', companyId: '' };
     // ═══ НАВІГАЦІЯ ═══
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -613,7 +639,16 @@
     }
     function showLogin(role) {
       clearAllMessages();
-      if (role === 'manager') {
+      if (role === 'driver') {
+        showScreen('screenDriverLogin');
+        document.getElementById('headerSubtitle').textContent = 'Вхід для водія';
+        const saved = localStorage.getItem('boti_driver_email');
+        if (saved) document.getElementById('driverEmail').value = saved;
+        setTimeout(() => {
+          const ef = document.getElementById('driverEmail');
+          if (ef.value) document.getElementById('driverPass').focus(); else ef.focus();
+        }, 100);
+      } else if (role === 'manager') {
         showScreen('screenManagerLogin');
         document.getElementById('headerSubtitle').textContent = 'Вхід для менеджера';
         const saved = localStorage.getItem('boti_manager_email');
@@ -641,13 +676,13 @@
     function goToCRM() {
       sessionStorage.setItem('boti_auth', JSON.stringify({
         role: currentUser.role, name: currentUser.name, email: currentUser.email,
-        companyName: currentUser.companyName, spreadsheetId: currentUser.spreadsheetId,
+        companyName: currentUser.companyName, companyId: currentUser.companyId,
         time: Date.now()
       }));
       window.location.href = REDIRECT['Власник'];
     }
     function doLogout() {
-      currentUser = { email: '', name: '', password: '', role: '', companyName: '', spreadsheetId: '' };
+      currentUser = { email: '', name: '', password: '', role: '', companyName: '', companyId: '' };
       sessionStorage.removeItem('boti_auth');
       showRoles();
     }
@@ -693,7 +728,12 @@
     async function doLogin(role) {
       clearAllMessages();
       let emailField, passField, btn, errorId;
-      if (role === 'manager') {
+      if (role === 'driver') {
+        emailField = document.getElementById('driverEmail');
+        passField = document.getElementById('driverPass');
+        btn = document.getElementById('driverLoginBtn');
+        errorId = 'driverError';
+      } else if (role === 'manager') {
         emailField = document.getElementById('managerEmail');
         passField = document.getElementById('managerPass');
         btn = document.getElementById('managerLoginBtn');
@@ -708,7 +748,8 @@
       const password = passField.value.trim();
       if (!email) { showError(errorId, 'Введіть email'); emailField.focus(); return; }
       if (!password) { showError(errorId, 'Введіть пароль'); passField.focus(); return; }
-      const expectedRole = role === 'manager' ? 'Менеджер' : 'Власник';
+      const roleMap = { driver: 'Водій', manager: 'Менеджер', owner: 'Власник' };
+      const expectedRole = roleMap[role];
       const originalText = btn.textContent;
       btn.innerHTML = '<span class="spinner-small"></span>';
       btn.disabled = true;
@@ -721,14 +762,14 @@
           currentUser = {
             email, name: result.name || email, password,
             role: result.role, companyName: result.companyName || '',
-            spreadsheetId: result.spreadsheetId || ''
+            companyId: result.companyId || ''
           };
           if (result.role === 'Власник') {
             showAdminPanel(result.name || email);
           } else {
             sessionStorage.setItem('boti_auth', JSON.stringify({
               role: result.role, name: result.name || email, email,
-              companyName: result.companyName || '', spreadsheetId: result.spreadsheetId || '',
+              companyName: result.companyName || '', companyId: result.companyId || '',
               time: Date.now()
             }));
             window.location.href = REDIRECT[result.role] || 'manager/index_pass_19v.html';
@@ -943,9 +984,11 @@
     // ═══ ENTER KEY ═══
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
+        const drvScreen = document.getElementById('screenDriverLogin');
         const manScreen = document.getElementById('screenManagerLogin');
         const ownScreen = document.getElementById('screenOwnerLogin');
-        if (manScreen && manScreen.classList.contains('active')) doLogin('manager');
+        if (drvScreen && drvScreen.classList.contains('active')) doLogin('driver');
+        else if (manScreen && manScreen.classList.contains('active')) doLogin('manager');
         else if (ownScreen && ownScreen.classList.contains('active')) doLogin('owner');
       }
     });

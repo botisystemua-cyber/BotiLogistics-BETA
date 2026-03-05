@@ -9,7 +9,7 @@
 //   B: Роль (Менеджер / Власник)
 //   C: Email
 //   D: Пароль
-//   E: Sheet_ID (spreadsheetId клієнтської таблиці)
+//   E: company_id (текстовий ключ компанії, напр. "yura", "demo")
 //
 
 var SHEET_NAME = 'Паролі';
@@ -60,7 +60,7 @@ function getAllRows() {
       role:     String(data[i][1]).trim(),
       email:    String(data[i][2]).trim().toLowerCase(),
       password: String(data[i][3]).trim(),
-      sheetId:  String(data[i][4]).trim()
+      companyId: String(data[i][4]).trim()
     });
   }
   return rows;
@@ -106,7 +106,7 @@ function handleLogin(p) {
     name: user.email, // ім'я = email
     role: user.role,
     companyName: user.company,
-    spreadsheetId: user.sheetId
+    companyId: user.companyId
   };
 }
 
@@ -149,9 +149,9 @@ function handleAddUser(p) {
   var existing = findByEmail(newEmail);
   if (existing) return { success: false, error: 'Користувач з таким email вже існує' };
 
-  // Додаємо в таблицю — та ж компанія і Sheet_ID як у власника
+  // Додаємо в таблицю — та ж компанія і company_id як у власника
   var sheet = getSheet();
-  sheet.appendRow([owner.company, newRole, newEmail, newPassword, owner.sheetId]);
+  sheet.appendRow([owner.company, newRole, newEmail, newPassword, owner.companyId]);
 
   return { success: true, message: 'Користувача ' + newEmail + ' додано (' + newRole + ')' };
 }

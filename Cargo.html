@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>YuraCRM Посилки v1</title>
+    <title>BOTI Logistics — CRM Посилки</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1468,7 +1468,7 @@
 <header class="header">
     <div class="header-top">
         <button class="burger-btn" onclick="openSideMenu()">☰</button>
-        <div class="logo">YURA<span>TRANSPORTATION</span> 📦</div>
+        <div class="logo"><span style="color:#4CAF50">BOTI</span><span> LOGISTICS</span> 📦</div>
         <div class="search-box">
             <span class="search-icon">🔍</span>
             <input type="text" class="search-input" id="searchInput" placeholder="Пошук посилок..." oninput="handleSearch()">
@@ -1941,7 +1941,7 @@
         <span>📦</span>
         <span id="navPackagesLabel">Посилки</span>
     </button>
-    <button class="nav-item" onclick="window.location.href='index_pass_19v.html'"><span>👥</span>Пасажири</button>
+    <button class="nav-item" onclick="window.location.href='Passengers.html'"><span>👥</span>Пасажири</button>
     <button class="nav-item" onclick="syncWithSheets()"><span>🔄</span>Синхр.</button>
     <button class="nav-item" onclick="openColumnsModal()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="toggleAddPopup()"><span>➕</span>Додати</button>
@@ -2255,8 +2255,26 @@ let calendarDirection = 'all'; // Напрямок тільки для кале�
 let draggedId = null;
 let undoHistory = []; // Історія для відміни дій
 
+// ═══ СЕСІЯ ═══
+var botiSession = null;
+function checkSession() {
+    try {
+        var raw = sessionStorage.getItem('boti_auth');
+        if (raw) botiSession = JSON.parse(raw);
+    } catch(e) {}
+    if (!botiSession || !botiSession.role) {
+        window.location.href = 'Login.html';
+        return false;
+    }
+    return true;
+}
+function getCompanyId() {
+    return botiSession ? botiSession.companyId : '';
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
+    if (!checkSession()) return;
     loadSettings();
     renderCalendars();
 
@@ -2272,7 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -2339,7 +2357,7 @@ function silentSync() {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -7125,7 +7143,7 @@ function syncWithSheets() {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -7196,6 +7214,7 @@ function savePackageToServer(pkg) {
 
     const payload = {
         action: 'addPackage',
+        companyId: getCompanyId(),
         fields: {
             direction: pkg.direction,
             vo: pkg.vo || '',

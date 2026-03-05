@@ -37,8 +37,8 @@ var LOG_SHEET_NAME = 'Логи';
 // ============================================
 var SOURCES = {
   BOT_POSYLKY: {
-    id: '1RyWJ-ZQ-OQbeD65fZXR-WEwP_kwuNllikiA3Q1rjtlo',
-    name: 'Бот Посилки',
+    id: '1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY',
+    name: 'Logistics-Cargo',
     type: 'posylky',
     sheets: ['Реєстрація ТТН', 'Виклик курєра', 'РОБОЧА'],
     archiveSheet: 'Посилки',

@@ -1,7 +1,7 @@
 // ============================================
-// ЮРА ТРАНСПОРТЕЙШН — CRM ПОСИЛКИ v1.0
-// Apps Script API для таблиці "Бот Посилки"
-// ID: 1RyWJ-ZQ-OQbeD65fZXR-WEwP_kwuNllikiA3Q1rjtlo
+// BOTI LOGISTICS — CRM ПОСИЛКИ v1.1
+// Apps Script API для таблиці "Logistics-Cargo"
+// ID: 1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY
 // ============================================
 //
 // ІНСТРУКЦІЯ:
@@ -17,6 +17,8 @@
 // ============================================
 // КОНФІГУРАЦІЯ
 // ============================================
+
+var SPREADSHEET_ID = '1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY';
 
 // Назви аркушів — ТОЧНО як в таблиці
 var SHEET_REG = 'Реєстрація ТТН';     // UA→EU посилки
@@ -56,9 +58,10 @@ var COL = {
   STATUS: 20,       // U — Статус (CRM: new/work/route/archived/refused/transferred/deleted)
   DATE_ARCHIVE: 21, // V — Дата архів
   ARCHIVE_ID: 22,   // W — ARCHIVE_ID (зв'язок з таблицею Архіви)
-  VEHICLE: 23       // X — Автомобіль
+  VEHICLE: 23,      // X — Автомобіль
+  COMPANY_ID: 24    // Y — company_id (ключ компанії)
 };
-var TOTAL_COLS = 24;
+var TOTAL_COLS = 25;
 
 // Статуси для архівації
 var ARCHIVE_STATUSES = ['archived', 'refused', 'deleted', 'transferred'];
@@ -112,11 +115,12 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
+    var companyId = data.companyId || (data.payload && data.payload.companyId) || '';
 
     switch (action) {
       // --- ЧИТАННЯ ---
       case 'getAll':
-        return respond(getAllPackages());
+        return respond(getAllPackages(companyId));
 
       case 'getStructure':
         return respond(getStructure());
@@ -193,8 +197,8 @@ function doGet(e) {
 // ============================================
 // getAll — Витягнути ВСІ посилки з обох аркушів
 // ============================================
-function getAllPackages() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+function getAllPackages(companyId) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var allPackages = [];
 
   // Читаємо 2 робочі аркуші (РОБОЧА — не читаємо, лише для бекапу)
@@ -224,6 +228,12 @@ function getAllPackages() {
       // Мінімальна ідентифікація
       var hasIdentity = row[COL.ID] || row[COL.TTN] || row[COL.PHONE] || row[COL.NAME];
       if (!hasIdentity) continue;
+
+      // Фільтр по company_id
+      if (companyId) {
+        var rowCompanyId = String(row[COL.COMPANY_ID] || '').trim().toLowerCase();
+        if (rowCompanyId !== companyId.toLowerCase()) continue;
+      }
 
       var dateReg = formatDate(row[COL.DATE_REG]);
 
@@ -299,7 +309,7 @@ function addPackage(data) {
   var direction = fields.direction || 'ua-eu';
   var sheetName = data.sheet || getSheetByDirection(direction);
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -412,6 +422,9 @@ function addPackage(data) {
   if (!newRow[COL.STATUS]) {
     newRow[COL.STATUS] = 'new';
   }
+  if (data.companyId) {
+    newRow[COL.COMPANY_ID] = data.companyId;
+  }
 
   sheet.appendRow(newRow);
   var newRowNum = sheet.getLastRow();
@@ -443,7 +456,7 @@ function updatePackage(data) {
     return { success: false, error: 'Відсутні sheet, rowNum або fields' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -509,7 +522,7 @@ function updateField(data) {
     return { success: false, error: 'Невідоме поле: ' + field };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -539,7 +552,7 @@ function updateStatus(data) {
     return { success: false, error: 'Відсутні sheet, rowNum або status' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -577,7 +590,7 @@ function bulkUpdateStatus(data) {
     return { success: false, error: 'Відсутні items або status' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
   var needDate = ARCHIVE_STATUSES.indexOf(newStatus) !== -1;
   var count = 0;
@@ -624,7 +637,7 @@ function deletePackage(data) {
     return { success: false, error: 'Відсутні sheet або rowNum' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -680,7 +693,7 @@ function archivePackage(data) {
     return { success: false, error: 'Відсутні sheet або rowNum' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = findSheet(ss, sheetName);
   if (!sheet) {
     return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
@@ -775,7 +788,7 @@ function bulkArchive(data) {
     return { success: false, error: 'Не вдалося відкрити архів: ' + err.toString() };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
   var dateShort = dateNow.substring(0, 10);
   var archiveRows = [];
@@ -880,7 +893,7 @@ function checkDuplicates(data) {
     return { success: true, duplicates: [], count: 0 };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var duplicates = [];
 
   var sheetsToCheck = [
@@ -955,7 +968,7 @@ function checkDuplicates(data) {
 // getStructure — Структура таблиці (дебаг)
 // ============================================
 function getStructure() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheets = ss.getSheets();
   var result = [];
 
@@ -1134,7 +1147,7 @@ function onOpen() {
 // ============================================
 
 function testFindSheets() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheets = ss.getSheets();
 
   Logger.log('=== ВСІ АРКУШІ ===');

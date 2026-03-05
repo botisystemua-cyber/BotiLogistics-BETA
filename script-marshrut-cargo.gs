@@ -1,7 +1,7 @@
 // ============================================
 // BOTI LOGISTICS — МАРШРУТИ ПОСИЛКИ v1.1
 // Apps Script API для таблиці "Маршрути посилки"
-// ID: 1Pd3nv3fbwZ_0YSzdG4cda-q52BQT57E0hDe7eQej6z8
+// ID: 17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo
 // ============================================
 //
 // ІНСТРУКЦІЯ:
@@ -18,7 +18,7 @@
 // КОНФІГУРАЦІЯ
 // ============================================
 
-var SPREADSHEET_ID = '1Pd3nv3fbwZ_0YSzdG4cda-q52BQT57E0hDe7eQej6z8';
+var SPREADSHEET_ID = '17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo';
 
 // URL архівного скрипта (Crm_Arhiv_1.0)
 var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';

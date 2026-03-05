@@ -51,7 +51,7 @@ var SOURCES = {
     idCol: 13           // N — ІД запису
   },
   ROUTE_POSYLKY: {
-    id: '1Pd3nv3fbwZ_0YSzdG4cda-q52BQT57E0hDe7eQej6z8',
+    id: '17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo',
     name: 'Маршрути Посилки',
     type: 'posylky',
     sheets: ['Братислава марш.', 'Словаччина марш.', 'Нітра марш.', 'Кошице+прешов марш.'],
@@ -79,7 +79,7 @@ var SOURCES = {
     idCol: 10           // K — ІД
   },
   ROUTE_PASAZHYRY: {
-    id: '1iKlD0Bj-5qB3Gc1d5ZBHscbRipcSe5xU7svqBfpB77Y',
+    id: '1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0',
     name: 'Маршрут Пасажири',
     type: 'pasazhyry',
     sheets: ['Пас. Маршрут 1', 'Пас. Маршрут 2', 'Пас. Маршрут 3'],

@@ -1,7 +1,7 @@
 // ============================================
 // BOTI LOGISTICS — МАРШРУТИ ПАСАЖИРИ v1.1
 // Apps Script API для таблиці "Маршрут Пасажири"
-// ID: 1iKlD0Bj-5qB3Gc1d5ZBHscbRipcSe5xU7svqBfpB77Y
+// ID: 1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0
 // ============================================
 //
 // ІНСТРУКЦІЯ:
@@ -18,7 +18,7 @@
 // КОНФІГУРАЦІЯ
 // ============================================
 
-var SPREADSHEET_ID = '1iKlD0Bj-5qB3Gc1d5ZBHscbRipcSe5xU7svqBfpB77Y';
+var SPREADSHEET_ID = '1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0';
 
 // URL архівного скрипта (Crm_Arhiv_1.0)
 var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';

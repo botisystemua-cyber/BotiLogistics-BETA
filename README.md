@@ -46,14 +46,14 @@ API_URL = AKfycbzMeU2UXqFW1JTj85yIvHeCt_9YyLW2i6CeBq6F6tWY3lYAKAT1X9Ne-N28aiY7dG
 
 ### Маршрути Пасажири
 ```
-API_URL = AKfycbzwJzU5zdm83SWPEcuxZxddaNIKEzDGGi8sLDr-TJxdJEYYGioaJCwkCKTJmLLV-_7S
+API_URL = AKfycbwd_jczf4mQRkYJgFUG2IhVGkZF-LQ9pmVEFew9gMNn2ziiKsrC3McQ4h5rfaP_FyS9
 Скрипт: script-marshrut-passengers.gs
 Використовується: Drivers.html (PASSENGER_API_URL, ROUTES_API_URL), Passengers.html (ROUTE_API_URL)
 ```
 
 ### Маршрути Посилки
 ```
-API_URL = AKfycbxvC8hFdHi5Lq3voHZiqDdgPYy_SXpC-4HkYGU75r9Vy5Wd9FPR2k2ZQ-ucT6s-bt5m
+API_URL = AKfycbwHiX1phfTEMXKQfBgHATRQ116-TFZYiJeXiswKu4eAhkjPTyRO9XMezre-LZwLPiU
 Скрипт: script-marshrut-cargo.gs
 Використовується: Drivers.html (DELIVERY_API_URL), Cargo.html (ROUTE_API_URL)
 ```

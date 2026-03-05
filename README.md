@@ -41,8 +41,9 @@ API_URL = AKfycbw1gPO3mpGK4uAxnqWbnGok_2OUzpYf8HrHGQ7SmS2pZtuE6dyi3z_oOCX8jssf8_
 
 ### Посилки (CRM)
 ```
-API_URL = AKfycbzMeU2UXqFW1JTj85yIvHeCt_9YyLW2i6CeBq6F6tWY3lYAKAT1X9Ne-N28aiY7dGHMQQ
+API_URL = AKfycbyjygnhQtrTFrbmmuNEdulvsIgD7eOKagyD7_8Ogc-FOPDlEhl6i-Oo4ewPkb2SZRbz5g
 Скрипт: script-cargo.gs
+Таблиця: Logistics-Cargo
 ```
 
 ### Маршрути Пасажири

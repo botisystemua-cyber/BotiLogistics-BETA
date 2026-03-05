@@ -695,19 +695,19 @@
             <div class="route-section">
                 <div class="route-section-title">&#128230; ПОСИЛКИ</div>
                 <div class="routes-grid">
-                    <div class="route-card" onclick="selectRoute('Братислава марш.', '1234', 'delivery')">
+                    <div class="route-card" onclick="selectRoute('Братислава марш.', '', 'delivery')">
                         <div class="route-name">Братислава</div>
                         <span class="route-type-badge badge-delivery">ПОСИЛКИ</span>
                     </div>
-                    <div class="route-card" onclick="selectRoute('Нітра марш.', '12345', 'delivery')">
+                    <div class="route-card" onclick="selectRoute('Нітра марш.', '', 'delivery')">
                         <div class="route-name">Нітра</div>
                         <span class="route-type-badge badge-delivery">ПОСИЛКИ</span>
                     </div>
-                    <div class="route-card" onclick="selectRoute('Словаччина марш.', '123456', 'delivery')">
+                    <div class="route-card" onclick="selectRoute('Словаччина марш.', '', 'delivery')">
                         <div class="route-name">Словаччина</div>
                         <span class="route-type-badge badge-delivery">ПОСИЛКИ</span>
                     </div>
-                    <div class="route-card" onclick="selectRoute('Кошице+прешов марш.', '1234567', 'delivery')">
+                    <div class="route-card" onclick="selectRoute('Кошице+прешов марш.', '', 'delivery')">
                         <div class="route-name">Кошице + Прешов</div>
                         <span class="route-type-badge badge-delivery">ПОСИЛКИ</span>
                     </div>
@@ -771,10 +771,10 @@
             ARCHIVE_API_URL: 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec',
             GOOGLE_MAPS_KEY: 'AIzaSyDbSS6XSCJ3MafbrSp-rIX1-x130bwzevo',
             DELIVERY_ROUTES: [
-                { name: 'Братислава марш.', password: '1234' },
-                { name: 'Нітра марш.', password: '12345' },
-                { name: 'Словаччина марш.', password: '123456' },
-                { name: 'Кошице+прешов марш.', password: '1234567' }
+                { name: 'Братислава марш.' },
+                { name: 'Нітра марш.' },
+                { name: 'Словаччина марш.' },
+                { name: 'Кошице+прешов марш.' }
             ]
         };
         let currentSheet = '';
@@ -819,7 +819,7 @@
             } catch(e) {}
             if (!botiSession || !botiSession.companyId) {
                 // Немає сесії — редірект на логін
-                window.location.href = 'index.html';
+                window.location.href = 'Login.html';
                 return false;
             }
             return true;
@@ -832,20 +832,10 @@
             // Використовуємо назву компанії з сесії
             var companyName = botiSession.companyName || CONFIG.COMPANY_NAME;
             document.getElementById('pageTitle').textContent = companyName + ' - Driver Panel';
-            var loginButton = document.getElementById('loginButton');
-            if (loginButton) {
-                loginButton.addEventListener('click', handleLogin);
-            }
-            var driverNameInput = document.getElementById('driverNameInput');
-            if (driverNameInput) {
-                driverNameInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') handleLogin();
-                });
-            }
-            var savedName = localStorage.getItem('driverName');
-            if (savedName && driverNameInput) {
-                driverNameInput.value = savedName;
-            }
+            // Авторизація вже пройшла на Login.html — скіпаємо loginScreen
+            driverName = botiSession.email || botiSession.name || '';
+            document.getElementById('driverInfoDisplay').innerHTML = '&#128100; Водій: ' + escapeHtml(driverName);
+            showScreen('routeScreen');
             loadPassengerRoutes();
         });
         async function loadPassengerRoutes() {
@@ -909,7 +899,8 @@
             errorMsg.style.display = 'block';
         }
         function selectRoute(route, correctPassword, routeType) {
-            if (routeType === 'passenger') {
+            // Авторизація через Login.html — паролі маршрутів не потрібні
+            if (!correctPassword || routeType === 'passenger') {
                 openRoute(route, routeType);
             } else {
                 showPasswordModal(route, correctPassword, routeType);

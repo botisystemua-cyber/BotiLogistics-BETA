@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>YuraTransportation — Панель управління</title>
+  <title>BOTI-Logistics — Панель управління</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,6 +21,7 @@
       --manager-glow: rgba(59, 130, 246, 0.15);
       --owner: #10b981;
       --owner-glow: rgba(16, 185, 129, 0.15);
+      --brand-green: #10b981;
       --brand-red: #d90d0d;
       --error: #ef4444;
       --success: #10b981;
@@ -70,8 +71,8 @@
     .brand-badge {
       display: inline-block; font-family: 'Manrope', sans-serif;
       font-size: 10px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--brand-red); background: rgba(217, 13, 13, 0.1);
-      border: 1px solid rgba(217, 13, 13, 0.2); padding: 6px 16px;
+      color: var(--brand-green); background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 16px;
       border-radius: 20px; margin-bottom: 20px;
     }
     .logo-text {
@@ -80,7 +81,7 @@
       color: var(--text-primary); margin-bottom: 12px;
     }
     .logo-text span {
-      background: linear-gradient(135deg, var(--brand-red), #ff4444);
+      background: linear-gradient(135deg, var(--brand-green), #34d399);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .subtitle {
@@ -374,7 +375,7 @@
       opacity: 0; animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
     }
     .footer a { color: rgba(255, 255, 255, 0.3); text-decoration: none; transition: color 0.3s ease; }
-    .footer a:hover { color: var(--brand-red); }
+    .footer a:hover { color: var(--brand-green); }
     /* ═══ ANIMATIONS ═══ */
     @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -424,8 +425,8 @@
   <div class="noise"></div>
   <div class="container">
     <header class="header">
-      <div class="brand-badge">Transportation System</div>
-      <h1 class="logo-text">YURA<span>TRANSPORTATION</span></h1>
+      <div class="brand-badge">Logistics Platform</div>
+      <h1 class="logo-text">BOTI-<span>LOGISTICS</span></h1>
       <p class="subtitle" id="headerSubtitle">Оберіть вашу роль для входу в систему</p>
     </header>
     <!-- ═══ ЕКРАН 1: ВИБІР РОЛІ ═══ -->
@@ -466,8 +467,8 @@
         </div>
         <div class="error-msg" id="managerError"></div>
         <div class="form-group">
-          <label class="form-label">Ім'я</label>
-          <input type="text" class="form-input manager-input" id="managerName" placeholder="Введіть ваше ім'я" autocomplete="off">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input manager-input" id="managerEmail" placeholder="Введіть ваш email" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
@@ -486,8 +487,8 @@
         </div>
         <div class="error-msg" id="ownerError"></div>
         <div class="form-group">
-          <label class="form-label">Ім'я</label>
-          <input type="text" class="form-input owner-input" id="ownerName" placeholder="Введіть ваше ім'я" autocomplete="off">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input owner-input" id="ownerEmail" placeholder="Введіть ваш email" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
@@ -545,8 +546,8 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Ім'я</label>
-              <input type="text" class="form-input owner-input" id="newUserName" placeholder="Ім'я нового користувача">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input owner-input" id="newUserEmail" placeholder="Email нового користувача">
             </div>
             <div class="form-group">
               <label class="form-label">Пароль</label>
@@ -579,7 +580,7 @@
       </div>
     </div>
     <footer class="footer">
-      © 2025 YuraTransportation · Розробка <a href="https://botisystem.com">BOTI System</a>
+      © 2025 BOTI-Logistics · Розробка <a href="https://botisystem.com">BOTI System</a>
     </footer>
   </div>
   <!-- ═══ МОДАЛЬНЕ ВІКНО ═══ -->
@@ -599,7 +600,7 @@
       'Власник': 'manager/index_pass_19v.html'
     };
     // Дані поточного сеансу
-    let currentUser = { name: '', password: '', role: '' };
+    let currentUser = { email: '', name: '', password: '', role: '', companyName: '', spreadsheetId: '' };
     // ═══ НАВІГАЦІЯ ═══
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -615,37 +616,39 @@
       if (role === 'manager') {
         showScreen('screenManagerLogin');
         document.getElementById('headerSubtitle').textContent = 'Вхід для менеджера';
-        const saved = localStorage.getItem('yura_manager_name');
-        if (saved) document.getElementById('managerName').value = saved;
+        const saved = localStorage.getItem('boti_manager_email');
+        if (saved) document.getElementById('managerEmail').value = saved;
         setTimeout(() => {
-          const nf = document.getElementById('managerName');
-          if (nf.value) document.getElementById('managerPass').focus(); else nf.focus();
+          const ef = document.getElementById('managerEmail');
+          if (ef.value) document.getElementById('managerPass').focus(); else ef.focus();
         }, 100);
       } else {
         showScreen('screenOwnerLogin');
         document.getElementById('headerSubtitle').textContent = 'Вхід для власника';
-        const saved = localStorage.getItem('yura_owner_name');
-        if (saved) document.getElementById('ownerName').value = saved;
+        const saved = localStorage.getItem('boti_owner_email');
+        if (saved) document.getElementById('ownerEmail').value = saved;
         setTimeout(() => {
-          const nf = document.getElementById('ownerName');
-          if (nf.value) document.getElementById('ownerPass').focus(); else nf.focus();
+          const ef = document.getElementById('ownerEmail');
+          if (ef.value) document.getElementById('ownerPass').focus(); else ef.focus();
         }, 100);
       }
     }
     function showAdminPanel(name) {
       showScreen('screenAdmin');
-      document.getElementById('headerSubtitle').textContent = 'Панель управління';
+      document.getElementById('headerSubtitle').textContent = currentUser.companyName || 'Панель управління';
       document.getElementById('adminWelcomeName').textContent = '👑 ' + name.toUpperCase();
     }
     function goToCRM() {
-      sessionStorage.setItem('yura_auth', JSON.stringify({
-        role: currentUser.role, name: currentUser.name, time: Date.now()
+      sessionStorage.setItem('boti_auth', JSON.stringify({
+        role: currentUser.role, name: currentUser.name, email: currentUser.email,
+        companyName: currentUser.companyName, spreadsheetId: currentUser.spreadsheetId,
+        time: Date.now()
       }));
       window.location.href = REDIRECT['Власник'];
     }
     function doLogout() {
-      currentUser = { name: '', password: '', role: '' };
-      sessionStorage.removeItem('yura_auth');
+      currentUser = { email: '', name: '', password: '', role: '', companyName: '', spreadsheetId: '' };
+      sessionStorage.removeItem('boti_auth');
       showRoles();
     }
     // ═══ MESSAGES ═══
@@ -689,37 +692,44 @@
     // ═══ ЛОГІН ═══
     async function doLogin(role) {
       clearAllMessages();
-      let nameField, passField, btn, errorId;
+      let emailField, passField, btn, errorId;
       if (role === 'manager') {
-        nameField = document.getElementById('managerName');
+        emailField = document.getElementById('managerEmail');
         passField = document.getElementById('managerPass');
         btn = document.getElementById('managerLoginBtn');
         errorId = 'managerError';
       } else {
-        nameField = document.getElementById('ownerName');
+        emailField = document.getElementById('ownerEmail');
         passField = document.getElementById('ownerPass');
         btn = document.getElementById('ownerLoginBtn');
         errorId = 'ownerError';
       }
-      const name = nameField.value.trim();
+      const email = emailField.value.trim();
       const password = passField.value.trim();
-      if (!name) { showError(errorId, 'Введіть ім\'я'); nameField.focus(); return; }
+      if (!email) { showError(errorId, 'Введіть email'); emailField.focus(); return; }
       if (!password) { showError(errorId, 'Введіть пароль'); passField.focus(); return; }
+      const expectedRole = role === 'manager' ? 'Менеджер' : 'Власник';
       const originalText = btn.textContent;
       btn.innerHTML = '<span class="spinner-small"></span>';
       btn.disabled = true;
       try {
         const result = await apiCall({
-          action: 'login', name, password, device: getDeviceInfo()
+          action: 'login', email, password, role: expectedRole, device: getDeviceInfo()
         });
         if (result.success) {
-          localStorage.setItem('yura_' + role + '_name', name);
-          currentUser = { name: result.name, password, role: result.role };
+          localStorage.setItem('boti_' + role + '_email', email);
+          currentUser = {
+            email, name: result.name || email, password,
+            role: result.role, companyName: result.companyName || '',
+            spreadsheetId: result.spreadsheetId || ''
+          };
           if (result.role === 'Власник') {
-            showAdminPanel(result.name);
+            showAdminPanel(result.name || email);
           } else {
-            sessionStorage.setItem('yura_auth', JSON.stringify({
-              role: result.role, name: result.name, time: Date.now()
+            sessionStorage.setItem('boti_auth', JSON.stringify({
+              role: result.role, name: result.name || email, email,
+              companyName: result.companyName || '', spreadsheetId: result.spreadsheetId || '',
+              time: Date.now()
             }));
             window.location.href = REDIRECT[result.role] || 'manager/index_pass_19v.html';
           }
@@ -760,7 +770,7 @@
       try {
         const result = await apiCall({
           action: 'getUsers',
-          ownerName: currentUser.name,
+          ownerEmail: currentUser.email,
           ownerPassword: currentUser.password
         });
         if (!result.success) {
@@ -808,9 +818,9 @@
       try {
         const result = await apiCall({
           action: 'toggleStatus',
-          ownerName: currentUser.name,
+          ownerEmail: currentUser.email,
           ownerPassword: currentUser.password,
-          targetName
+          targetEmail: targetName
         });
         if (result.success) {
           loadUsers();
@@ -845,9 +855,9 @@
     async function doDeleteUser(targetName, needPass) {
       const params = {
         action: 'deleteUser',
-        ownerName: currentUser.name,
+        ownerEmail: currentUser.email,
         ownerPassword: currentUser.password,
-        targetName
+        targetEmail: targetName
       };
       if (needPass) {
         const passInput = document.getElementById('deleteTargetPass');
@@ -877,22 +887,22 @@
     async function doAddUser() {
       clearAllMessages();
       const role = document.getElementById('newUserRole').value;
-      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
       const password = document.getElementById('newUserPass').value.trim();
-      if (!name) { showError('addUserError', 'Введіть ім\'я'); return; }
+      if (!email) { showError('addUserError', 'Введіть email'); return; }
       if (!password || password.length < 4) { showError('addUserError', 'Пароль мінімум 4 символи'); return; }
       try {
         const result = await apiCall({
           action: 'addUser',
-          ownerName: currentUser.name,
+          ownerEmail: currentUser.email,
           ownerPassword: currentUser.password,
           newRole: role,
-          newName: name,
+          newEmail: email,
           newPassword: password
         });
         if (result.success) {
           showSuccess('addUserSuccess', result.message);
-          document.getElementById('newUserName').value = '';
+          document.getElementById('newUserEmail').value = '';
           document.getElementById('newUserPass').value = '';
         } else {
           showError('addUserError', result.error);
@@ -913,7 +923,7 @@
       try {
         const result = await apiCall({
           action: 'changePassword',
-          name: currentUser.name,
+          email: currentUser.email,
           oldPassword: oldPass,
           newPassword: newPass
         });
@@ -933,8 +943,10 @@
     // ═══ ENTER KEY ═══
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
-        if (document.getElementById('screenManagerLogin').classList.contains('active')) doLogin('manager');
-        else if (document.getElementById('screenOwnerLogin').classList.contains('active')) doLogin('owner');
+        const manScreen = document.getElementById('screenManagerLogin');
+        const ownScreen = document.getElementById('screenOwnerLogin');
+        if (manScreen && manScreen.classList.contains('active')) doLogin('manager');
+        else if (ownScreen && ownScreen.classList.contains('active')) doLogin('owner');
       }
     });
     // ═══ CLICK OUTSIDE MODAL ═══

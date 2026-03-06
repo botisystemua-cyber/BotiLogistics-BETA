@@ -245,6 +245,10 @@ function doPost(e) {
       case 'clearOldMailing':
         return respond(clearOldMailing(payload));
 
+      // --- РЕДАГУВАННЯ ---
+      case 'editPassenger':
+        return respond(editPassenger(payload));
+
       // --- СТВОРЕННЯ ---
       case 'addPassenger':
         return respond(addPassengerToRoute(payload));
@@ -1410,6 +1414,62 @@ function sendToArchive(payload) {
 // ============================================
 // addPassengerToRoute — Додати пасажира з Drivers UI
 // ============================================
+// ============================================
+// editPassenger — Редагування пасажира водієм
+// ============================================
+function editPassenger(payload) {
+  try {
+    var sheetName = payload.vehicle || payload.sheetName;
+    var rowNum = payload.rowNum;
+    var fields = payload.fields || {};
+
+    if (!sheetName || !rowNum) {
+      return { success: false, error: 'Не вказано аркуш або номер рядка' };
+    }
+
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
+    }
+
+    var row = parseInt(rowNum);
+    if (row < 2 || row > sheet.getLastRow()) {
+      return { success: false, error: 'Невірний номер рядка: ' + rowNum };
+    }
+
+    // Маппінг полів з фронтенду на колонки таблиці
+    var fieldMap = {
+      name:    COL.NAME,
+      phone:   COL.PHONE,
+      from:    COL.FROM,
+      to:      COL.TO,
+      date:    COL.DATE,
+      seats:   COL.SEATS,
+      weight:  COL.WEIGHT,
+      payment: COL.PAYMENT,
+      timing:  COL.TIMING,
+      note:    COL.NOTE
+    };
+
+    var updated = [];
+    for (var key in fields) {
+      if (fields.hasOwnProperty(key) && fieldMap.hasOwnProperty(key)) {
+        var colIndex = fieldMap[key];
+        sheet.getRange(row, colIndex + 1).setValue(fields[key]);
+        updated.push(key);
+      }
+    }
+
+    writeLog('editPassenger', sheetName, row, 'edited',
+      'Водій змінив: ' + updated.join(', '));
+
+    return { success: true, updated: updated, rowNum: row };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 function addPassengerToRoute(payload) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);

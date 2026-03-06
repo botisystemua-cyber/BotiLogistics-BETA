@@ -4313,11 +4313,80 @@ function moveOneToRoute(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
     if (!p.vehicle) return showToast('⚠️ Спочатку призначте авто');
-    p.status = 'route';
-    saveSettings();
-    render();
-    updateAllCounts();
-    showToast('🚀 В маршруті');
+
+    // Знаходимо авто для визначення назви аркуша маршруту
+    const veh = vehicles.find(v => v.id === p.vehicle || v.name === p.vehicle);
+    const vName = veh ? (veh.routeSheet || veh.name) : p.vehicle;
+
+    // Формуємо дані як в bulkMoveToRoute
+    const byVehicle = {};
+    byVehicle[vName] = [p];
+
+    showRouteProgress('Записую в маршрут...');
+
+    // Спочатку перевіряємо конфлікти
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'checkRouteSheets',
+            companyId: getCompanyId(),
+            payload: { vehicleNames: [vName] }
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.existing && data.existing.length > 0) {
+            // Є існуючі записи — додаємо до них
+            executeSingleCopyToRoute(p, byVehicle, 'add');
+        } else {
+            executeSingleCopyToRoute(p, byVehicle, 'add');
+        }
+    })
+    .catch(() => {
+        executeSingleCopyToRoute(p, byVehicle, 'add');
+    });
+}
+
+function executeSingleCopyToRoute(p, byVehicle, conflictAction) {
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'copyToRoute',
+            companyId: getCompanyId(),
+            payload: {
+                passengersByVehicle: byVehicle,
+                conflictAction: conflictAction
+            }
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        hideRouteProgress();
+        if (data.success) {
+            p.status = 'route';
+            p.mark = 'Маршрут';
+            saveSettings();
+            render();
+            updateAllCounts();
+            updateRoutesList();
+            showToast('🚀 В маршруті');
+        } else {
+            showToast('❌ ' + (data.error || 'Помилка запису'));
+        }
+    })
+    .catch(err => {
+        hideRouteProgress();
+        console.error('Route error:', err);
+        // Fallback — зберігаємо локально
+        p.status = 'route';
+        p.mark = 'Маршрут';
+        saveSettings();
+        render();
+        updateAllCounts();
+        showToast('⚠️ Збережено локально (немає зʼєднання)');
+    });
 }
 
 function archivePassenger(id) {
@@ -4754,6 +4823,7 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
             render();
             updateBulkBar();
             updateAllCounts();
+            updateRoutesList();
 
             let msg = `🚀 ${data.copied} записано в маршрут`;
             if (data.archived) msg += `, 📦 ${data.archived} архівовано`;

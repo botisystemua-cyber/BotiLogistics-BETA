@@ -2272,7 +2272,12 @@ const ALL_COLUMNS = {
 let colSettings = {header:['ttn','weight','dateReg','phone','vehicle','amount','dateReceive','id','payStatus','payment','note','address','number'],details:['phoneReg','parcelStatus','name','vo','smsNote','photo','timing']};
 let packages = [];
 
-let vehicles = []; // Завантажується з API (Logistics-marshrut-cargo)
+let vehicles = [
+    {id:'v1', name:'Авто 1', routeSheet:'Маршрут 1', maxWeight:2000, maxPoints:60},
+    {id:'v2', name:'Авто 2', routeSheet:'Маршрут 2', maxWeight:2000, maxPoints:60},
+    {id:'v3', name:'Авто 3', routeSheet:'Маршрут 3', maxWeight:2000, maxPoints:60},
+    {id:'v4', name:'Авто 4', routeSheet:'Маршрут 4', maxWeight:2000, maxPoints:60}
+];
 let filters = {date:'',vehicle:'',search:'',showArchive:false,statusFilter:'',routeVehicle:'',direction:'all',specialStatus:'',statusDateFrom:'',statusDateTo:'',showNewOnly:true};
 let selectedIds = new Set();
 let expandedExtras = new Set(); // Cards with expanded extra section
@@ -2302,7 +2307,7 @@ function getCompanyId() {
     return botiSession ? botiSession.companyId : '';
 }
 
-// Завантаження маршрутів (назви авто/маршрутів) з таблиці Logistics-marshrut-cargo
+// Синхронізація маршрутів з таблиці Logistics-marshrut-cargo
 function loadVehiclesFromAPI() {
     fetch(ROUTE_API_URL, {
         method: 'POST',
@@ -2312,24 +2317,28 @@ function loadVehiclesFromAPI() {
     .then(r => r.json())
     .then(data => {
         if (data.success && data.routes && data.routes.length > 0) {
-            // Оновлюємо vehicles з реальних назв листів таблиці
-            const newVehicles = data.routes.map((route, idx) => {
-                const name = route.name || route.vehicle || ('Маршрут ' + (idx + 1));
-                // Зберігаємо існуючі налаштування (maxWeight, maxPoints) якщо є
-                const existing = vehicles.find(v => v.name === name || v.routeSheet === name);
-                return {
-                    id: existing?.id || ('v' + (idx + 1)),
-                    name: name,
-                    routeSheet: route.name || name,
-                    maxWeight: existing?.maxWeight || 2000,
-                    maxPoints: existing?.maxPoints || 60
-                };
+            // Оновлюємо routeSheet для кожного авто з реальних назв листів
+            data.routes.forEach((route, idx) => {
+                const sheetName = route.name || route.vehicle;
+                if (sheetName && vehicles[idx]) {
+                    vehicles[idx].routeSheet = sheetName;
+                }
             });
-            vehicles = newVehicles;
+            // Якщо в таблиці більше маршрутів ніж авто — додаємо нові
+            for (let i = vehicles.length; i < data.routes.length; i++) {
+                const sheetName = data.routes[i].name || data.routes[i].vehicle;
+                vehicles.push({
+                    id: 'v' + (i + 1),
+                    name: 'Авто ' + (i + 1),
+                    routeSheet: sheetName || ('Маршрут ' + (i + 1)),
+                    maxWeight: 2000,
+                    maxPoints: 60
+                });
+            }
             saveSettings();
             updateVehiclesList();
             renderRoutesListLocal();
-            console.log('Маршрути завантажено з таблиці:', vehicles.map(v => v.name));
+            console.log('Маршрути синхронізовано:', vehicles.map(v => v.name + ' → ' + v.routeSheet));
         }
     })
     .catch(err => {
@@ -3899,37 +3908,40 @@ function updateRoutesList() {
 function renderRoutesListLocal() {
     const routesHtml = vehicles.map(v => {
         const count = packages.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
+        const routeLabel = v.routeSheet || v.name;
         return `<div class="dropdown-item" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')" style="color:#f97316;">
-            <span>🚐 ${v.name}</span>
+            <span>🚐 ${routeLabel}</span>
             <span class="badge" style="background:${count > 0 ? 'var(--success)' : 'var(--border)'};color:${count > 0 ? 'white' : 'var(--text-secondary)'}">${count}</span>
         </div>`;
     }).join('');
-    
+
     const routesList = document.getElementById('routesList');
     if (routesList) routesList.innerHTML = routesHtml;
-    
+
     // Mobile routes
     const mobileRoutesHtml = vehicles.map(v => {
         const count = packages.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
+        const routeLabel = v.routeSheet || v.name;
         return `<div class="side-menu-item route ${filters.routeVehicle === v.id ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}'); closeSideMenu();" style="color:#f97316;">
-            <span class="side-menu-item-left">🚐 ${v.name}</span>
+            <span class="side-menu-item-left">🚐 ${routeLabel}</span>
             <span class="side-menu-item-count">${count}</span>
         </div>`;
     }).join('');
-    
+
     const mobileRoutesList = document.getElementById('mobileRoutesList');
     if (mobileRoutesList) mobileRoutesList.innerHTML = mobileRoutesHtml;
-    
+
     // PC Sidebar routes
     const pcRoutesHtml = vehicles.map(v => {
         const count = packages.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
+        const routeLabel = v.routeSheet || v.name;
         const isActive = filters.routeVehicle === v.id;
         return `<div class="pc-sidebar-item route ${isActive ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')" style="color:#f97316;">
-            <span><span class="item-icon">🚐</span>${v.name}</span>
+            <span><span class="item-icon">🚐</span>${routeLabel}</span>
             <span class="item-count">${count}</span>
         </div>`;
     }).join('');
-    
+
     const pcRoutesList = document.getElementById('pcRoutesList');
     if (pcRoutesList) pcRoutesList.innerHTML = pcRoutesHtml;
     
@@ -4671,11 +4683,42 @@ function moveOneToRoute(id) {
     const p = packages.find(x => x.id === id);
     if (!p) return;
     if (!p.vehicle) return showToast('⚠️ Спочатку призначте авто');
-    p.status = 'route';
-    saveSettings();
-    render();
-    updateAllCounts();
-    showToast('🚀 В маршруті');
+
+    // Знаходимо авто та його маршрут
+    const veh = vehicles.find(v => v.id === p.vehicle || v.name === p.vehicle);
+    const sheetName = veh ? (veh.routeSheet || veh.name) : p.vehicle;
+
+    // Копіюємо в таблицю маршруту
+    const byVehicle = {};
+    byVehicle[sheetName] = [{ ...p, direction: sheetName }];
+
+    showToast('📤 Записую в маршрут...');
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'copyToRoute',
+            companyId: getCompanyId(),
+            payload: { packagesByVehicle: byVehicle, conflictAction: 'add' }
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            p.status = 'route';
+            p.mark = 'Маршрут';
+            saveSettings();
+            render();
+            updateAllCounts();
+            showToast('🚀 В маршруті: ' + sheetName);
+        } else {
+            showToast('❌ ' + (data.error || 'Помилка'));
+        }
+    })
+    .catch(err => {
+        console.error('Route error:', err);
+        showToast('❌ Помилка запису в маршрут');
+    });
 }
 
 function archivePackage(id) {
@@ -4956,13 +4999,13 @@ function bulkMoveToRoute() {
     const withVehicle = selected.filter(p => p.vehicle);
     if (!withVehicle.length) return showToast('⚠️ Спочатку призначте авто');
     
-    // Групуємо по авто
+    // Групуємо по маршруту (routeSheet) — Авто 1 → Маршрут 1
     const byVehicle = {};
     withVehicle.forEach(p => {
         const veh = vehicles.find(v => v.id === p.vehicle || v.name === p.vehicle);
-        const vName = veh ? veh.name : p.vehicle;
-        if (!byVehicle[vName]) byVehicle[vName] = [];
-        byVehicle[vName].push(p);
+        const sheetName = veh ? (veh.routeSheet || veh.name) : p.vehicle;
+        if (!byVehicle[sheetName]) byVehicle[sheetName] = [];
+        byVehicle[sheetName].push(p);
     });
     
     // Показуємо завантаження
@@ -6001,9 +6044,12 @@ function saveVehicle() {
         return showToast('Авто з такою назвою вже існує');
     }
 
+    // Автоматично генеруємо назву маршруту: "Авто X" → "Маршрут X"
+    const routeSheet = name.replace(/^Авто\s*/i, 'Маршрут ') || name;
     const newVehicle = {
         id: 'v' + Date.now(),
         name: name,
+        routeSheet: routeSheet,
         maxWeight: maxWeight,
         maxPoints: maxPoints
     };

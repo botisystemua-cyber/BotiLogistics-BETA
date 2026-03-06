@@ -471,7 +471,7 @@ function getAvailableRoutes(companyId) {
     var routes = [];
 
     // Службові аркуші які НЕ є маршрутами
-    var excludePatterns = ['логи', 'logs', 'водіїв', 'розсилк', 'провірка', 'перевірка', 'template', 'шаблон', 'тест', 'test', 'архів', 'маршрути', 'відпр'];
+    var excludePatterns = ['логи', 'logs', 'водіїв', 'розсилк', 'провірка', 'перевірка', 'template', 'шаблон', 'тест', 'test', 'архів', 'маршрути водіїв', 'відпр'];
 
     for (var i = 0; i < sheets.length; i++) {
       var name = sheets[i].getName();

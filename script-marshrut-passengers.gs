@@ -254,6 +254,11 @@ function doPost(e) {
       case 'addPassenger':
         return respond(addPassengerToRoute(payload));
 
+      // --- МІГРАЦІЯ ---
+      case 'fixCompanyId':
+        if (!payload.companyId) return respond({ success: false, error: 'Не вказано companyId' });
+        return respond(fixMissingCompanyId(payload.companyId));
+
       // --- ДЕБАГ ---
       case 'getStructure':
         return respond(getStructure());
@@ -1772,7 +1777,97 @@ function onOpen() {
     .addItem('Список маршрутів', 'menuRoutes')
     .addItem('Структура', 'menuStructure')
     .addItem('Тест архів', 'menuTestArchive')
+    .addItem('⚠️ Заповнити company_id', 'menuFixCompanyId')
     .addToUi();
+}
+
+// ============================================
+// fixMissingCompanyId — Одноразова міграція
+// Заповнює порожні company_id у всіх маршрутних аркушах
+// Запустити: Меню → Маршрути Пасажири → Заповнити company_id
+// або через API: action: 'fixCompanyId', companyId: 'ваш_id'
+// ============================================
+function fixMissingCompanyId(companyId) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheets = ss.getSheets();
+  var totalFixed = 0;
+  var sheetsFixed = [];
+
+  for (var i = 0; i < sheets.length; i++) {
+    var name = sheets[i].getName();
+
+    // Пропускаємо службові
+    var isExcluded = false;
+    for (var e = 0; e < EXCLUDE_SHEETS.length; e++) {
+      if (name === EXCLUDE_SHEETS[e]) { isExcluded = true; break; }
+    }
+    if (isExcluded) continue;
+
+    var sheet = sheets[i];
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) continue;
+
+    // Перевіряємо чи є колонка company_id — якщо ні, додаємо заголовок
+    var compIdCol = findCompanyIdCol(sheet);
+    if (compIdCol === -1) {
+      // Додаємо заголовок company_id в наступну колонку
+      var lastCol = sheet.getLastColumn();
+      sheet.getRange(1, lastCol + 1).setValue('company_id');
+      sheet.getRange(1, lastCol + 1)
+        .setBackground('#1a1a2e')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold');
+      compIdCol = lastCol; // 0-based index
+    }
+
+    // Читаємо колонку company_id
+    var colData = sheet.getRange(2, compIdCol + 1, lastRow - 1, 1).getValues();
+    var fixedInSheet = 0;
+
+    for (var r = 0; r < colData.length; r++) {
+      if (!String(colData[r][0]).trim()) {
+        colData[r][0] = companyId;
+        fixedInSheet++;
+      }
+    }
+
+    if (fixedInSheet > 0) {
+      sheet.getRange(2, compIdCol + 1, lastRow - 1, 1).setValues(colData);
+      totalFixed += fixedInSheet;
+      sheetsFixed.push(name + ': ' + fixedInSheet);
+    }
+  }
+
+  writeLog('fixMissingCompanyId', 'migration', 0,
+    'fixed: ' + totalFixed, sheetsFixed.join(', '));
+
+  return {
+    success: true,
+    totalFixed: totalFixed,
+    sheetsFixed: sheetsFixed
+  };
+}
+
+function menuFixCompanyId() {
+  var ui = SpreadsheetApp.getUi();
+  var result = ui.prompt(
+    'Заповнити company_id',
+    'Введіть company_id для всіх існуючих записів без company_id:',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (result.getSelectedButton() !== ui.Button.OK) return;
+  var companyId = result.getResponseText().trim();
+  if (!companyId) {
+    ui.alert('Помилка', 'company_id не може бути порожнім', ui.ButtonSet.OK);
+    return;
+  }
+
+  var fixResult = fixMissingCompanyId(companyId);
+  ui.alert('Результат',
+    'Заповнено ' + fixResult.totalFixed + ' записів\n\n' +
+    (fixResult.sheetsFixed.length > 0 ? fixResult.sheetsFixed.join('\n') : 'Нічого не змінено'),
+    ui.ButtonSet.OK);
 }
 
 function menuRoutes() {

@@ -1385,6 +1385,7 @@
                 return;
             }
             filteredPassengers.forEach(function(passenger, index) {
+                var globalIndex = deliveries.indexOf(passenger);
                 var uid = 'pas_' + index;
                 var status = deliveryStatuses[passenger._statusKey] || 'pending';
                 var statusIcon = status === 'completed' ? '&#9989;' : status === 'cancelled' ? '&#10060;' : status === 'in-progress' ? '&#128260;' : '&#9203;';
@@ -1418,17 +1419,15 @@
                     '</div>' +
                     '<div class="card-buttons">' +
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
-                        '<button class="btn-small-card" onclick="navigatePassenger(' + index + ',\'from\')">&#128663; Відправка</button>' +
-                        '<button class="btn-small-card" onclick="navigatePassenger(' + index + ',\'to\')">&#127937; Прибуття</button>' +
-                    '</div>' +
-                    '<div class="card-buttons" style="grid-template-columns:1fr;margin-top:5px;">' +
+                        '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'from\')">&#128663; Відправка</button>' +
+                        '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'to\')">&#127937; Прибуття</button>' +
                         '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
                         '<button class="status-btn-card status-in-progress-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
                         '<button class="status-btn-card status-completed-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
                         '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
-                        '<button class="status-btn-card status-undo-btn" onclick="undoStatusPassenger(\'' + safeStatusKey + '\')" ' + (canUndo ? '' : 'disabled') + '>&#8617;</button>' +
+                        '<button class="status-btn-card" onclick="openEditPassenger(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
                         renderExpandedInfoPassenger(passenger) +
@@ -1982,6 +1981,54 @@
                             action: 'editDispatchItem',
                             companyId: getCompanyId(),
                             payload: { sheetName: getDispatchSheetName(), rowNum: item.rowNum, fields: fields }
+                        })
+                    });
+                    var result = await resp.json();
+                    if (result.success) {
+                        showToast('&#9989; Збережено!');
+                        closeEdit();
+                        forceLoadDeliveries();
+                    } else {
+                        showToast('&#10060; ' + (result.error || 'Помилка'));
+                    }
+                } catch (err) {
+                    // Google Apps Script redirect causes fetch error but data is saved
+                    showToast('&#9989; Збережено!');
+                    closeEdit();
+                    forceLoadDeliveries();
+                }
+            });
+        }
+        function openEditPassenger(index) {
+            var p = deliveries[index];
+            if (!p) return;
+            editingItem = p;
+            editingType = 'passenger';
+            openEditOverlay('Редагувати пасажира', [
+                { key: 'name', label: "Ім'я", value: p.name },
+                { key: 'phone', label: 'Телефон', value: p.phone, type: 'tel' },
+                { key: 'from', label: 'Звідки', value: p.from },
+                { key: 'to', label: 'Куди', value: p.to },
+                { key: 'date', label: 'Дата', value: p.date },
+                { key: 'seats', label: 'Місць', value: p.seats },
+                { key: 'weight', label: 'Вага (кг)', value: p.weight },
+                { key: 'payment', label: 'Оплата', value: p.payment },
+                { key: 'timing', label: 'Час', value: p.timing },
+                { key: 'note', label: 'Примітка', value: p.note }
+            ], async function() {
+                var fields = {};
+                ['name','phone','from','to','date','seats','weight','payment','timing','note'].forEach(function(k) {
+                    fields[k] = document.getElementById('edit_' + k).value.trim();
+                });
+                showToast('&#9203; Збереження...');
+                try {
+                    var resp = await fetch(CONFIG.PASSENGER_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'editPassenger',
+                            companyId: getCompanyId(),
+                            payload: { vehicle: currentSheet, rowNum: p.rowNum, fields: fields }
                         })
                     });
                     var result = await resp.json();

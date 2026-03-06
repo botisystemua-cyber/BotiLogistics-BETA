@@ -2272,12 +2272,20 @@ const ALL_COLUMNS = {
 let colSettings = {header:['ttn','weight','dateReg','phone','vehicle','amount','dateReceive','id','payStatus','payment','note','address','number'],details:['phoneReg','parcelStatus','name','vo','smsNote','photo','timing']};
 let packages = [];
 
-let vehicles = [
+const DEFAULT_VEHICLES = [
     {id:'v1', name:'Авто 1', routeSheet:'Маршрут 1', maxWeight:2000, maxPoints:60},
     {id:'v2', name:'Авто 2', routeSheet:'Маршрут 2', maxWeight:2000, maxPoints:60},
     {id:'v3', name:'Авто 3', routeSheet:'Маршрут 3', maxWeight:2000, maxPoints:60},
     {id:'v4', name:'Авто 4', routeSheet:'Маршрут 4', maxWeight:2000, maxPoints:60}
 ];
+let vehicles = DEFAULT_VEHICLES.map(v => ({...v}));
+
+// Службові аркуші які НЕ є маршрутами
+const EXCLUDED_SHEETS = ['логи', 'розсилка', 'лог', 'logs', 'mailing', 'провірка', 'провірка розсилки'];
+
+function isRouteSheet(name) {
+    return !EXCLUDED_SHEETS.some(ex => name.toLowerCase().includes(ex));
+}
 let filters = {date:'',vehicle:'',search:'',showArchive:false,statusFilter:'',routeVehicle:'',direction:'all',specialStatus:'',statusDateFrom:'',statusDateTo:'',showNewOnly:true};
 let selectedIds = new Set();
 let expandedExtras = new Set(); // Cards with expanded extra section
@@ -2307,44 +2315,62 @@ function getCompanyId() {
     return botiSession ? botiSession.companyId : '';
 }
 
-// Синхронізація маршрутів з таблиці Logistics-marshrut-cargo
-function loadVehiclesFromAPI() {
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success && data.routes && data.routes.length > 0) {
-            // Оновлюємо name + routeSheet для кожного авто з реальних назв листів
-            data.routes.forEach((route, idx) => {
-                const sheetName = route.name || route.vehicle;
-                if (sheetName && vehicles[idx]) {
-                    vehicles[idx].routeSheet = sheetName;
-                    vehicles[idx].name = sheetName;
-                }
-            });
-            // Якщо в таблиці більше маршрутів ніж авто — додаємо нові
-            for (let i = vehicles.length; i < data.routes.length; i++) {
-                const sheetName = data.routes[i].name || data.routes[i].vehicle;
+// Синхронізація маршрутів з таблиці — підтягує реальні аркуші, видаляє зниклі
+async function loadVehiclesFromAPI() {
+    try {
+        const res = await fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+        });
+        const data = await res.json();
+        if (!data.success || !data.routes) return;
+
+        // Фільтруємо лише маршрутні аркуші (без логів, розсилки тощо)
+        const serverSheets = data.routes.filter(r => isRouteSheet(r.name));
+
+        // 1) Додаємо нові аркуші яких немає в vehicles
+        for (const sheet of serverSheets) {
+            const exists = vehicles.find(v =>
+                v.routeSheet === sheet.name || v.name === sheet.name
+            );
+            if (!exists) {
                 vehicles.push({
-                    id: 'v' + (i + 1),
-                    name: sheetName || ('Маршрут ' + (i + 1)),
-                    routeSheet: sheetName || ('Маршрут ' + (i + 1)),
+                    id: 'v' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                    name: sheet.name,
+                    routeSheet: sheet.name,
                     maxWeight: 2000,
                     maxPoints: 60
                 });
             }
-            saveSettings();
-            updateVehiclesList();
-            renderRoutesListLocal();
-            console.log('Маршрути синхронізовано:', vehicles.map(v => v.name + ' → ' + v.routeSheet));
         }
-    })
-    .catch(err => {
+
+        // 2) Видаляємо авто чий аркуш зник з сервера (дефолтні залишаємо як fallback)
+        const serverNames = serverSheets.map(s => s.name);
+        vehicles = vehicles.filter(v => {
+            if (!v.routeSheet) return true;
+            if (serverNames.includes(v.routeSheet)) return true;
+            if (DEFAULT_VEHICLES.find(d => d.id === v.id)) return true;
+            return false;
+        });
+
+        // 3) Оновлюємо name з routeSheet для всіх, щоб назви були актуальні
+        vehicles.forEach(v => {
+            if (v.routeSheet && serverNames.includes(v.routeSheet)) {
+                v.name = v.routeSheet;
+            }
+        });
+
+        saveSettings();
+        updateVehiclesList();
+        if (typeof updateMobileVehicles === 'function') updateMobileVehicles();
+        if (typeof updateRoutesList === 'function') updateRoutesList();
+        if (typeof updatePcVehiclesList === 'function') updatePcVehiclesList();
+        renderRoutesListLocal();
+        console.log('Маршрути синхронізовано:', vehicles.map(v => v.name + ' → ' + v.routeSheet));
+    } catch (err) {
         console.warn('Не вдалось завантажити маршрути з API:', err);
-    });
+    }
 }
 
 // INIT
@@ -2586,7 +2612,7 @@ function playNotificationSound() {
     }
 }
 
-const SETTINGS_VERSION = 2;
+const SETTINGS_VERSION = 3;
 function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} if(s.vehicles&&s.vehicles.length&&s._v===SETTINGS_VERSION)vehicles=s.vehicles; } catch(e){} }
 function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({_v:SETTINGS_VERSION,colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); }
 
@@ -3865,12 +3891,9 @@ function updateRoutesList() {
                 const count = route.count || 0;
                 totalCount += count;
 
-                // Знаходимо відповідне авто по назві
+                // Знаходимо відповідне авто по routeSheet (точне порівняння)
                 const matchedVehicle = vehicles.find(v => {
-                    return v.name === route.vehicle ||
-                        v.name === route.name ||
-                        route.name.includes(v.name) ||
-                        v.name.includes(route.name);
+                    return v.routeSheet === route.name || v.name === route.name;
                 });
 
                 if (matchedVehicle) {
@@ -4096,7 +4119,7 @@ async function loadAllRoutePassengers() {
         }
         
         if (routesResponse.success && routesResponse.routes && routesResponse.routes.length > 0) {
-            const routes = routesResponse.routes;
+            const routes = routesResponse.routes.filter(r => isRouteSheet(r.name));
             updateLoader('Завантаження пасажирів...', `0 / ${routes.length}`);
             
             // Паралельно завантажуємо ВСІ маршрути одночасно
@@ -4126,12 +4149,9 @@ async function loadAllRoutePassengers() {
                 
                 const items = data.success ? (data.passengers || data.packages || []) : [];
                 if (items.length > 0) {
-                    // Знаходимо відповідне авто по назві
+                    // Знаходимо відповідне авто по routeSheet (точне порівняння)
                     const matchedVehicle = vehicles.find(v => {
-                        return v.name === route.vehicle ||
-                            v.name === route.name ||
-                            route.name.includes(v.name) ||
-                            v.name.includes(route.name);
+                        return v.routeSheet === route.name || v.name === route.name;
                     });
 
                     const mapped = items.map((p, idx) => ({

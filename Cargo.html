@@ -7235,10 +7235,11 @@ function savePackageToServer(pkg) {
             smsNote: pkg.smsNote || '',
             dateReceive: pkg.dateReceive || '',
             photo: pkg.photo || '',
-            status: pkg.status || ''
+            status: pkg.status || '',
+            vehicle: pkg.vehicle || ''
         }
     };
-    
+
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -7287,6 +7288,7 @@ function updatePackageOnServer(pkg) {
 
     const payload = {
         action: 'updatePackage',
+        companyId: getCompanyId(),
         sheet: pSheet,
         rowNum: pRowNum,
         fields: {

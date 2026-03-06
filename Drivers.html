@@ -777,7 +777,7 @@
             COMPANY_NAME: 'BOTI Logistics',
             DELIVERY_SPREADSHEET_ID: '17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo',
             // Маршрут Посилки API v1.2
-            DELIVERY_API_URL: 'https://script.google.com/macros/s/AKfycbxtfhsI2ksss5CRk5g76yL1ICutCdeY5J2Fjvr7-qoqOdItytqWS8XrHMJbr28n9fM0/exec',
+            DELIVERY_API_URL: 'https://script.google.com/macros/s/AKfycbz0E-N3HBXBQVTCH67LuBe9cIoPL7h3D8hBDHfbJjfJv6GRre3b48rFz4G5FXbaRqi3/exec',
             // Маршрут Пасажири API v1.1
             PASSENGER_API_URL: 'https://script.google.com/macros/s/AKfycbyG5Ef0tooEOV7-qBPgIiDNEdPZDt2clLFQdzOeeKbiUhcWmjcedSEQP4PnlPqcqI4V/exec',
             // Архів API v1.0
@@ -1187,8 +1187,9 @@
                     (item.paymentType ? '<span class="detail-badge">&#128179; ' + escapeHtml(item.paymentType) + '</span>' : '') +
                 '</div>' +
                 (safePhone ? '<div class="card-buttons"><button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button></div>' : '') +
-                '<div class="card-buttons" style="grid-template-columns:1fr;margin-top:5px;">' +
+                '<div class="card-buttons" style="grid-template-columns:1fr 1fr;margin-top:5px;">' +
                     '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
+                    '<button class="btn-small-card" onclick="openEditDispatch(' + index + ')" style="background:#1a3a5e;color:white;">&#9998; Редагувати</button>' +
                 '</div>' +
                 '<div class="status-buttons-card">' +
                     '<button class="status-btn-card status-in-progress-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
@@ -1302,6 +1303,7 @@
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
                         mapBtn +
                         '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
+                        '<button class="btn-small-card" onclick="openEditDelivery(' + globalIndex + ')" style="background:#1a3a5e;color:white;">&#9998; Редагувати</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
                         '<button class="status-btn-card status-in-progress-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
@@ -1862,6 +1864,126 @@
         function closeAddLead() {
             var overlay = document.getElementById('addLeadOverlay');
             if (overlay) overlay.classList.remove('show');
+        }
+        // ═══ РЕДАГУВАННЯ ПОСИЛКИ ═══
+        var editingItem = null;
+        var editingType = '';
+        function openEditOverlay(title, fields, onSave) {
+            var overlay = document.getElementById('editOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'add-lead-overlay';
+                overlay.id = 'editOverlay';
+                overlay.onclick = function(e) { if (e.target === overlay) closeEdit(); };
+                document.body.appendChild(overlay);
+            }
+            var html = '<div class="add-lead-box"><div class="add-lead-title">&#9998; ' + title + '</div>';
+            for (var i = 0; i < fields.length; i++) {
+                var f = fields[i];
+                html += '<div class="add-lead-field"><label>' + f.label + '</label><input type="' + (f.type || 'text') + '" id="edit_' + f.key + '" value="' + escapeHtml(f.value || '') + '" placeholder="' + (f.ph || '') + '"></div>';
+            }
+            html += '<button class="add-lead-submit" onclick="submitEdit()">&#128190; Зберегти</button>';
+            html += '<button class="add-lead-cancel" onclick="closeEdit()">Скасувати</button>';
+            html += '</div>';
+            overlay.innerHTML = html;
+            overlay.classList.add('show');
+            window._editSaveFn = onSave;
+        }
+        function closeEdit() {
+            var overlay = document.getElementById('editOverlay');
+            if (overlay) overlay.classList.remove('show');
+            editingItem = null;
+        }
+        async function submitEdit() {
+            if (window._editSaveFn) await window._editSaveFn();
+        }
+        function openEditDelivery(index) {
+            var d = deliveries[index];
+            if (!d) return;
+            editingItem = d;
+            editingType = 'delivery';
+            openEditOverlay('Редагувати посилку', [
+                { key: 'name', label: 'ПіБ', value: d.name },
+                { key: 'phone', label: 'Телефон', value: d.phone, type: 'tel' },
+                { key: 'address', label: 'Адреса', value: d.address },
+                { key: 'ttn', label: 'Номер ТТН', value: d.ttn },
+                { key: 'weight', label: 'Вага (кг)', value: d.weight },
+                { key: 'amount', label: 'Сума', value: d.price || d.amount },
+                { key: 'payment', label: 'Оплата', value: d.payment },
+                { key: 'note', label: 'Примітка', value: d.note }
+            ], async function() {
+                var fields = {};
+                ['name','phone','address','ttn','weight','amount','payment','note'].forEach(function(k) {
+                    fields[k] = document.getElementById('edit_' + k).value.trim();
+                });
+                showToast('&#9203; Збереження...');
+                try {
+                    var resp = await fetch(CONFIG.DELIVERY_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'editRoutePackage',
+                            companyId: getCompanyId(),
+                            payload: { sheetName: currentSheet, rowNum: d.rowNum, fields: fields }
+                        })
+                    });
+                    var result = await resp.json();
+                    if (result.success) {
+                        showToast('&#9989; Збережено!');
+                        closeEdit();
+                        forceLoadDeliveries();
+                    } else {
+                        showToast('&#10060; ' + (result.error || 'Помилка'));
+                    }
+                } catch (err) {
+                    showToast('&#10060; Помилка: ' + err.message);
+                }
+            });
+        }
+        function openEditDispatch(index) {
+            var item = dispatchData[index];
+            if (!item) return;
+            editingItem = item;
+            editingType = 'dispatch';
+            openEditOverlay('Редагувати відправку', [
+                { key: 'name', label: 'ПІБ', value: item.name },
+                { key: 'parcelNum', label: '№ посилки', value: item.parcelNum },
+                { key: 'city', label: 'Місто/НП', value: item.city },
+                { key: 'description', label: 'Опис/фото', value: item.description },
+                { key: 'weight', label: 'Вага (кг)', value: item.weight },
+                { key: 'amount', label: 'Сума', value: item.amount },
+                { key: 'paymentType', label: 'Тип оплати', value: item.paymentType },
+                { key: 'currency', label: 'Валюта', value: item.currency },
+                { key: 'envelope', label: 'Конверт', value: item.envelope },
+                { key: 'senderPhone', label: 'Телефон відправника', value: item.senderPhone, type: 'tel' }
+            ], async function() {
+                var fields = {};
+                ['name','parcelNum','city','description','weight','amount','paymentType','currency','envelope','senderPhone'].forEach(function(k) {
+                    fields[k] = document.getElementById('edit_' + k).value.trim();
+                });
+                showToast('&#9203; Збереження...');
+                try {
+                    var resp = await fetch(CONFIG.DELIVERY_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'editDispatchItem',
+                            companyId: getCompanyId(),
+                            payload: { sheetName: getDispatchSheetName(), rowNum: item.rowNum, fields: fields }
+                        })
+                    });
+                    var result = await resp.json();
+                    if (result.success) {
+                        showToast('&#9989; Збережено!');
+                        closeEdit();
+                        forceLoadDeliveries();
+                    } else {
+                        showToast('&#10060; ' + (result.error || 'Помилка'));
+                    }
+                } catch (err) {
+                    showToast('&#10060; Помилка: ' + err.message);
+                }
+            });
         }
         async function submitAddLead() {
             var isDelivery = currentRouteType === 'delivery';

@@ -1287,6 +1287,23 @@
         .scanner-btn.capture:active { transform: scale(0.9); background: #ddd; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Scanner hint overlay */
+        .scanner-hint { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; padding: 14px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.7)); pointer-events: none; z-index: 4; }
+        .scanner-hint-text { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; text-align: center; animation: hintPulse 2s ease-in-out infinite; }
+        @keyframes hintPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+        /* Scanner mode selector (barcode find/add) */
+        .scanner-mode-popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2100; display: flex; align-items: center; justify-content: center; }
+        .scanner-mode-inner { background: #1a1a2e; border-radius: 16px; padding: 20px; min-width: 280px; max-width: 320px; }
+        .scanner-mode-title { color: white; font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 16px; }
+        .scanner-mode-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; color: white; margin-bottom: 10px; font-family: inherit; transition: transform 0.1s; }
+        .scanner-mode-btn:active { transform: scale(0.97); }
+        .scanner-mode-btn.find { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .scanner-mode-btn.add { background: linear-gradient(135deg, #10b981, #059669); }
+        .scanner-mode-btn .mode-icon { font-size: 24px; }
+        .scanner-mode-btn small { display: block; font-size: 10px; opacity: 0.8; font-weight: 400; margin-top: 2px; }
+        .scanner-mode-cancel { width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; background: none; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; font-family: inherit; }
+
         /* Scanner preview (after photo taken) */
         .scanner-preview { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #000; display: none; flex-direction: column; z-index: 5; }
         .scanner-preview.show { display: flex; }
@@ -1982,6 +1999,10 @@
         <video id="scannerVideo" autoplay playsinline muted></video>
         <canvas id="scannerCanvas"></canvas>
         <div class="scanner-guide"></div>
+        <!-- Hint overlay -->
+        <div class="scanner-hint" id="scannerHint">
+            <span class="scanner-hint-text">Натисніть 📸 щоб зробити фото або 📊 для штрих-коду</span>
+        </div>
         <!-- Preview after capture -->
         <div class="scanner-preview" id="scannerPreview">
             <img id="scannerPreviewImg" src="" alt="Preview">
@@ -1999,7 +2020,7 @@
         <button class="scanner-btn capture" onclick="capturePhoto()">
             <span class="btn-icon">📸</span>
         </button>
-        <button class="scanner-btn" onclick="scanBarcode()">
+        <button class="scanner-btn" onclick="openBarcodeMenu()">
             <span class="btn-icon">📊</span>
             Штрих-код
         </button>
@@ -6078,6 +6099,7 @@ function savePackage() {
         smsNote: document.getElementById('fSmsNote')?.value || '',
         photo: document.getElementById('fPhoto')?.value || '',
         status: existingP?.status || '',
+        _pendingPhoto: sessionStorage.getItem('pendingPhoto') || null,
         isNew: !editingId,
         order: packages.length * 10
     }; 
@@ -6098,13 +6120,30 @@ function savePackage() {
         savePackageToServer(d);
     }
     
+    // Якщо є pending фото з камери (демо-кеш) — завантажуємо на хостинг асинхронно
+    const pendingPhoto = d._pendingPhoto;
+    delete d._pendingPhoto;
+    if (pendingPhoto && (!d.photo || d.photo.startsWith('Демо'))) {
+        uploadPhotoToImgBB(pendingPhoto).then(url => {
+            if (url) {
+                d.photo = url;
+                saveSettings();
+                render();
+                showToast('📷 Фото завантажено: ' + url.substring(0, 40) + '...');
+            }
+        });
+        sessionStorage.removeItem('pendingPhoto');
+    } else {
+        sessionStorage.removeItem('pendingPhoto');
+    }
+
     editingId = null;
-    saveSettings(); 
-    closeModal('packageModal'); 
-    render(); 
-    updateVehiclesList(); 
-    updateAllCounts(); 
-    renderCalendars(); 
+    saveSettings();
+    closeModal('packageModal');
+    render();
+    updateVehiclesList();
+    updateAllCounts();
+    renderCalendars();
 }
 
 // COLUMNS
@@ -6459,6 +6498,9 @@ function closeAddPopupOutside(e) {
 function openScanner() {
     document.getElementById('scannerOverlay').classList.add('show');
     document.getElementById('scannerPreview').classList.remove('show');
+    // Показуємо підказку
+    const hint = document.getElementById('scannerHint');
+    if (hint) hint.style.display = '';
     startCamera();
     // Підвантажуємо Tesseract.js якщо ще не завантажений
     if (!tesseractReady) loadTesseract();
@@ -6582,6 +6624,11 @@ function switchCamera() {
     showToast(currentFacingMode === 'environment' ? '📷 Задня камера' : '🤳 Передня камера');
 }
 
+// --- Vibration helper ---
+function vibrate(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+}
+
 // --- Capture Photo ---
 function capturePhoto() {
     const video = document.getElementById('scannerVideo');
@@ -6595,6 +6642,16 @@ function capturePhoto() {
 
     capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
 
+    // Вібрація — відгук
+    vibrate(100);
+
+    // Ховаємо підказку
+    const hint = document.getElementById('scannerHint');
+    if (hint) hint.style.display = 'none';
+
+    // Зберігаємо фото в кеш (sessionStorage) для демо
+    try { sessionStorage.setItem('lastScanPhoto', capturedImageData); } catch(e) {}
+
     // Показуємо превʼю
     document.getElementById('scannerPreviewImg').src = capturedImageData;
     document.getElementById('scannerPreview').classList.add('show');
@@ -6605,21 +6662,112 @@ function capturePhoto() {
 function retakePhoto() {
     capturedImageData = null;
     document.getElementById('scannerPreview').classList.remove('show');
+    // Повертаємо підказку
+    const hint = document.getElementById('scannerHint');
+    if (hint) hint.style.display = '';
 }
 
 function usePhoto() {
+    // Вібрація — підтвердження
+    vibrate([50, 50, 100]);
+
     // Закриваємо сканер
     closeScanner();
 
-    // Запускаємо повне розпізнавання
+    // Фото з кешу або поточне
+    const photoData = capturedImageData || sessionStorage.getItem('lastScanPhoto');
+
+    if (!photoData) {
+        // Демо: якщо фото немає, просто відкриваємо форму
+        openAddModal();
+        showToast('📝 Заповніть дані вручну');
+        return;
+    }
+
+    // Зберігаємо в кеш на випадок помилки
+    try { sessionStorage.setItem('lastScanPhoto', photoData); } catch(e) {}
+
+    // Відкриваємо форму одразу з фото (демо — без OCR якщо Tesseract не завантажений)
+    if (!tesseractReady || !window.Tesseract) {
+        // Демо-режим: одразу відкриваємо форму з фото
+        openAddModal();
+        const photoEl = document.getElementById('fPhoto');
+        if (photoEl) {
+            photoEl.value = 'Демо: фото збережено в кеш';
+            photoEl.style.background = '#d1fae5';
+            photoEl.style.borderColor = '#10b981';
+            setTimeout(() => { photoEl.style.background = ''; photoEl.style.borderColor = ''; }, 3000);
+        }
+        // Зберігаємо base64 в прихованому стані для збереження
+        sessionStorage.setItem('pendingPhoto', photoData);
+        showToast('📷 Фото збережено. Заповніть решту полів.');
+        return;
+    }
+
+    // Повний режим: OCR + штрих-код
     showLoader('Розпізнавання...', 'Штрих-код + текст');
-    runFullRecognition(capturedImageData);
+    runFullRecognition(photoData);
+}
+
+// --- Barcode Mode Menu ---
+let barcodeMode = 'add'; // 'find' або 'add'
+
+function openBarcodeMenu() {
+    const popup = document.createElement('div');
+    popup.className = 'scanner-mode-popup';
+    popup.id = 'barcodeModePopup';
+    popup.onclick = function(e) { if (e.target === popup) popup.remove(); };
+    popup.innerHTML = `
+        <div class="scanner-mode-inner">
+            <div class="scanner-mode-title">📊 Штрих-код</div>
+            <button class="scanner-mode-btn find" onclick="startBarcodeScan('find')">
+                <span class="mode-icon">🔍</span>
+                <div>Знайти штрих-код<small>Сканувати ТТН → знайти існуючий лід</small></div>
+            </button>
+            <button class="scanner-mode-btn add" onclick="startBarcodeScan('add')">
+                <span class="mode-icon">➕</span>
+                <div>Додати штрих-код<small>Сканувати ТТН → додати в нову посилку</small></div>
+            </button>
+            <button class="scanner-mode-cancel" onclick="document.getElementById('barcodeModePopup').remove()">Скасувати</button>
+        </div>`;
+    document.body.appendChild(popup);
+}
+
+function startBarcodeScan(mode) {
+    document.getElementById('barcodeModePopup')?.remove();
+    barcodeMode = mode;
+    scanBarcode();
+}
+
+// --- Handle barcode result based on mode ---
+function handleBarcodeResult(val) {
+    vibrate([50, 100]); // вібрація при знаходженні штрих-коду
+
+    if (barcodeMode === 'find') {
+        // Режим "Знайти" — вставляємо в пошук і шукаємо існуючий лід
+        closeScanner();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = val;
+            searchInput.focus();
+            filters.search = val;
+            render();
+        }
+        showToast('🔍 Пошук ТТН: ' + val);
+    } else {
+        // Режим "Додати" — вставляємо в форму нового ліда
+        closeScanner();
+        prefillFormFromScan({ ttn: val });
+        showToast('✅ ТТН додано: ' + val);
+    }
 }
 
 // --- Barcode Detection (live, without photo) ---
 async function scanBarcode() {
     const video = document.getElementById('scannerVideo');
     if (!cameraReady || !video || !video.videoWidth) return showToast('⚠️ Камера ще завантажується...');
+
+    showToast('📊 Скануємо...');
 
     // Якщо BarcodeDetector немає — спробуємо завантажити polyfill
     if (!('BarcodeDetector' in window)) {
@@ -6633,10 +6781,7 @@ async function scanBarcode() {
             const detector = new BarcodeDetector({ formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'itf', 'codabar'] });
             const barcodes = await detector.detect(video);
             if (barcodes.length > 0) {
-                const val = barcodes[0].rawValue;
-                showToast('✅ Штрих-код: ' + val);
-                closeScanner();
-                prefillFormFromScan({ ttn: val });
+                handleBarcodeResult(barcodes[0].rawValue);
                 return;
             }
         } catch(e) {
@@ -6655,10 +6800,7 @@ async function scanBarcode() {
             const detector = new BarcodeDetector();
             const barcodes = await detector.detect(canvas);
             if (barcodes.length > 0) {
-                const val = barcodes[0].rawValue;
-                showToast('✅ Штрих-код: ' + val);
-                closeScanner();
-                prefillFormFromScan({ ttn: val });
+                handleBarcodeResult(barcodes[0].rawValue);
                 return;
             }
         } catch(e) {}

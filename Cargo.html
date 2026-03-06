@@ -6798,36 +6798,86 @@ function usePhoto() {
     // Фото з кешу або поточне
     const photoData = capturedImageData || sessionStorage.getItem('lastScanPhoto');
 
-    if (!photoData) {
-        // Демо: якщо фото немає, просто відкриваємо форму
-        openAddModal();
-        showToast('📝 Заповніть дані вручну');
-        return;
-    }
-
-    // Зберігаємо в кеш на випадок помилки
-    try { sessionStorage.setItem('lastScanPhoto', photoData); } catch(e) {}
-
-    // Відкриваємо форму одразу з фото (демо — без OCR якщо Tesseract не завантажений)
-    if (!tesseractReady || !window.Tesseract) {
-        // Демо-режим: одразу відкриваємо форму з фото
-        openAddModal();
-        const photoEl = document.getElementById('fPhoto');
-        if (photoEl) {
-            photoEl.value = 'Демо: фото збережено в кеш';
-            photoEl.style.background = '#d1fae5';
-            photoEl.style.borderColor = '#10b981';
-            setTimeout(() => { photoEl.style.background = ''; photoEl.style.borderColor = ''; }, 3000);
-        }
-        // Зберігаємо base64 в прихованому стані для збереження
+    // Зберігаємо фото в кеш
+    if (photoData) {
+        try { sessionStorage.setItem('lastScanPhoto', photoData); } catch(e) {}
         sessionStorage.setItem('pendingPhoto', photoData);
-        showToast('📷 Фото збережено. Заповніть решту полів.');
-        return;
     }
 
-    // Повний режим: OCR + штрих-код
-    showLoader('Розпізнавання...', 'Штрих-код + текст');
-    runFullRecognition(photoData);
+    // ЗАВЖДИ одразу відкриваємо форму — щоб не блокувати користувача
+    openAddModal();
+
+    // Ставимо фото в поле
+    const photoEl = document.getElementById('fPhoto');
+    if (photoEl && photoData) {
+        photoEl.value = '📷 Фото збережено (обробка...)';
+        photoEl.style.background = '#d1fae5';
+        photoEl.style.borderColor = '#10b981';
+        setTimeout(() => { photoEl.style.background = ''; photoEl.style.borderColor = ''; }, 4000);
+    }
+
+    showToast('📷 Фото збережено. Заповніть решту полів.');
+
+    // Фонове розпізнавання — якщо Tesseract доступний
+    if (photoData && tesseractReady && window.Tesseract) {
+        runBackgroundRecognition(photoData);
+    }
+}
+
+// Фонове розпізнавання — заповнює поля форми, якщо вона ще відкрита
+async function runBackgroundRecognition(imageData) {
+    const parsed = {};
+
+    // Штрих-код
+    if (!('BarcodeDetector' in window)) {
+        try { await loadBarcodePolyfill(); } catch(e) {}
+    }
+    if ('BarcodeDetector' in window) {
+        try {
+            const img = new Image();
+            img.src = imageData;
+            await new Promise(r => img.onload = r);
+            const detector = new BarcodeDetector();
+            const barcodes = await detector.detect(img);
+            if (barcodes.length > 0) parsed.ttn = barcodes[0].rawValue;
+        } catch(e) {}
+    }
+
+    // OCR
+    try {
+        const text = await runOCR(imageData);
+        const ocrParsed = parseOCRText(text);
+        Object.assign(parsed, ocrParsed);
+    } catch(e) {
+        console.warn('Background OCR failed:', e);
+    }
+
+    // Форма ще відкрита? Заповнюємо знайдені поля
+    if (!document.getElementById('packageModal')?.classList.contains('show')) return;
+
+    const fields = [];
+    if (parsed.ttn) { const el = document.getElementById('fTtn'); if (el && !el.value) { el.value = parsed.ttn; fields.push('ТТН'); } }
+    if (parsed.phone) { const el = document.getElementById('fPhone'); if (el && !el.value) { el.value = parsed.phone; fields.push('Тел'); } }
+    if (parsed.phoneReg) { const el = document.getElementById('fPhoneReg'); if (el && !el.value) el.value = parsed.phoneReg; }
+    if (parsed.name) { const el = document.getElementById('fName'); if (el && !el.value) { el.value = parsed.name; fields.push('ПіБ'); } }
+    if (parsed.address) { const el = document.getElementById('fAddress'); if (el && !el.value) { el.value = parsed.address; fields.push('Адреса'); } }
+    if (parsed.weight) { const el = document.getElementById('fWeight'); if (el && !el.value) { el.value = parsed.weight; fields.push('Вага'); } }
+    if (parsed.amount) { const el = document.getElementById('fAmount'); if (el && !el.value) { el.value = parsed.amount; fields.push('Сума'); } }
+
+    // Підсвічуємо заповнені
+    ['fTtn','fPhone','fPhoneReg','fName','fAddress','fWeight','fAmount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+            el.style.background = '#d1fae5';
+            el.style.borderColor = '#10b981';
+            setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 3000);
+        }
+    });
+
+    if (fields.length > 0) {
+        vibrate(100);
+        showToast('✅ Розпізнано: ' + fields.join(', '));
+    }
 }
 
 // --- Barcode Mode Menu ---
@@ -7100,30 +7150,9 @@ async function uploadPhotoToImgBB(base64data) {
     return null;
 }
 
-// --- Prefill Add Form ---
-async function prefillFormFromScan(data) {
+// --- Prefill Add Form (синхронна — одразу відкриває форму) ---
+function prefillFormFromScan(data) {
     openAddModal();
-
-    // Якщо фото — base64, завантажуємо на хостинг
-    if (data.photo && data.photo.startsWith('data:')) {
-        const photoEl = document.getElementById('fPhoto');
-        if (photoEl) {
-            photoEl.value = 'Завантаження фото...';
-            photoEl.disabled = true;
-        }
-        const url = await uploadPhotoToImgBB(data.photo);
-        if (url) {
-            data.photo = url;
-            showToast('📷 Фото завантажено!');
-        } else {
-            data.photo = '';
-            showToast('⚠️ Не вдалось завантажити фото');
-        }
-        if (photoEl) {
-            photoEl.value = data.photo || '';
-            photoEl.disabled = false;
-        }
-    }
 
     if (data.ttn) document.getElementById('fTtn').value = data.ttn;
     if (data.phone) document.getElementById('fPhone').value = data.phone;
@@ -7132,15 +7161,34 @@ async function prefillFormFromScan(data) {
     if (data.address) document.getElementById('fAddress').value = data.address;
     if (data.weight) document.getElementById('fWeight').value = data.weight;
     if (data.amount) document.getElementById('fAmount').value = data.amount;
+
+    // Фото — якщо base64, зберігаємо в кеш і завантажуємо на хостинг у фоні
     if (data.photo) {
         const photoEl = document.getElementById('fPhoto');
-        if (photoEl) photoEl.value = data.photo;
+        if (photoEl) {
+            if (data.photo.startsWith('data:')) {
+                photoEl.value = '📷 Фото (завантажується...)';
+                sessionStorage.setItem('pendingPhoto', data.photo);
+                // Фонове завантаження на ImgBB
+                uploadPhotoToImgBB(data.photo).then(url => {
+                    if (url && document.getElementById('packageModal')?.classList.contains('show')) {
+                        photoEl.value = url;
+                        photoEl.style.background = '#d1fae5';
+                        photoEl.style.borderColor = '#10b981';
+                        setTimeout(() => { photoEl.style.background = ''; photoEl.style.borderColor = ''; }, 3000);
+                        showToast('📷 Фото завантажено!');
+                    }
+                }).catch(() => {});
+            } else {
+                photoEl.value = data.photo;
+            }
+        }
     }
 
     // Підсвічуємо заповнені поля
-    ['fTtn','fPhone','fPhoneReg','fName','fAddress','fWeight','fAmount','fPhoto'].forEach(id => {
+    ['fTtn','fPhone','fPhoneReg','fName','fAddress','fWeight','fAmount'].forEach(id => {
         const el = document.getElementById(id);
-        if (el && el.value && el.value !== 'Завантаження фото...') {
+        if (el && el.value) {
             el.style.background = '#d1fae5';
             el.style.borderColor = '#10b981';
             setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 3000);

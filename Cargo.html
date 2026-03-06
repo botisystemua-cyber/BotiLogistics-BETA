@@ -2272,12 +2272,7 @@ const ALL_COLUMNS = {
 let colSettings = {header:['ttn','weight','dateReg','phone','vehicle','amount','dateReceive','id','payStatus','payment','note','address','number'],details:['phoneReg','parcelStatus','name','vo','smsNote','photo','timing']};
 let packages = [];
 
-let vehicles = [
-    {id:'v1', name:'Братислава марш.', maxWeight:2000, maxPoints:60},
-    {id:'v2', name:'Нітра марш.', maxWeight:2000, maxPoints:60},
-    {id:'v3', name:'Словаччина марш.', maxWeight:2000, maxPoints:60},
-    {id:'v4', name:'Кошице+прешов марш.', maxWeight:2000, maxPoints:60}
-];
+let vehicles = []; // Завантажується з API (Logistics-marshrut-cargo)
 let filters = {date:'',vehicle:'',search:'',showArchive:false,statusFilter:'',routeVehicle:'',direction:'all',specialStatus:'',statusDateFrom:'',statusDateTo:'',showNewOnly:true};
 let selectedIds = new Set();
 let expandedExtras = new Set(); // Cards with expanded extra section
@@ -2307,11 +2302,48 @@ function getCompanyId() {
     return botiSession ? botiSession.companyId : '';
 }
 
+// Завантаження маршрутів (назви авто/маршрутів) з таблиці Logistics-marshrut-cargo
+function loadVehiclesFromAPI() {
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.routes && data.routes.length > 0) {
+            // Оновлюємо vehicles з реальних назв листів таблиці
+            const newVehicles = data.routes.map((route, idx) => {
+                const name = route.name || route.vehicle || ('Маршрут ' + (idx + 1));
+                // Зберігаємо існуючі налаштування (maxWeight, maxPoints) якщо є
+                const existing = vehicles.find(v => v.name === name || v.routeSheet === name);
+                return {
+                    id: existing?.id || ('v' + (idx + 1)),
+                    name: name,
+                    routeSheet: route.name || name,
+                    maxWeight: existing?.maxWeight || 2000,
+                    maxPoints: existing?.maxPoints || 60
+                };
+            });
+            vehicles = newVehicles;
+            saveSettings();
+            updateVehiclesList();
+            renderRoutesListLocal();
+            console.log('Маршрути завантажено з таблиці:', vehicles.map(v => v.name));
+        }
+    })
+    .catch(err => {
+        console.warn('Не вдалось завантажити маршрути з API:', err);
+    });
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
     if (!checkSession()) return;
     loadSettings();
     renderCalendars();
+    // Завантажуємо актуальні маршрути з таблиці
+    loadVehiclesFromAPI();
 
     // За замовчуванням показуємо нові ліди
     filters.showNewOnly = true;
@@ -2544,7 +2576,7 @@ function playNotificationSound() {
     }
 }
 
-function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} } catch(e){} }
+function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} if(s.vehicles&&s.vehicles.length)vehicles=s.vehicles; } catch(e){} }
 function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); }
 
 // === ОФЛАЙН БУФЕР: збереження незбережених лідів ===
@@ -3975,7 +4007,7 @@ function showVehicleRoute(vehicleId) {
             body: JSON.stringify({
                 action: 'getRoutePassengers',
                 companyId: getCompanyId(),
-                payload: { sheetName: v.name }
+                payload: { sheetName: v.routeSheet || v.name }
             })
         }).then(r => r.json()),
         fetch(ROUTE_API_URL, {

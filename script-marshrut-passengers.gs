@@ -430,6 +430,7 @@ function getAvailableRoutes(companyId) {
 function checkRouteSheets(payload) {
   try {
     var vehicleNames = payload.vehicleNames || [];
+    var companyId = payload.companyId || '';
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var existing = [];
 
@@ -437,11 +438,27 @@ function checkRouteSheets(payload) {
       var sheetName = vehicleNames[i];
       var sheet = ss.getSheetByName(sheetName);
       if (sheet && sheet.getLastRow() > 1) {
-        existing.push({
-          vehicle: vehicleNames[i],
-          sheet: sheetName,
-          count: sheet.getLastRow() - 1
-        });
+        var count = sheet.getLastRow() - 1;
+
+        // Фільтр по company_id — рахуємо тільки записи цієї компанії
+        if (companyId) {
+          var compIdCol = findCompanyIdCol(sheet);
+          if (compIdCol !== -1) {
+            var colData = sheet.getRange(2, compIdCol + 1, count, 1).getValues();
+            count = 0;
+            for (var r = 0; r < colData.length; r++) {
+              if (String(colData[r][0]).trim().toLowerCase() === companyId.toLowerCase()) count++;
+            }
+          }
+        }
+
+        if (count > 0) {
+          existing.push({
+            vehicle: vehicleNames[i],
+            sheet: sheetName,
+            count: count
+          });
+        }
       }
     }
 
@@ -489,24 +506,49 @@ function copyToRoute(payload) {
         sheet.setFrozenRows(1);
       }
 
-      // Обробка конфліктів
+      // Обробка конфліктів (тільки для рядків поточної компанії)
       var lastRow = sheet.getLastRow();
       if (lastRow > 1 && conflictAction !== 'add') {
+        var companyId = payload.companyId || '';
+        var compIdCol = findCompanyIdCol(sheet);
+
         if (conflictAction === 'clear') {
-          totalCleared += lastRow - 1;
-          sheet.deleteRows(2, lastRow - 1);
+          // Видаляємо тільки рядки цієї компанії (знизу вгору щоб не зсувались індекси)
+          if (companyId && compIdCol !== -1) {
+            var allData = sheet.getRange(2, compIdCol + 1, lastRow - 1, 1).getValues();
+            for (var cr = allData.length - 1; cr >= 0; cr--) {
+              if (String(allData[cr][0]).trim().toLowerCase() === companyId.toLowerCase()) {
+                sheet.deleteRow(cr + 2);
+                totalCleared++;
+              }
+            }
+          } else {
+            totalCleared += lastRow - 1;
+            sheet.deleteRows(2, lastRow - 1);
+          }
         } else if (conflictAction === 'archive') {
-          totalArchived += lastRow - 1;
-          // Ставимо статус "archived" на старі рядки
           var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
-          var archiveRange = sheet.getRange(2, COL.STATUS + 1, lastRow - 1, 1);
-          var archVals = [];
-          for (var a = 0; a < lastRow - 1; a++) archVals.push(['archived']);
-          archiveRange.setValues(archVals);
-          var dateRange = sheet.getRange(2, COL.DATE_ARCHIVE + 1, lastRow - 1, 1);
-          var dateVals = [];
-          for (var d = 0; d < lastRow - 1; d++) dateVals.push([dateNow]);
-          dateRange.setValues(dateVals);
+          if (companyId && compIdCol !== -1) {
+            // Архівуємо тільки рядки цієї компанії
+            var allData2 = sheet.getRange(2, compIdCol + 1, lastRow - 1, 1).getValues();
+            for (var ar = 0; ar < allData2.length; ar++) {
+              if (String(allData2[ar][0]).trim().toLowerCase() === companyId.toLowerCase()) {
+                sheet.getRange(ar + 2, COL.STATUS + 1).setValue('archived');
+                sheet.getRange(ar + 2, COL.DATE_ARCHIVE + 1).setValue(dateNow);
+                totalArchived++;
+              }
+            }
+          } else {
+            totalArchived += lastRow - 1;
+            var archiveRange = sheet.getRange(2, COL.STATUS + 1, lastRow - 1, 1);
+            var archVals = [];
+            for (var a = 0; a < lastRow - 1; a++) archVals.push(['archived']);
+            archiveRange.setValues(archVals);
+            var dateRange = sheet.getRange(2, COL.DATE_ARCHIVE + 1, lastRow - 1, 1);
+            var dateVals = [];
+            for (var d = 0; d < lastRow - 1; d++) dateVals.push([dateNow]);
+            dateRange.setValues(dateVals);
+          }
         }
       }
 

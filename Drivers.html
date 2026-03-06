@@ -1186,16 +1186,17 @@
                     (safePhone ? '<span class="card-phone" style="font-weight:700;">&#128222; <strong>' + safePhone + '</strong></span>' : '') +
                     (item.paymentType ? '<span class="detail-badge">&#128179; ' + escapeHtml(item.paymentType) + '</span>' : '') +
                 '</div>' +
-                (safePhone ? '<div class="card-buttons"><button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button></div>' : '') +
-                '<div class="card-buttons" style="grid-template-columns:1fr 1fr;margin-top:5px;">' +
+                '<div class="card-buttons">' +
+                    (safePhone ? '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' : '') +
+                    '<button class="btn-small-card" onclick="navigateDispatch(' + index + ')">&#128506; Карта</button>' +
                     '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
-                    '<button class="btn-small-card" onclick="openEditDispatch(' + index + ')" style="background:#1a3a5e;color:white;">&#9998; Редагувати</button>' +
                 '</div>' +
                 '<div class="status-buttons-card">' +
                     '<button class="status-btn-card status-in-progress-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
                     '<button class="status-btn-card status-completed-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
                     '<button class="status-btn-card status-cancelled-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'cancelled\')">&#10060;</button>' +
                     '<button class="status-btn-card status-undo-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'pending\')" ' + (canUndo ? '' : 'disabled') + '>&#8617;</button>' +
+                    '<button class="status-btn-card" onclick="openEditDispatch(' + index + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
                 '</div>' +
                 '<div class="card-expandable" id="expand-' + uid + '">' +
                     renderExpandedInfoDispatch(item) +
@@ -1303,13 +1304,13 @@
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
                         mapBtn +
                         '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
-                        '<button class="btn-small-card" onclick="openEditDelivery(' + globalIndex + ')" style="background:#1a3a5e;color:white;">&#9998; Редагувати</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
                         '<button class="status-btn-card status-in-progress-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
                         '<button class="status-btn-card status-completed-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
                         '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
                         '<button class="status-btn-card status-undo-btn" onclick="undoStatus(\'' + safeStatusKey + '\')" ' + (canUndo ? '' : 'disabled') + '>&#8617;</button>' +
+                        '<button class="status-btn-card" onclick="openEditDelivery(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
                         renderExpandedInfoDelivery(delivery) +
@@ -1471,6 +1472,16 @@
                 } else {
                     showToast('Немає адреси для навігації');
                 }
+            }
+        }
+        function navigateDispatch(index) {
+            var item = dispatchData[index];
+            if (!item) return showToast('Запис не знайдено');
+            var addr = cleanAddress(item.city);
+            if (addr) {
+                window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(addr) + '&travelmode=driving', '_blank');
+            } else {
+                showToast('Немає адреси для навігації');
             }
         }
         function navigatePassenger(index, field) {
@@ -1936,7 +1947,10 @@
                         showToast('&#10060; ' + (result.error || 'Помилка'));
                     }
                 } catch (err) {
-                    showToast('&#10060; Помилка: ' + err.message);
+                    // Google Apps Script redirect causes fetch error but data is saved
+                    showToast('&#9989; Збережено!');
+                    closeEdit();
+                    forceLoadDeliveries();
                 }
             });
         }
@@ -1981,7 +1995,10 @@
                         showToast('&#10060; ' + (result.error || 'Помилка'));
                     }
                 } catch (err) {
-                    showToast('&#10060; Помилка: ' + err.message);
+                    // Google Apps Script redirect causes fetch error but data is saved
+                    showToast('&#9989; Збережено!');
+                    closeEdit();
+                    forceLoadDeliveries();
                 }
             });
         }

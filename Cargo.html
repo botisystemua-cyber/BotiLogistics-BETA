@@ -4563,6 +4563,8 @@ function deleteFromRouteAndTrash(uid) {
             mainPkg.status = 'archived';
             mainPkg.archiveType = 'deleted';
             mainPkg.archiveDate = new Date().toISOString().split('T')[0];
+            mainPkg.statusDate = mainPkg.archiveDate;
+            mainPkg.archivedBy = 'archived_' + getCompanyId();
             updatePackageOnServer(mainPkg);
             saveSettings();
         }
@@ -4723,7 +4725,27 @@ function moveOneToRoute(id) {
 
 function archivePackage(id) {
     const p = packages.find(x => x.id === id);
-    if (p) { if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; } p.archiveType = 'archived'; p.status = 'archived'; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві'); }
+    if (!p) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
+    p.archiveType = 'archived';
+    p.status = 'archived';
+    p.statusDate = today;
+    p.archivedBy = 'archived_' + getCompanyId();
+
+    // Якщо є серверні дані — архівуємо на сервері з companyId
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
+    if (pSheet && pRowNum) {
+        const isRoute = !!p._isRouteData;
+        const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
+        const action = isRoute ? 'archivePackages' : 'archivePackage';
+        const body = isRoute
+            ? { action, companyId: getCompanyId(), packages: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'archive' }
+            : { action, companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'archive' };
+        fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).catch(() => {});
+    }
+    saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
 }
 
 function restorePackage(id) {
@@ -5189,6 +5211,7 @@ function bulkArchive() {
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'bulkArchive',
+                        companyId: getCompanyId(),
                         items: mainPackages,
                         user: 'crm',
                         reason: 'bulk_archive'
@@ -6222,11 +6245,13 @@ function confirmDeletePassenger(uid) {
     p.archiveType = 'deleted';
     p.status = 'archived';
     p.archiveDate = new Date().toISOString().split('T')[0];
+    p.statusDate = p.archiveDate;
+    p.archivedBy = 'archived_' + getCompanyId();
     p.isNew = false;
-    
+
     // Закриваємо дії картки
     openActionsId = null;
-    
+
     // Якщо є серверні дані - архівуємо на сервері
     const pSheet = p._sheet || p.sheet;
     const pRowNum = p._rowNum || p.rowNum;
@@ -6235,8 +6260,8 @@ function confirmDeletePassenger(uid) {
         const isRoute = !!p._isRouteData;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
         const body = isRoute
-            ? { action: 'archivePackages', packages: [{ sheet: pSheet, rowNum: pRowNum }] }
-            : { action: 'archivePackage', sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'manual_delete' };
+            ? { action: 'archivePackages', companyId: getCompanyId(), packages: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'manual_delete' }
+            : { action: 'archivePackage', companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'manual_delete' };
 
         fetch(apiUrl, {
             method: 'POST',
@@ -7817,33 +7842,41 @@ function updatePackageOnServer(pkg) {
     const isRoute = !!pkg._isRouteData;
     const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
 
+    const fields = {
+        vo: pkg.vo || '',
+        number: pkg.number || '',
+        ttn: pkg.ttn || '',
+        weight: pkg.weight || '',
+        address: pkg.address || '',
+        phone: pkg.phone || '',
+        amount: pkg.amount || '',
+        payStatus: pkg.payStatus || '',
+        payment: pkg.payment || '',
+        phoneReg: pkg.phoneReg || '',
+        note: pkg.note || '',
+        parcelStatus: pkg.parcelStatus || '',
+        name: pkg.name || '',
+        dateReg: pkg.dateReg || '',
+        timing: pkg.timing || '',
+        smsNote: pkg.smsNote || '',
+        dateReceive: pkg.dateReceive || '',
+        photo: pkg.photo || '',
+        status: pkg.status || '',
+        vehicle: pkg.vehicle || ''
+    };
+    // Додаємо архівні поля якщо статус = archived
+    if (pkg.status === 'archived') {
+        fields.dateArchive = pkg.statusDate || pkg.archiveDate || new Date().toISOString().split('T')[0];
+        fields.archivedBy = pkg.archivedBy || ('archived_' + getCompanyId());
+        fields.archiveReason = pkg.archiveType || 'archived';
+    }
+
     const payload = {
         action: 'updatePackage',
         companyId: getCompanyId(),
         sheet: pSheet,
         rowNum: pRowNum,
-        fields: {
-            vo: pkg.vo || '',
-            number: pkg.number || '',
-            ttn: pkg.ttn || '',
-            weight: pkg.weight || '',
-            address: pkg.address || '',
-            phone: pkg.phone || '',
-            amount: pkg.amount || '',
-            payStatus: pkg.payStatus || '',
-            payment: pkg.payment || '',
-            phoneReg: pkg.phoneReg || '',
-            note: pkg.note || '',
-            parcelStatus: pkg.parcelStatus || '',
-            name: pkg.name || '',
-            dateReg: pkg.dateReg || '',
-            timing: pkg.timing || '',
-            smsNote: pkg.smsNote || '',
-            dateReceive: pkg.dateReceive || '',
-            photo: pkg.photo || '',
-            status: pkg.status || '',
-            vehicle: pkg.vehicle || ''
-        }
+        fields: fields
     };
 
     fetch(apiUrl, {

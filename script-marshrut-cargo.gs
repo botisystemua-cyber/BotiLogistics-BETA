@@ -877,11 +877,24 @@ function changeStatus(payload, newStatus) {
       sheet.getRange(rowNum, COL.STATUS + 1).setValue(newStatus);
 
       if (ARCHIVE_STATUSES.indexOf(newStatus) !== -1) {
+        var companyId = payload.companyId || '';
         sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
-        sheet.getRange(rowNum, COL.ARCHIVED_BY + 1).setValue(user);
+        // Записуємо хто архівував у форматі: archived_компанія
+        var archivedBy = companyId ? ('archived_' + companyId) : user;
+        sheet.getRange(rowNum, COL.ARCHIVED_BY + 1).setValue(archivedBy);
         if (note) {
           sheet.getRange(rowNum, COL.ARCHIVE_REASON + 1).setValue(note);
         }
+        // Записуємо companyId щоб точно був в рядку
+        if (companyId) {
+          sheet.getRange(rowNum, COL.COMPANY_ID + 1).setValue(companyId);
+        }
+      }
+
+      if (note) {
+        var currentNote = str(sheet.getRange(rowNum, COL.NOTE + 1).getValue());
+        var updatedNote = note + (currentNote ? ' | ' + currentNote : '');
+        sheet.getRange(rowNum, COL.NOTE + 1).setValue(updatedNote);
       }
 
       changed++;
@@ -907,7 +920,8 @@ function changeStatus(payload, newStatus) {
 function archiveToExternal(payload) {
   try {
     var items = payload.items || payload.packages || [];
-    var user = payload.user || 'crm';
+    var companyId = payload.companyId || '';
+    var user = companyId ? ('archived_' + companyId) : (payload.user || 'crm');
     var reason = payload.reason || 'route_archive';
 
     if (items.length === 0) {

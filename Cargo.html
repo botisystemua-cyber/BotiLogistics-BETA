@@ -2586,8 +2586,9 @@ function playNotificationSound() {
     }
 }
 
-function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} if(s.vehicles&&s.vehicles.length)vehicles=s.vehicles; } catch(e){} }
-function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); }
+const SETTINGS_VERSION = 2;
+function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} if(s.vehicles&&s.vehicles.length&&s._v===SETTINGS_VERSION)vehicles=s.vehicles; } catch(e){} }
+function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({_v:SETTINGS_VERSION,colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); }
 
 // === ОФЛАЙН БУФЕР: збереження незбережених лідів ===
 const OFFLINE_BUFFER_KEY = 'yuraCrmOfflineBuffer';

@@ -544,6 +544,9 @@
           <button class="admin-action-btn" id="btnChangePass" onclick="toggleAdminSub('changePass')">
             <span class="action-icon">🔑</span> Змінити пароль
           </button>
+          <button class="admin-action-btn" id="btnCompanySettings" onclick="toggleAdminSub('companySettings')">
+            <span class="action-icon">⚙️</span> Налаштування
+          </button>
           <button class="admin-action-btn" onclick="doLogout()">
             <span class="action-icon">🚪</span> Вийти
           </button>
@@ -579,6 +582,41 @@
               <input type="text" class="form-input owner-input" id="newUserPass" placeholder="Пароль (мін. 4 символи)">
             </div>
             <button class="btn-login owner-btn" onclick="doAddUser()">Додати</button>
+          </div>
+        </div>
+        <!-- Налаштування компанії -->
+        <div class="admin-sub" id="subCompanySettings">
+          <div class="sub-panel">
+            <div class="sub-title">⚙️ НАЛАШТУВАННЯ КОМПАНІЇ</div>
+            <div class="error-msg" id="companySettingsError"></div>
+            <div class="success-msg" id="companySettingsSuccess"></div>
+            <div class="form-group">
+              <label class="form-label">Лого компанії</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div id="companyLogoPreview" style="width:56px;height:56px;border-radius:12px;background:var(--bg-input);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('companyLogoInput').click()">
+                  <span id="companyLogoPlaceholder" style="font-size:24px;">📷</span>
+                  <img id="companyLogoImg" style="width:100%;height:100%;object-fit:cover;display:none;">
+                </div>
+                <div style="flex:1;">
+                  <input type="file" id="companyLogoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(this)">
+                  <button class="btn-login owner-btn" style="padding:8px 16px;font-size:13px;margin:0;" onclick="document.getElementById('companyLogoInput').click()">Завантажити</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Назва компанії</label>
+              <input type="text" class="form-input owner-input" id="companyDisplayName" placeholder="Назва вашої компанії" oninput="updateCompanyPreview()">
+            </div>
+            <div style="margin-top:8px;padding:12px;border-radius:12px;background:var(--owner-glow);font-size:13px;color:var(--text-secondary);">
+              <div style="margin-bottom:4px;">📱 На телефоні буде відображатись:</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <img id="companyPreviewLogo" style="width:36px;height:36px;border-radius:8px;object-fit:cover;display:none;">
+                <div>
+                  <div style="font-size:15px;font-weight:600;color:var(--text-primary);" id="companyPreviewName">—</div>
+                </div>
+              </div>
+            </div>
+            <button class="btn-login owner-btn" onclick="saveCompanySettings()">💾 Зберегти</button>
           </div>
         </div>
         <!-- Змінити пароль -->
@@ -798,11 +836,79 @@
       if (!isActive) {
         panel.classList.add('active');
         // Підсвічуємо кнопку
-        const btnMap = { users: 'btnUsers', addUser: 'btnAddUser', changePass: 'btnChangePass' };
+        const btnMap = { users: 'btnUsers', addUser: 'btnAddUser', changePass: 'btnChangePass', companySettings: 'btnCompanySettings' };
         const btn = document.getElementById(btnMap[sub]);
         if (btn) btn.classList.add('active');
         if (sub === 'users') loadUsers();
+        if (sub === 'companySettings') loadCompanySettings();
       }
+    }
+    // ═══ НАЛАШТУВАННЯ КОМПАНІЇ ═══
+    let companyLogoData = null;
+    function loadCompanySettings() {
+      const saved = JSON.parse(localStorage.getItem('boti_company_settings') || '{}');
+      document.getElementById('companyDisplayName').value = saved.name || currentUser.companyName || '';
+      // Завантажуємо лого
+      companyLogoData = saved.logo || null;
+      if (companyLogoData) {
+        const img = document.getElementById('companyLogoImg');
+        img.src = companyLogoData;
+        img.style.display = 'block';
+        document.getElementById('companyLogoPlaceholder').style.display = 'none';
+      } else {
+        document.getElementById('companyLogoImg').style.display = 'none';
+        document.getElementById('companyLogoPlaceholder').style.display = '';
+      }
+      updateCompanyPreview();
+    }
+    function handleLogoUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 500 * 1024) {
+        showError('companySettingsError', 'Файл завеликий (макс. 500 КБ)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        companyLogoData = e.target.result;
+        const img = document.getElementById('companyLogoImg');
+        img.src = companyLogoData;
+        img.style.display = 'block';
+        document.getElementById('companyLogoPlaceholder').style.display = 'none';
+        updateCompanyPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+    function updateCompanyPreview() {
+      const name = document.getElementById('companyDisplayName').value.trim();
+      document.getElementById('companyPreviewName').textContent = name || '—';
+      const previewLogo = document.getElementById('companyPreviewLogo');
+      if (companyLogoData) {
+        previewLogo.src = companyLogoData;
+        previewLogo.style.display = 'block';
+      } else {
+        previewLogo.style.display = 'none';
+      }
+    }
+    function saveCompanySettings() {
+      const name = document.getElementById('companyDisplayName').value.trim();
+      if (!name) {
+        showError('companySettingsError', 'Введіть назву компанії');
+        return;
+      }
+      const settings = { name, logo: companyLogoData, savedAt: Date.now() };
+      localStorage.setItem('boti_company_settings', JSON.stringify(settings));
+      // Оновлюємо currentUser і session
+      currentUser.companyName = name;
+      document.getElementById('headerSubtitle').textContent = name;
+      // Оновлюємо session storage для CRM
+      const auth = JSON.parse(sessionStorage.getItem('boti_auth') || '{}');
+      if (auth.role) {
+        auth.companyName = name;
+        auth.companyLogo = companyLogoData;
+        sessionStorage.setItem('boti_auth', JSON.stringify(auth));
+      }
+      showSuccess('companySettingsSuccess', '✅ Збережено на пристрій');
     }
     // ═══ ЗАВАНТАЖИТИ КОРИСТУВАЧІВ ═══
     async function loadUsers() {

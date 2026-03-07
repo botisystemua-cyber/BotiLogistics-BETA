@@ -1458,9 +1458,6 @@
                 <div class="side-menu-item" onclick="resetVehicleFilter(); closeSideMenu();" style="color:var(--text-secondary);font-weight:600;border-top:1px solid var(--border);margin-top:6px;justify-content:center;background:var(--bg-main);">
                     <span class="side-menu-item-left">🔄 Скинути фільтр авто</span>
                 </div>
-                <div class="side-menu-item" onclick="openAddVehicleModal(); closeSideMenu();" style="color:var(--info);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">
-                    <span class="side-menu-item-left">➕ Додати авто</span>
-                </div>
             </div>
         </div>
         
@@ -1587,10 +1584,9 @@
                 <div class="pc-sidebar-item" onclick="resetVehicleFilter()" style="background:var(--bg-main);color:var(--text-secondary);font-size:12px;justify-content:center;cursor:pointer;margin-top:6px;">
                     <span><span class="item-icon">🔄</span>Скинути фільтр авто</span>
                 </div>
-                <div class="pc-sidebar-add" onclick="openAddVehicleModal()">➕ Додати авто</div>
             </div>
         </div>
-        
+
         <!-- Маршрути -->
         <div class="pc-sidebar-section">
             <div class="pc-sidebar-header collapsed" onclick="togglePcSection('routes')">
@@ -1775,7 +1771,6 @@
                             <div class="dropdown-item" onclick="setVehicleFilter('')">Всі авто</div>
                             <div class="dropdown-item" onclick="setVehicleFilter('none')" style="color:var(--warning);">❓ Без авто <span class="badge" style="background:var(--warning);" id="countNoVehicle">0</span></div>
                             <div id="vehiclesList"></div>
-                            <div class="dropdown-item" onclick="openAddVehicleModal()" style="color:var(--info);font-weight:600;border-top:1px solid var(--border);">➕ Додати авто</div>
                         </div>
                     </div>
                     <div class="dropdown-container">
@@ -2010,30 +2005,6 @@
                     </span>
                 </button>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛКА ДОДАТИ АВТО -->
-<div class="modal-overlay" id="vehicleModal" onclick="if(event.target===this)closeModal('vehicleModal')">
-    <div class="modal" style="max-width:340px">
-        <div class="modal-header"><span class="modal-title">🚐 Нове авто</span><button class="modal-close" onclick="closeModal('vehicleModal')">×</button></div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Назва авто</label>
-                <input type="text" id="vName" placeholder="Наприклад: Пас. Маршрут 4">
-            </div>
-            <div class="form-group">
-                <label>Кількість місць</label>
-                <input type="number" id="vSeats" value="8" min="1">
-            </div>
-            <div style="background:#fff3e0;padding:10px;border-radius:6px;font-size:11px;color:#e65100;margin-top:12px;">
-                ⚠️ Буде створено новий аркуш в таблиці "Маршрут Пасажири"
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeModal('vehicleModal')">Скасувати</button>
-            <button class="btn-save" onclick="saveVehicle()">💾 Створити</button>
         </div>
     </div>
 </div>
@@ -2905,7 +2876,6 @@ function showCapacityWarning(date, seats, capacity) {
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('capacityWarningModal').remove()">Зрозуміло</button>
-                <button class="btn-save" onclick="document.getElementById('capacityWarningModal').remove();openAddVehicleModal()">➕ Додати авто</button>
             </div>
         </div>
     `;
@@ -3529,8 +3499,7 @@ function updatePcVehiclesList() {
             <div onclick="setVehicleFilter('${v.id}')" style="flex:1;cursor:pointer;">
                 <span class="item-icon">🚐</span>${v.name}
             </div>
-            <span class="item-count" style="margin-right:8px;">${count}</span>
-            <button onclick="event.stopPropagation();deleteVehicle('${v.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:0.5;padding:4px;" title="Видалити авто">🗑️</button>
+            <span class="item-count">${count}</span>
         </div>`;
     }).join('');
 
@@ -5974,114 +5943,8 @@ function updateVehiclesList() {
     document.getElementById('countNoVehicle').textContent = noVehicle.length;
 }
 
-function openAddVehicleModal() {
-    document.getElementById('vehicleDropdown')?.classList.remove('show');
-    document.getElementById('vName').value = '';
-    document.getElementById('vSeats').value = 8;
-    document.getElementById('vehicleModal').classList.add('show');
-}
-
-function saveVehicle() {
-    const name = document.getElementById('vName').value.trim();
-    const seats = parseInt(document.getElementById('vSeats').value) || 8;
-
-    if (!name) return showToast('❌ Введіть назву авто');
-
-    // Перевіряємо чи таке авто вже є
-    if (vehicles.find(v => v.name.toLowerCase() === name.toLowerCase())) {
-        return showToast('❌ Авто з такою назвою вже існує');
-    }
-
-    // Додаємо авто локально одразу (оптимістично)
-    const newVehicle = {
-        id: 'v' + Date.now(),
-        name: name,
-        seats: seats,
-        routeSheet: ''
-    };
-    vehicles.push(newVehicle);
-    saveSettings();
-    updateVehiclesList();
-    updateMobileVehicles();
-    updateRoutesList();
-    updatePcVehiclesList();
-    updateAllCounts();
-    closeModal('vehicleModal');
-    showToast(`✅ ${name} створено`);
-
-    // Створюємо аркуш на сервері (у фоні)
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'createRouteSheet',
-            companyId: getCompanyId(),
-            payload: { vehicleName: name }
-        })
-    })
-    .then(r => r.text())
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            if (data.success && data.sheetName) {
-                newVehicle.routeSheet = data.sheetName;
-                saveSettings();
-            }
-        } catch(e) {
-            // GAS redirect — синхронізуємо пізніше
-            console.warn('Create vehicle response not JSON, syncing...', text.substring(0, 100));
-        }
-        setTimeout(() => syncVehiclesFromServer(), 2000);
-    })
-    .catch(err => {
-        console.warn('Create vehicle fetch error:', err);
-        setTimeout(() => syncVehiclesFromServer(), 3000);
-    });
-}
-
-// Видалення авто
-function deleteVehicle(vehicleId) {
-    const v = vehicles.find(x => x.id === vehicleId);
-    if (!v) return showToast('❌ Авто не знайдено');
-
-    if (!confirm(`Видалити авто "${v.name}" та його аркуш маршруту?`)) {
-        return;
-    }
-
-    // Видаляємо локально одразу
-    const vName = v.name;
-    vehicles = vehicles.filter(x => x.id !== vehicleId);
-    saveSettings();
-    updateVehiclesList();
-    updateMobileVehicles();
-    updateRoutesList();
-    updatePcVehiclesList();
-    updateAllCounts();
-    showToast(`🗑️ ${vName} видалено`);
-
-    // Видаляємо аркуш на сервері (у фоні)
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'deleteRouteSheet',
-            payload: { vehicleName: v.routeSheet || v.name, force: true, companyId: getCompanyId() }
-        })
-    })
-    .then(r => r.text())
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            if (!data.success) console.warn('Delete vehicle server error:', data.error);
-        } catch(e) {
-            console.warn('Delete vehicle response not JSON');
-        }
-    })
-    .catch(err => console.warn('Delete vehicle fetch error:', err));
-}
-
 // PASSENGERS
-function openAddModal() { 
+function openAddModal() {
     editingId = null; 
     document.getElementById('passengerModalTitle').textContent = 'Додати'; 
     document.getElementById('fDate').value = filters.date || new Date().toISOString().split('T')[0]; 

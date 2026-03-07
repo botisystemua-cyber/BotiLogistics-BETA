@@ -5169,39 +5169,50 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
             conflictAction: conflictAction // 'add', 'archive', 'clear'
         }
     };
-    
+
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseErr) {
+            // GAS повернув не-JSON (HTML error page, timeout тощо)
+            // Дані скоріш за все записані — показуємо попередження замість помилки
+            console.warn('Route response is not JSON:', text.substring(0, 200));
+            showToast('⚠️ Записано, але сервер не підтвердив. Перевірте маршрут.');
+            try {
+                withVehicle.forEach(p => { p.status = 'route'; p.mark = 'Маршрут'; });
+                saveSettings();
+                refreshAfterAction();
+                updateAllCounts();
+            } catch (e) { console.error('Post-save update error:', e); }
+            return;
+        }
+
         if (data.success) {
             let msg = `🚀 ${data.copied} записано в маршрут`;
             if (data.archived) msg += `, 📦 ${data.archived} архівовано`;
             if (data.cleared) msg += `, 🗑️ ${data.cleared} видалено`;
             showToast(msg);
 
-            // Оновлюємо статус локально (в try-catch щоб не перебити toast успіху)
             try {
-                withVehicle.forEach(p => {
-                    p.status = 'route';
-                    p.mark = 'Маршрут';
-                });
+                withVehicle.forEach(p => { p.status = 'route'; p.mark = 'Маршрут'; });
                 saveSettings();
                 refreshAfterAction();
                 updateAllCounts();
-            } catch (e) {
-                console.error('Post-save update error:', e);
-            }
+            } catch (e) { console.error('Post-save update error:', e); }
         } else {
-            showToast('❌ ' + data.error);
+            showToast('❌ ' + (data.error || 'Невідома помилка'));
         }
     })
     .catch(err => {
-        console.error('Route error:', err);
-        showToast('❌ Помилка запису');
+        console.error('Route network error:', err);
+        showToast('❌ Помилка мережі. Перевірте з\'єднання.');
     });
 }
 

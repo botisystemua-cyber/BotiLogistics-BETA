@@ -3996,7 +3996,10 @@ function showAllRoutes() {
     filters.showArchive = false;
     document.getElementById('routeDropdown')?.classList.remove('show');
     closeSideMenu();
-    
+
+    // Оновлюємо active стан кнопок маршрутів у sidebar
+    renderRoutesListLocal();
+
     // Завантажуємо всі маршрути (loader всередині функції)
     loadAllRoutePassengers();
 }
@@ -4028,6 +4031,9 @@ function showRoute(sheetName) {
     filters.showArchive = false;
     document.getElementById('routeDropdown')?.classList.remove('show');
     closeSideMenu();
+
+    // Оновлюємо active стан кнопок маршрутів у sidebar
+    renderRoutesListLocal();
 
     showLoader(`Завантаження: ${sheetName}`, '');
 
@@ -5172,19 +5178,23 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Оновлюємо статус локально
-            withVehicle.forEach(p => {
-                p.status = 'route';
-                p.mark = 'Маршрут';
-            });
-            saveSettings();
-            refreshAfterAction();
-            updateAllCounts();
-
             let msg = `🚀 ${data.copied} записано в маршрут`;
             if (data.archived) msg += `, 📦 ${data.archived} архівовано`;
             if (data.cleared) msg += `, 🗑️ ${data.cleared} видалено`;
             showToast(msg);
+
+            // Оновлюємо статус локально (в try-catch щоб не перебити toast успіху)
+            try {
+                withVehicle.forEach(p => {
+                    p.status = 'route';
+                    p.mark = 'Маршрут';
+                });
+                saveSettings();
+                refreshAfterAction();
+                updateAllCounts();
+            } catch (e) {
+                console.error('Post-save update error:', e);
+            }
         } else {
             showToast('❌ ' + data.error);
         }

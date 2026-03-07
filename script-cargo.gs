@@ -578,6 +578,10 @@ function bulkUpdateStatus(data) {
     sheet.getRange(item.rowNum, COL.STATUS + 1).setValue(newStatus);
     if (needDate) {
       sheet.getRange(item.rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
+    } else {
+      // Відновлення: очищаємо архівні поля
+      sheet.getRange(item.rowNum, COL.DATE_ARCHIVE + 1).setValue('');
+      sheet.getRange(item.rowNum, COL.ARCHIVE_ID + 1).setValue('');
     }
     count++;
   }
@@ -648,7 +652,8 @@ function bulkAssignVehicle(data) {
 
 // ============================================
 // archivePackage — Архівувати одну посилку
-// Відправляє в Crm_Arhiv_1.0 через HTTP
+// In-place: оновлює STATUS, DATE_ARCHIVE, ARCHIVE_ID
+// без копіювання в зовнішню таблицю
 // ============================================
 function archivePackage(data) {
   var sheetName = data.sheet;
@@ -683,43 +688,17 @@ function archivePackage(data) {
     };
   }
 
-  var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
+  var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
   var archiveId = generateArchiveId_();
 
-  // === КРОК 1: Пишемо НАПРЯМУ в архівну таблицю ===
-  try {
-    var archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
-    var archiveSheet = archiveSS.getSheetByName('Посилки');
-    if (!archiveSheet) {
-      return { success: false, error: 'Архівний аркуш "Посилки" не знайдено' };
-    }
-
-    // Будуємо рядок: дані з оригіналу (A-W) + мета (дата, хто, причина, джерело, archiveId)
-    var archiveRow = [];
-    for (var i = 0; i < TOTAL_COLS; i++) {
-      archiveRow.push(rowData[i] !== undefined ? rowData[i] : '');
-    }
-    // Перезаписуємо мета-поля
-    archiveRow[COL.DATE_ARCHIVE] = dateNow;
-    archiveRow[COL.ARCHIVE_ID] = archiveId;
-    // Додаткові мета-колонки (X, Y, Z)
-    archiveRow.push(user);          // X - ARCHIVED_BY
-    archiveRow.push(reason);        // Y - ARCHIVE_REASON
-    archiveRow.push(sheetName);     // Z - SOURCE_SHEET
-
-    archiveSheet.appendRow(archiveRow);
-  } catch (err) {
-    return { success: false, error: 'Помилка запису в архів: ' + err.toString() };
-  }
-
-  // === КРОК 2: Оновлюємо джерело (тільки після успішного запису в архів) ===
+  // In-place: оновлюємо 3 колонки в тій самій таблиці
   sheet.getRange(rowNum, COL.STATUS + 1).setValue('archived');
-  sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow.substring(0, 10));
+  sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
   sheet.getRange(rowNum, COL.ARCHIVE_ID + 1).setValue(archiveId);
 
   var recordId = String(rowData[COL.ID] || '');
   writeLog('archivePackage', sheetName, rowNum, 'archived',
-    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId);
+    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId + ' | by: ' + user + ' | reason: ' + reason);
 
   return {
     success: true,
@@ -732,7 +711,8 @@ function archivePackage(data) {
 
 // ============================================
 // bulkArchive — Масова архівація
-// Пише НАПРЯМУ в архівну таблицю (без HTTP)
+// In-place: оновлює STATUS, DATE_ARCHIVE, ARCHIVE_ID
+// без копіювання в зовнішню таблицю
 // ============================================
 function bulkArchive(data) {
   var items = data.items; // масив { sheet, rowNum }
@@ -743,24 +723,9 @@ function bulkArchive(data) {
     return { success: false, error: 'Відсутні items' };
   }
 
-  // Відкриваємо архівну таблицю
-  var archiveSS;
-  var archiveSheet;
-  try {
-    archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
-    archiveSheet = archiveSS.getSheetByName('Посилки');
-    if (!archiveSheet) {
-      return { success: false, error: 'Архівний аркуш "Посилки" не знайдено' };
-    }
-  } catch (err) {
-    return { success: false, error: 'Не вдалося відкрити архів: ' + err.toString() };
-  }
-
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-  var dateShort = dateNow.substring(0, 10);
-  var archiveRows = [];
-  var successItems = []; // { sheet, rowNum, archiveId }
+  var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
+  var count = 0;
   var errors = [];
 
   for (var i = 0; i < items.length; i++) {
@@ -784,48 +749,19 @@ function bulkArchive(data) {
 
     var archiveId = generateArchiveId_();
 
-    // Будуємо рядок архіву: дані + мета
-    var archiveRow = [];
-    for (var j = 0; j < TOTAL_COLS; j++) {
-      archiveRow.push(rowData[j] !== undefined ? rowData[j] : '');
-    }
-    archiveRow[COL.DATE_ARCHIVE] = dateNow;
-    archiveRow[COL.ARCHIVE_ID] = archiveId;
-    archiveRow.push(user);          // ARCHIVED_BY
-    archiveRow.push(reason);        // ARCHIVE_REASON
-    archiveRow.push(item.sheet);    // SOURCE_SHEET
-
-    archiveRows.push(archiveRow);
-    successItems.push({ sheet: item.sheet, rowNum: item.rowNum, archiveId: archiveId, srcSheet: sheet });
-  }
-
-  if (archiveRows.length === 0) {
-    return { success: true, count: 0, total: items.length, errors: errors.length > 0 ? errors : undefined };
-  }
-
-  // === КРОК 1: Batch-запис в архів ===
-  try {
-    var startRow = archiveSheet.getLastRow() + 1;
-    var archiveCols = TOTAL_COLS + 3; // дані + ARCHIVED_BY + ARCHIVE_REASON + SOURCE_SHEET
-    archiveSheet.getRange(startRow, 1, archiveRows.length, archiveCols).setValues(archiveRows);
-  } catch (err) {
-    return { success: false, error: 'Помилка batch-запису в архів: ' + err.toString() };
-  }
-
-  // === КРОК 2: Оновлюємо джерело ===
-  for (var k = 0; k < successItems.length; k++) {
-    var si = successItems[k];
-    si.srcSheet.getRange(si.rowNum, COL.STATUS + 1).setValue('archived');
-    si.srcSheet.getRange(si.rowNum, COL.DATE_ARCHIVE + 1).setValue(dateShort);
-    si.srcSheet.getRange(si.rowNum, COL.ARCHIVE_ID + 1).setValue(si.archiveId);
+    // In-place: оновлюємо 3 колонки
+    sheet.getRange(item.rowNum, COL.STATUS + 1).setValue('archived');
+    sheet.getRange(item.rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
+    sheet.getRange(item.rowNum, COL.ARCHIVE_ID + 1).setValue(archiveId);
+    count++;
   }
 
   writeLog('bulkArchive', 'bulk', 0, 'archived',
-    archiveRows.length + '/' + items.length + ' записано в архів');
+    count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
 
   return {
     success: true,
-    count: archiveRows.length,
+    count: count,
     total: items.length,
     errors: errors.length > 0 ? errors : undefined
   };

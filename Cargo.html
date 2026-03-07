@@ -4802,7 +4802,27 @@ function archivePackage(id) {
 
 function restorePackage(id) {
     const p = packages.find(x => x.id === id);
-    if (p) { p.status = p.prevStatus || 'new'; delete p.prevStatus; delete p.archiveType; p.statusDate = ''; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('♻️ Відновлено'); }
+    if (!p) return;
+    p.status = p.prevStatus || 'new';
+    delete p.prevStatus;
+    delete p.archiveType;
+    p.statusDate = '';
+
+    // Серверний виклик — очищаємо архівні поля через bulkUpdateStatus
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
+    if (pSheet && pRowNum && !p._isRouteData) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'bulkUpdateStatus',
+                items: [{ sheet: pSheet, rowNum: pRowNum }],
+                status: 'new'
+            })
+        }).catch(() => {});
+    }
+    saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('♻️ Відновлено');
 }
 
 function bulkRestore() {

@@ -2044,7 +2044,7 @@
             <div class="form-group"><label>Адреса отримувача</label><input type="text" id="fAddress"></div>
             <div class="form-row"><div class="form-group"><label>Номер ТТН</label><input type="text" id="fTtn"></div><div class="form-group"><label>Вага (кг)</label><input type="text" id="fWeight"></div></div>
             <div class="form-row"><div class="form-group"><label>Сума €</label><input type="text" id="fAmount"></div><div class="form-group"><label>Статус оплати</label><select id="fPayStatus"><option value="">—</option><option value="Оплачено">Оплачено</option><option value="Неоплачено">Неоплачено</option><option value="Відправник">Відправник</option><option value="Отримувач">Отримувач</option></select></div></div>
-            <div class="form-row"><div class="form-group"><label>Оплата</label><select id="fPayment"><option value="">—</option><option value="При отр гот">При отр гот</option><option value="При отр на карту">При отр на карту</option><option value="Відпр на карту">Відпр на карту</option><option value="Картка">Картка</option><option value="Готівка">Готівка</option></select></div><div class="form-group"><label>ВО</label><select id="fVo"><option value="">—</option><option value="Д">Д</option><option value="Ш">Ш</option><option value="Б">Б</option></select></div></div>
+            <div class="form-group"><label>Оплата</label><select id="fPayment"><option value="">—</option><option value="При отр гот">При отр гот</option><option value="При отр на карту">При отр на карту</option><option value="Відпр на карту">Відпр на карту</option><option value="Картка">Картка</option><option value="Готівка">Готівка</option></select></div>
             <div class="form-row"><div class="form-group"><label>Авто</label><select id="fVehicle"><option value="">—</option></select></div><div class="form-group"><label>Статус посилки</label><select id="fParcelStatus"><option value="">—</option><option value="Невідомий">Невідомий</option><option value="Зареєстровано">Зареєстровано</option><option value="Оформлено">Оформлено</option><option value="Кордон">Кордон</option><option value="Доставка">Доставка</option></select></div></div>
             <div class="form-row"><div class="form-group"><label>Таймінг</label><input type="text" id="fTiming"></div><div class="form-group"><label>Дата оформлення</label><input type="date" id="fDateReg"></div></div>
             <div class="form-group"><label>Примітка</label><textarea id="fNote" rows="2"></textarea></div>
@@ -3370,7 +3370,6 @@ function render() {
         const payStatuses = ['Оплачено','Неоплачено','Відправник','Отримувач'];
         const payments = ['При отр гот','При отр на карту','Відпр на карту','Картка','Готівка'];
         const parcelStatuses = ['Невідомий','Зареєстровано','Оформлено','Кордон','Доставка'];
-        const voOptions = ['Д','Ш','Б'];
 
         const mkInput = (label, field, val, ph, type) => `<div class="inline-edit-field"><span class="inline-edit-label">${label}</span><input class="inline-edit-input" type="${type||'text'}" value="${esc(val)}" placeholder="${ph||'—'}" onchange="inlineSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"></div>`;
         const mkSelect = (label, field, val, opts) => `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${selOpt(field,val,opts)}</select></div>`;
@@ -3412,7 +3411,6 @@ function render() {
         inlineHtml += mkSelect('Статус посилки','parcelStatus',p.parcelStatus,parcelStatuses);
         inlineHtml += mkSelect('Статус оплати','payStatus',p.payStatus,payStatuses);
         inlineHtml += mkSelect('Оплата','payment',p.payment,payments);
-        inlineHtml += mkSelect('ВО','vo',p.vo,voOptions);
         inlineHtml += `<div class="inline-section-title">Інше</div>`;
         inlineHtml += mkInput('Примітка','note',p.note,'—');
         inlineHtml += mkInput('Примітка СМС','smsNote',p.smsNote,'—');
@@ -3464,10 +3462,9 @@ function render() {
                         ${cc('phoneReg','cg-main',`${p.phoneReg ? `<span class="cg-val">${p.phoneReg}</span>${cpBtn(p.phoneReg)}${edBtn('phoneReg')}` : `${ph('phoneReg')}${edBtn('phoneReg')}`}`)}
                         ${cc('parcelStatus','cg-sm',`${p.parcelStatus ? `<span class="cg-val">${p.parcelStatus}</span>${edBtn('parcelStatus')}` : `${ph('parcelStatus')}${edBtn('parcelStatus')}`}`)}
                     </div>
-                    <!-- ROW 6: ПІБ | ВО | SMS Note | Photo | Timing -->
+                    <!-- ROW 6: ПІБ | SMS Note | Photo | Timing -->
                     <div class="cg-row">
                         ${cc('name','cg-main',`${p.name ? `<span class="cg-val-name">${nameDisplay}</span>${cpBtn(p.name)}${edBtn('name')}` : `${ph('name')}${edBtn('name')}`}`)}
-                        ${cc('vo','cg-sm',`${p.vo ? `<span class="cg-val" style="font-weight:700;color:var(--purple);">${p.vo}</span>${edBtn('vo')}` : `${ph('vo')}${edBtn('vo')}`}`)}
                         ${cc('smsNote','cg-sm',`${p.smsNote ? `<span class="cg-val">${p.smsNote.length>25?p.smsNote.substring(0,25)+'...':p.smsNote}</span>${edBtn('smsNote')}` : `${ph('smsNote')}${edBtn('smsNote')}`}`)}
                         ${cc('photo','cg-sm',`${p.photo ? `<a href="${esc(String(p.photo).trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--info);font-weight:600;font-size:11px;">📷 Фото</a>` : ph('photo')}`)}
                         ${cc('timing','cg-sm',`${p.timing ? `<span class="cg-val">${p.timing}</span>${edBtn('timing')}` : `${ph('timing')}${edBtn('timing')}`}`)}
@@ -4356,7 +4353,6 @@ function renderRoutePassengers() {
         const payStatuses = ['Оплачено','Неоплачено','Відправник','Отримувач'];
         const payments = ['При отр гот','При отр на карту','Відпр на карту','Картка','Готівка'];
         const parcelStatuses = ['Невідомий','Зареєстровано','Оформлено','Кордон','Доставка'];
-        const voOptions = ['Д','Ш','Б'];
         const selOpt = (field, val, options) => options.map(o => `<option value="${esc(o)}" ${val===o?'selected':''}>${o}</option>`).join('');
         const mkInput = (label, field, val, ph, type) => `<div class="inline-edit-field"><span class="inline-edit-label">${label}</span><input class="inline-edit-input" type="${type||'text'}" value="${esc(val)}" placeholder="${ph||'—'}" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"></div>`;
         const mkSelect = (label, field, val, opts) => `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${selOpt(field,val,opts)}</select></div>`;
@@ -4376,7 +4372,6 @@ function renderRoutePassengers() {
         inlineHtml += mkInput('Примітка','note',p.note,'—');
         inlineHtml += mkInput('SMS','smsNote',p.smsNote,'—');
         inlineHtml += mkSelect('Статус посилки','parcelStatus',p.parcelStatus,parcelStatuses);
-        inlineHtml += mkSelect('ВО','vo',p.vo,voOptions);
         inlineHtml += `</div>`;
 
         html += `<div class="lead-card status-route ${sel?'selected':''}" data-uid="${uk}" data-id="${p.id}">
@@ -4416,10 +4411,9 @@ function renderRoutePassengers() {
                         ${cc('phoneReg','cg-main',`<span class="cg-val">${p.phoneReg||'—'}</span>${p.phoneReg?cpBtn(p.phoneReg):''}`)}
                         ${cc('parcelStatus','cg-sm',`<span class="cg-val">${p.parcelStatus||'—'}</span>`)}
                     </div>
-                    <!-- ROW 6: ПІБ | ВО | SMS Note | Timing -->
+                    <!-- ROW 6: ПІБ | SMS Note | Timing -->
                     <div class="cg-row">
                         ${cc('name','cg-main',`<span class="cg-val-name">${nameDisplay}</span>${cpBtn(p.name||'')}`)}
-                        ${cc('vo','cg-sm',`<span class="cg-val" style="font-weight:700;color:var(--purple);">${p.vo||'—'}</span>`)}
                         ${cc('smsNote','cg-sm',`<span class="cg-val">${p.smsNote ? (p.smsNote.length>25?p.smsNote.substring(0,25)+'...':p.smsNote) : '—'}</span>`)}
                         ${cc('timing','cg-sm',`<span class="cg-val">${p.timing||'—'}</span>`)}
                     </div>
@@ -6188,8 +6182,6 @@ function openAddModal() {
     if (payStatus) payStatus.value = '';
     const payment = document.getElementById('fPayment');
     if (payment) payment.value = '';
-    const vo = document.getElementById('fVo');
-    if (vo) vo.value = '';
     const parcelStatus = document.getElementById('fParcelStatus');
     if (parcelStatus) parcelStatus.value = '';
     document.getElementById('fVehicle').value = filters.vehicle || '';
@@ -6215,8 +6207,6 @@ function editPackage(uid) {
     if (payStatus) payStatus.value = p.payStatus || '';
     const payment = document.getElementById('fPayment');
     if (payment) payment.value = p.payment || '';
-    const vo = document.getElementById('fVo');
-    if (vo) vo.value = p.vo || '';
     const parcelStatus = document.getElementById('fParcelStatus');
     if (parcelStatus) parcelStatus.value = p.parcelStatus || '';
     document.getElementById('fVehicle').value = p.vehicle || '';
@@ -6359,7 +6349,6 @@ function savePackage() {
         amount: document.getElementById('fAmount').value,
         payStatus: document.getElementById('fPayStatus')?.value || '',
         payment: document.getElementById('fPayment')?.value || '',
-        vo: document.getElementById('fVo')?.value || '',
         parcelStatus: document.getElementById('fParcelStatus')?.value || '',
         vehicle: document.getElementById('fVehicle').value,
         timing: document.getElementById('fTiming').value,
@@ -6471,7 +6460,6 @@ function headerEdit(uid, field, btn) {
         phoneReg: { val: p.phoneReg||'', ph: '+380...', w: '140px' },
         timing: { val: p.timing||'', ph: 'Таймінг...', w: '100px' },
         smsNote: { val: p.smsNote||'', ph: 'СМС...', w: '140px' },
-        vo: { val: p.vo||'', ph: 'ВО', w: '60px' },
         parcelStatus: { val: p.parcelStatus||'', ph: 'Статус...', w: '120px' },
         payStatus: { val: p.payStatus||'', ph: 'Статус оплати...', w: '120px' },
         payment: { val: p.payment||'', ph: 'Оплата...', w: '120px' }
@@ -6660,7 +6648,7 @@ function restorePackageToOriginal(uid) {
     p.statusDate = '';
 
     // Очищаємо поля що міг змінити менеджер
-    const clearFields = ['vehicle', 'vo', 'number', 'note', 'smsNote', 'timing', 'dateReceive', 'photo', 'order'];
+    const clearFields = ['vehicle', 'number', 'note', 'smsNote', 'timing', 'dateReceive', 'photo', 'order'];
     clearFields.forEach(f => { p[f] = ''; });
 
     // Якщо є серверні дані — оновлюємо на сервері
@@ -7865,7 +7853,7 @@ function savePackageToServer(pkg) {
     .catch(err => {
         hideLoader();
         console.error('Save error:', err);
-        showToast('⚠️ Збережено локально. Буде відправлено при відновленні мережі.');
+        showToast('❌ Помилка збереження. Спробуйте ще раз.');
     });
 }
 
@@ -7933,7 +7921,7 @@ function updatePackageOnServer(pkg) {
     })
     .catch(err => {
         console.error('❌ Fetch error:', err);
-        showToast('⚠️ Зміни збережено локально. Синхронізація при відновленні мережі.');
+        showToast('❌ Помилка оновлення. Спробуйте ще раз.');
     });
 }
 

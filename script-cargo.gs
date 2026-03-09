@@ -24,9 +24,6 @@ var SPREADSHEET_ID = '1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY';
 var SHEET_NAME = 'Посилки';
 var SHEET_LOGS = 'Логи';
 
-// URL архівного скрипта (Crm_Arhiv_1.0)
-var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';
-
 // Порядок колонок (A-W = 23 колонки, індекс 0-22)
 // A:Напрямок  B:Номер ТТН  C:Вага  D:Адреса Отримувача
 // E:Телефон Отримувача  F:Сума €  G:Статус оплати  H:Оплата
@@ -895,36 +892,6 @@ function getStructure() {
   return { success: true, sheets: result };
 }
 
-// ============================================
-// ВІДПРАВКА В АРХІВ (HTTP до Crm_Arhiv_1.0)
-// ============================================
-function sendToArchive(payload) {
-  try {
-    var options = {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-
-    var response = UrlFetchApp.fetch(ARCHIVE_API_URL, options);
-    var code = response.getResponseCode();
-    var body = response.getContentText();
-
-    if (code === 200) {
-      try {
-        return JSON.parse(body);
-      } catch (e) {
-        return { success: false, error: 'Невалідна відповідь від архіву' };
-      }
-    } else {
-      return { success: false, error: 'HTTP ' + code + ': ' + body.substring(0, 200) };
-    }
-  } catch (e) {
-    Logger.log('Archive API error: ' + e.toString());
-    return { success: false, error: 'Архів недоступний: ' + e.toString() };
-  }
-}
 
 // ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
@@ -1030,7 +997,6 @@ function onOpen() {
     .addItem('Структура таблиці', 'testStructure')
     .addItem('Тест: всі посилки', 'testGetAll')
     .addItem('Тест: знайти аркуші', 'testFindSheets')
-    .addItem('Тест: архів зв\'язок', 'testArchiveConnection')
     .addToUi();
 }
 
@@ -1080,15 +1046,3 @@ function testStructure() {
   }
 }
 
-function testArchiveConnection() {
-  Logger.log('=== ТЕСТ ЗВ\'ЯЗКУ З АРХІВОМ ===');
-  Logger.log('URL: ' + ARCHIVE_API_URL);
-
-  var result = sendToArchive({ action: 'getStats' });
-  if (result.success) {
-    Logger.log('Зв\'язок: OK');
-    Logger.log('Статистика: ' + JSON.stringify(result.stats, null, 2));
-  } else {
-    Logger.log('ПОМИЛКА: ' + result.error);
-  }
-}

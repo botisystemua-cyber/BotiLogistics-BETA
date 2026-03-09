@@ -20,9 +20,6 @@
 
 var SPREADSHEET_ID = '17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo';
 
-// URL архівного скрипта (Crm_Arhiv_1.0)
-var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';
-
 // Аркуші
 var SHEET_LOGS = 'Маршрути водіїв';
 var SHEET_MAILING = 'Провірка розсилки';
@@ -902,7 +899,9 @@ function changeStatus(payload, newStatus) {
 }
 
 // ============================================
-// archiveToExternal — Відправити в Crm_Arhiv_1.0
+// archiveToExternal — Архівація маршрутних посилок
+// In-place: оновлює STATUS, DATE_ARCHIVE, ARCHIVE_ID
+// без копіювання в зовнішню таблицю
 // ============================================
 function archiveToExternal(payload) {
   try {
@@ -915,24 +914,9 @@ function archiveToExternal(payload) {
       return { success: false, error: 'Немає записів' };
     }
 
-    // Відкриваємо архівну таблицю НАПРЯМУ
-    var archiveSS;
-    var archiveSheet;
-    try {
-      archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
-      archiveSheet = archiveSS.getSheetByName('Посилки маршрут');
-      if (!archiveSheet) {
-        return { success: false, error: 'Архівний аркуш "Посилки маршрут" не знайдено' };
-      }
-    } catch (err) {
-      return { success: false, error: 'Не вдалося відкрити архів: ' + err.toString() };
-    }
-
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    var dateShort = dateNow.substring(0, 10);
-    var archiveRows = [];
-    var successItems = [];
+    var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
+    var count = 0;
     var errors = [];
 
     for (var i = 0; i < items.length; i++) {
@@ -958,46 +942,19 @@ function archiveToExternal(payload) {
         archiveStatus = reason;
       }
 
-      // === КРОК 1: Оновлюємо джерело ПЕРШИМ (як в archivePackage script-cargo.gs) ===
-      // Це гарантує що статус завжди оновиться, навіть якщо запис в архів не вдасться
+      // In-place: оновлюємо 3 колонки в тій самій таблиці
       sheet.getRange(rowNum, COL.STATUS + 1).setValue(archiveStatus);
-      sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateShort);
+      sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
       sheet.getRange(rowNum, COL.ARCHIVE_ID + 1).setValue(archiveId);
-
-      // Будуємо рядок архіву: 23 колонки (A-W) + 3 мета-колонки (X, Y, Z)
-      // A-W (0-22): дані з маршруту | X: ARCHIVED_BY | Y: ARCHIVE_REASON | Z: SOURCE_SHEET
-      var archiveRow = [];
-      for (var j = 0; j < TOTAL_COLS; j++) {
-        archiveRow.push(rowData[j] !== undefined ? rowData[j] : '');
-      }
-      // Перезаписуємо мета-поля
-      archiveRow[COL.STATUS] = archiveStatus;
-      archiveRow[COL.DATE_ARCHIVE] = dateNow;
-      archiveRow[COL.ARCHIVE_ID] = archiveId;
-      // Додаткові мета-колонки за межами основних
-      archiveRow.push(user);          // X - ARCHIVED_BY
-      archiveRow.push(reason);        // Y - ARCHIVE_REASON
-      archiveRow.push(item.sheet);    // Z - SOURCE_SHEET
-
-      archiveRows.push(archiveRow);
-      successItems.push({ rowNum: rowNum, archiveId: archiveId, srcSheet: sheet });
+      count++;
     }
 
-    if (archiveRows.length === 0) {
-      return { success: true, count: 0, total: items.length, errors: errors.length > 0 ? errors : undefined };
-    }
-
-    // === КРОК 2: Batch-запис в архів ===
-    var startRow = archiveSheet.getLastRow() + 1;
-    var archiveCols = TOTAL_COLS + 3; // дані (A-W) + ARCHIVED_BY + ARCHIVE_REASON + SOURCE_SHEET
-    archiveSheet.getRange(startRow, 1, archiveRows.length, archiveCols).setValues(archiveRows);
-
-    writeLog('archiveToExternal', 'bulk', 0, 'archived: ' + archiveRows.length,
-      archiveRows.length + '/' + items.length + ' записано в архів');
+    writeLog('archivePackages', 'bulk', 0, 'archived: ' + count,
+      count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
 
     return {
       success: true,
-      count: archiveRows.length,
+      count: count,
       total: items.length,
       errors: errors.length > 0 ? errors : undefined
     };
@@ -1480,32 +1437,6 @@ function getStructure() {
   return { success: true, sheets: result };
 }
 
-// ============================================
-// ВІДПРАВКА В АРХІВ (HTTP до Crm_Arhiv_1.0)
-// ============================================
-function sendToArchive(payload) {
-  try {
-    var options = {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-
-    var response = UrlFetchApp.fetch(ARCHIVE_API_URL, options);
-    var code = response.getResponseCode();
-    var body = response.getContentText();
-
-    if (code === 200) {
-      try { return JSON.parse(body); }
-      catch (e) { return { success: false, error: 'Невалідна відповідь' }; }
-    }
-    return { success: false, error: 'HTTP ' + code };
-  } catch (e) {
-    Logger.log('Archive API error: ' + e.toString());
-    return { success: false, error: 'Архів недоступний: ' + e.toString() };
-  }
-}
 
 // ============================================
 // addPackageToRoute — Додати посилку з Drivers UI
@@ -1623,7 +1554,6 @@ function onOpen() {
   ui.createMenu('Маршрути Посилки')
     .addItem('Список маршрутів', 'menuAvailableRoutes')
     .addItem('Структура таблиці', 'menuStructure')
-    .addItem('Тест архів зв\'язок', 'menuTestArchive')
     .addToUi();
 }
 
@@ -1647,14 +1577,6 @@ function menuStructure() {
   SpreadsheetApp.getUi().alert('Дивись Logger (Ctrl+Enter)');
 }
 
-function menuTestArchive() {
-  var result = sendToArchive({ action: 'getStats' });
-  SpreadsheetApp.getUi().alert(
-    'Архів',
-    result.success ? 'OK — зв\'язок працює' : 'ПОМИЛКА: ' + result.error,
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
-}
 
 // ============================================
 // ВІДПРАВКА (DISPATCH) — аркуші "(відпр)"

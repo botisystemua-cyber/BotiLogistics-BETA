@@ -23,9 +23,6 @@ var SPREADSHEET_ID = '1SvWAVYNKkWl7Sx_wWhTWPlDyKU9hIQCQzcWBTUGG2i8';
 // Таблиця маршрутів пасажирів
 var ROUTE_SPREADSHEET_ID = '1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0';
 
-// URL архівного скрипта (Crm_Arhiv_1.0)
-var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';
-
 // Аркуші
 var SHEET_UA_EU = 'Україна-єв';    // UA→EU пасажири
 var SHEET_EU_UA = 'Європа-ук';     // EU→UA пасажири
@@ -167,7 +164,7 @@ function doPost(e) {
       case 'deletePassengersPermanently':
         return respond(deletePassengersPermanently(payload));
 
-      // --- АРХІВАЦІЯ (з відправкою в Crm_Arhiv_1.0) ---
+      // --- АРХІВАЦІЯ ---
       case 'archivePassenger':
         return respond(archivePassenger(payload));
 
@@ -722,7 +719,6 @@ function deletePassengersPermanently(payload) {
 
 // ============================================
 // archivePassenger — Архівувати одного пасажира
-// Відправляє в Crm_Arhiv_1.0
 // ============================================
 function archivePassenger(payload) {
   var sheetName = payload.sheet;
@@ -1490,32 +1486,6 @@ function getStructure() {
   return { success: true, sheets: result };
 }
 
-// ============================================
-// ВІДПРАВКА В АРХІВ (HTTP до Crm_Arhiv_1.0)
-// ============================================
-function sendToArchive(payload) {
-  try {
-    var options = {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-
-    var response = UrlFetchApp.fetch(ARCHIVE_API_URL, options);
-    var code = response.getResponseCode();
-    var body = response.getContentText();
-
-    if (code === 200) {
-      try { return JSON.parse(body); }
-      catch (e) { return { success: false, error: 'Невалідна відповідь' }; }
-    }
-    return { success: false, error: 'HTTP ' + code };
-  } catch (e) {
-    Logger.log('Archive API error: ' + e.toString());
-    return { success: false, error: 'Архів недоступний: ' + e.toString() };
-  }
-}
 
 // ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
@@ -1811,7 +1781,6 @@ function onOpen() {
   ui.createMenu('CRM Пасажири')
     .addItem('Всі пасажири', 'testGetAll')
     .addItem('Структура таблиці', 'testStructure')
-    .addItem('Тест архів зв\'язок', 'testArchiveConnection')
     .addToUi();
 }
 
@@ -1839,8 +1808,3 @@ function testStructure() {
   }
 }
 
-function testArchiveConnection() {
-  Logger.log('URL: ' + ARCHIVE_API_URL);
-  var result = sendToArchive({ action: 'getStats' });
-  Logger.log(result.success ? 'Архів: OK' : 'Архів: ПОМИЛКА — ' + result.error);
-}

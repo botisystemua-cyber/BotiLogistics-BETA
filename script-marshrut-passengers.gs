@@ -20,9 +20,6 @@
 
 var SPREADSHEET_ID = '1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0';
 
-// URL архівного скрипта (Crm_Arhiv_1.0)
-var ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';
-
 // Google Maps API ключ (для оптимізації маршрутів)
 var API_KEY = 'AIzaSyCthPzhD6zDM9zR-re0R2ceohyhCRdawNc';
 
@@ -982,7 +979,9 @@ function changeStatus(payload, newStatus) {
 }
 
 // ============================================
-// archiveToExternal — Відправити в Crm_Arhiv_1.0
+// archiveToExternal — Архівація маршрутних пасажирів
+// In-place: оновлює STATUS, DATE_ARCHIVE, ARCHIVE_ID
+// без копіювання в зовнішню таблицю
 // ============================================
 function archiveToExternal(payload) {
   try {
@@ -991,24 +990,9 @@ function archiveToExternal(payload) {
     var reason = payload.reason || 'route_archive';
     if (items.length === 0) return { success: false, error: 'Немає записів' };
 
-    // Відкриваємо архівну таблицю НАПРЯМУ
-    var archiveSS;
-    var archiveSheet;
-    try {
-      archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
-      archiveSheet = archiveSS.getSheetByName('Пасажири маршрут');
-      if (!archiveSheet) {
-        return { success: false, error: 'Архівний аркуш "Пасажири маршрут" не знайдено' };
-      }
-    } catch (err) {
-      return { success: false, error: 'Не вдалося відкрити архів: ' + err.toString() };
-    }
-
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    var dateShort = dateNow.substring(0, 10);
-    var archiveRows = [];
-    var successItems = [];
+    var dateNow = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
+    var count = 0;
     var errors = [];
 
     for (var i = 0; i < items.length; i++) {
@@ -1029,46 +1013,25 @@ function archiveToExternal(payload) {
 
       var archiveId = generateArchiveId_();
 
-      // Будуємо рядок архіву: 23 колонки (A-W)
-      // A-R (0-17): дані | S(18): дата | T(19): хто | U(20): причина | V(21): аркуш | W(22): ARCHIVE_ID
-      var archiveRow = [];
-      for (var j = 0; j < 18; j++) {
-        archiveRow.push(rowData[j] !== undefined ? rowData[j] : '');
+      // Визначаємо правильний статус
+      var archiveStatus = 'archived';
+      if (reason === 'refused' || reason === 'deleted' || reason === 'transferred') {
+        archiveStatus = reason;
       }
-      archiveRow.push(dateNow);       // S - DATE_ARCHIVE
-      archiveRow.push(user);          // T - ARCHIVED_BY
-      archiveRow.push(reason);        // U - ARCHIVE_REASON
-      archiveRow.push(sheetName);     // V - SOURCE_SHEET
-      archiveRow.push(archiveId);     // W - ARCHIVE_ID
 
-      archiveRows.push(archiveRow);
-      successItems.push({ rowNum: rowNum, archiveId: archiveId, srcSheet: sheet });
+      // In-place: оновлюємо колонки в тій самій таблиці
+      sheet.getRange(rowNum, COL.STATUS + 1).setValue(archiveStatus);
+      sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateNow);
+      sheet.getRange(rowNum, COL.ARCHIVE_ID + 1).setValue(archiveId);
+      count++;
     }
 
-    if (archiveRows.length === 0) {
-      return { success: true, count: 0, total: items.length, errors: errors.length > 0 ? errors : undefined };
-    }
-
-    // === КРОК 1: Batch-запис в архів ===
-    var startRow = archiveSheet.getLastRow() + 1;
-    archiveSheet.getRange(startRow, 1, archiveRows.length, 23).setValues(archiveRows);
-
-    // === КРОК 2: Оновлюємо джерело ===
-    for (var k = 0; k < successItems.length; k++) {
-      var si = successItems[k];
-      si.srcSheet.getRange(si.rowNum, COL.STATUS + 1).setValue('archived');
-      si.srcSheet.getRange(si.rowNum, COL.DATE_ARCHIVE + 1).setValue(dateShort);
-      si.srcSheet.getRange(si.rowNum, COL.ARCHIVED_BY + 1).setValue(user);
-      si.srcSheet.getRange(si.rowNum, COL.ARCHIVE_REASON + 1).setValue(reason);
-      si.srcSheet.getRange(si.rowNum, COL.ARCHIVE_ID + 1).setValue(si.archiveId);
-    }
-
-    writeLog('archiveToExternal', 'bulk', 0, 'archived: ' + archiveRows.length,
-      archiveRows.length + '/' + items.length + ' записано в архів');
+    writeLog('archivePassengers', 'bulk', 0, 'archived: ' + count,
+      count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
 
     return {
       success: true,
-      count: archiveRows.length,
+      count: count,
       total: items.length,
       errors: errors.length > 0 ? errors : undefined
     };
@@ -1448,26 +1411,6 @@ function getStructure() {
   return { success: true, sheets: result };
 }
 
-// ============================================
-// АРХІВ API (HTTP до Crm_Arhiv_1.0)
-// ============================================
-function sendToArchive(payload) {
-  try {
-    var response = UrlFetchApp.fetch(ARCHIVE_API_URL, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
-    if (response.getResponseCode() === 200) {
-      try { return JSON.parse(response.getContentText()); }
-      catch (e) { return { success: false, error: 'Невалідна відповідь' }; }
-    }
-    return { success: false, error: 'HTTP ' + response.getResponseCode() };
-  } catch (e) {
-    return { success: false, error: 'Архів недоступний: ' + e.toString() };
-  }
-}
 
 // ============================================
 // addPassengerToRoute — Додати пасажира з Drivers UI
@@ -1827,7 +1770,6 @@ function onOpen() {
   ui.createMenu('Маршрути Пасажири')
     .addItem('Список маршрутів', 'menuRoutes')
     .addItem('Структура', 'menuStructure')
-    .addItem('Тест архів', 'menuTestArchive')
     .addItem('⚠️ Заповнити company_id', 'menuFixCompanyId')
     .addToUi();
 }
@@ -1938,9 +1880,3 @@ function menuStructure() {
   SpreadsheetApp.getUi().alert('Дивись Logger');
 }
 
-function menuTestArchive() {
-  var result = sendToArchive({ action: 'getStats' });
-  SpreadsheetApp.getUi().alert('Архів',
-    result.success ? 'OK' : 'ПОМИЛКА: ' + result.error,
-    SpreadsheetApp.getUi().ButtonSet.OK);
-}

@@ -3162,15 +3162,17 @@ function getFilteredData() {
         // Приховуємо архівовані
         data = data.filter(p => p.status !== 'archived');
     }
-    // Спеціальний фільтр по типу архіву (refused, transferred, deleted) або весь архів
+    // Спеціальний фільтр по типу архіву (refused, deleted) або чистий архів
     else if (filters.specialStatus) {
         if (filters.specialStatus === 'archived') {
-            data = data.filter(p => p.status === 'archived');
+            // Чистий архів — без відмов та видалених
+            data = data.filter(p => p.status === 'archived' && p.archiveType !== 'refused' && p.archiveType !== 'deleted');
         } else {
             data = data.filter(p => p.status === 'archived' && p.archiveType === filters.specialStatus);
         }
     } else if (filters.showArchive) {
-        data = data.filter(p => p.status === 'archived');
+        // Чистий архів — без відмов та видалених
+        data = data.filter(p => p.status === 'archived' && p.archiveType !== 'refused' && p.archiveType !== 'deleted');
     } else {
         // Приховуємо архівовані в звичайному режимі
         data = data.filter(p => p.status !== 'archived');
@@ -3728,9 +3730,11 @@ function handleSearch() { filters.search = document.getElementById('searchInput'
 function updateAllCounts() {
     // Активні = не архівовані
     const active = packages.filter(p => p.status !== 'archived');
-    const archived = packages.filter(p => p.status === 'archived');
-    const refused = archived.filter(p => p.archiveType === 'refused');
-    const deleted = archived.filter(p => p.archiveType === 'deleted');
+    const allArchived = packages.filter(p => p.status === 'archived');
+    const refused = allArchived.filter(p => p.archiveType === 'refused');
+    const deleted = allArchived.filter(p => p.archiveType === 'deleted');
+    // Чистий архів — без відмов та видалених
+    const archived = allArchived.filter(p => p.archiveType !== 'refused' && p.archiveType !== 'deleted');
     const inRoute = active.filter(p => p.status === 'route');
     const noVehicle = active.filter(p => !p.vehicle);
     const uaEu = active.filter(p => p.direction === 'ua-eu');
@@ -5327,42 +5331,30 @@ function bulkArchive() {
     archiveLocally();
     showToast(`📦 Архівовано: ${allFoundPackages.length}`);
 
-    // Якщо є серверні дані — відправляємо на сервер (fire-and-forget)
-    if (mainPackages.length > 0 || routePackages.length > 0) {
-        const requests = [];
-        if (mainPackages.length > 0) {
-            requests.push(
-                fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'bulkArchive',
-                        companyId: getCompanyId(),
-                        items: mainPackages,
-                        user: 'crm',
-                        reason: 'bulk_archive'
-                    })
-                }).then(r => r.text()).then(t => { try { return JSON.parse(t); } catch(e) { return { success: true }; } })
-            );
-        }
-        if (routePackages.length > 0) {
-            requests.push(
-                fetch(ROUTE_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'archivePackages',
-                        companyId: getCompanyId(),
-                        packages: routePackages
-                    })
-                }).then(r => r.text()).then(t => { try { return JSON.parse(t); } catch(e) { return { success: true }; } })
-            );
-        }
-
-        Promise.all(requests).catch(err => {
-            console.warn('Archive fetch error:', err);
-            setTimeout(() => silentSync(), 2000);
-        });
+    // Якщо є серверні дані — відправляємо на сервер (fire-and-forget, як на картці)
+    if (mainPackages.length > 0) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'bulkArchive',
+                companyId: getCompanyId(),
+                items: mainPackages,
+                user: 'crm',
+                reason: 'bulk_archive'
+            })
+        }).catch(() => {});
+    }
+    if (routePackages.length > 0) {
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'archivePackages',
+                companyId: getCompanyId(),
+                packages: routePackages
+            })
+        }).catch(() => {});
     }
 }
 
@@ -7853,32 +7845,12 @@ function updatePackageOnServer(pkg) {
         payload.sheet = pSheet;
     }
 
+    // Fire-and-forget — не чекаємо відповідь (уникаємо CORS проблем з GAS)
     fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
-    })
-    .then(r => r.text())
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            if (data.success) {
-                // Тихе збереження — ОК
-            } else {
-                console.warn('Update server error:', data.error);
-                // Дані оновлені локально — синхронізуємо
-                setTimeout(() => silentSync(), 1500);
-            }
-        } catch(e) {
-            // GAS повернув не-JSON (redirect) — дані збережені локально
-            console.warn('Update response not JSON, syncing...', text.substring(0, 100));
-            setTimeout(() => silentSync(), 1500);
-        }
-    })
-    .catch(err => {
-        console.warn('Update fetch error (data saved locally):', err);
-        setTimeout(() => silentSync(), 2000);
-    });
+    }).catch(() => {});
 }
 
 // Отримати ініціали користувача (поки що заглушка)

@@ -485,17 +485,22 @@ function getAvailableRoutes(companyId) {
       if (lastRow < 2) continue;
 
       // Фільтр по company_id — показуємо тільки маршрути де є рядки з цим company_id
-      var count = lastRow - 1;
-      if (companyId) {
-        var compIdCol = findCompanyIdCol(sheets[i]);
-        if (compIdCol === -1) continue; // Немає колонки company_id — не показуємо
-        var colData = sheets[i].getRange(2, compIdCol + 1, lastRow - 1, 1).getValues();
-        count = 0;
-        for (var r = 0; r < colData.length; r++) {
-          if (String(colData[r][0]).trim().toLowerCase() === companyId.toLowerCase()) count++;
+      // Виключаємо архівовані записи з підрахунку
+      var statusCol = COL.STATUS; // Колонка статусу
+      var allData = sheets[i].getRange(2, 1, lastRow - 1, Math.max(statusCol + 1, (companyId ? sheets[i].getLastColumn() : statusCol + 1))).getValues();
+      var compIdCol = companyId ? findCompanyIdCol(sheets[i]) : -1;
+      if (companyId && compIdCol === -1) continue; // Немає колонки company_id — не показуємо
+
+      var count = 0;
+      for (var r = 0; r < allData.length; r++) {
+        var rowStatus = String(allData[r][statusCol] || '').trim().toLowerCase();
+        if (ARCHIVE_STATUSES.indexOf(rowStatus) !== -1) continue; // Пропускаємо архівовані
+        if (companyId) {
+          if (String(allData[r][compIdCol] || '').trim().toLowerCase() !== companyId.toLowerCase()) continue;
         }
-        if (count === 0) continue; // Немає рядків для цієї компанії
+        count++;
       }
+      if (count === 0 && companyId) continue; // Немає активних рядків для цієї компанії
 
       routes.push({
         name: name,

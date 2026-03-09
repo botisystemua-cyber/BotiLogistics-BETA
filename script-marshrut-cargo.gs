@@ -500,7 +500,7 @@ function getAvailableRoutes(companyId) {
         }
         count++;
       }
-      if (count === 0 && companyId) continue; // Немає активних рядків для цієї компанії
+      // Маршрут показуємо навіть якщо count=0 (порожній або все заархівовано) — щоб можна було додати нові посилки
 
       routes.push({
         name: name,

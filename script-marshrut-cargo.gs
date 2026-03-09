@@ -952,6 +952,18 @@ function archiveToExternal(payload) {
 
       var archiveId = generateArchiveId_();
 
+      // Визначаємо правильний статус: refused/deleted/archived залежно від reason
+      var archiveStatus = 'archived';
+      if (reason === 'refused' || reason === 'deleted' || reason === 'transferred') {
+        archiveStatus = reason;
+      }
+
+      // === КРОК 1: Оновлюємо джерело ПЕРШИМ (як в archivePackage script-cargo.gs) ===
+      // Це гарантує що статус завжди оновиться, навіть якщо запис в архів не вдасться
+      sheet.getRange(rowNum, COL.STATUS + 1).setValue(archiveStatus);
+      sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(dateShort);
+      sheet.getRange(rowNum, COL.ARCHIVE_ID + 1).setValue(archiveId);
+
       // Будуємо рядок архіву: 23 колонки (A-W) + 3 мета-колонки (X, Y, Z)
       // A-W (0-22): дані з маршруту | X: ARCHIVED_BY | Y: ARCHIVE_REASON | Z: SOURCE_SHEET
       var archiveRow = [];
@@ -959,6 +971,7 @@ function archiveToExternal(payload) {
         archiveRow.push(rowData[j] !== undefined ? rowData[j] : '');
       }
       // Перезаписуємо мета-поля
+      archiveRow[COL.STATUS] = archiveStatus;
       archiveRow[COL.DATE_ARCHIVE] = dateNow;
       archiveRow[COL.ARCHIVE_ID] = archiveId;
       // Додаткові мета-колонки за межами основних
@@ -974,23 +987,10 @@ function archiveToExternal(payload) {
       return { success: true, count: 0, total: items.length, errors: errors.length > 0 ? errors : undefined };
     }
 
-    // === КРОК 1: Batch-запис в архів ===
+    // === КРОК 2: Batch-запис в архів ===
     var startRow = archiveSheet.getLastRow() + 1;
     var archiveCols = TOTAL_COLS + 3; // дані (A-W) + ARCHIVED_BY + ARCHIVE_REASON + SOURCE_SHEET
     archiveSheet.getRange(startRow, 1, archiveRows.length, archiveCols).setValues(archiveRows);
-
-    // === КРОК 2: Оновлюємо джерело ===
-    // Визначаємо правильний статус: refused/deleted/archived залежно від reason
-    var archiveStatus = 'archived';
-    if (reason === 'refused' || reason === 'deleted' || reason === 'transferred') {
-      archiveStatus = reason;
-    }
-    for (var k = 0; k < successItems.length; k++) {
-      var si = successItems[k];
-      si.srcSheet.getRange(si.rowNum, COL.STATUS + 1).setValue(archiveStatus);
-      si.srcSheet.getRange(si.rowNum, COL.DATE_ARCHIVE + 1).setValue(dateShort);
-      si.srcSheet.getRange(si.rowNum, COL.ARCHIVE_ID + 1).setValue(si.archiveId);
-    }
 
     writeLog('archiveToExternal', 'bulk', 0, 'archived: ' + archiveRows.length,
       archiveRows.length + '/' + items.length + ' записано в архів');

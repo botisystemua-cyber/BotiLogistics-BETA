@@ -5311,7 +5311,8 @@ function bulkArchive() {
         return showToast('⚠️ Немає заявок для архівації');
     }
 
-    // Локальна функція архівації
+    // Локальна функція архівації (як на картці — archivePackage / executeRouteStatusAction)
+    const today = new Date().toISOString().split('T')[0];
     function archiveLocally() {
         allFoundPackages.forEach(p => {
             if (p.status !== 'archived') {
@@ -5319,7 +5320,21 @@ function bulkArchive() {
             }
             p.archiveType = 'archived';
             p.status = 'archived';
-            p.statusDate = new Date().toISOString().split('T')[0];
+            p.statusDate = today;
+            p.archivedBy = 'archived_' + getCompanyId();
+
+            // Для маршрутних — оновлюємо головний пакет (як executeRouteStatusAction)
+            if (p._isRouteData) {
+                const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
+                if (mainPkg && mainPkg !== p) {
+                    if (mainPkg.status !== 'archived') mainPkg.prevStatus = mainPkg.status || 'new';
+                    mainPkg.status = 'archived';
+                    mainPkg.archiveType = 'archived';
+                    mainPkg.archiveDate = today;
+                    mainPkg.statusDate = today;
+                    mainPkg.archivedBy = 'archived_' + getCompanyId();
+                }
+            }
         });
         refreshAfterAction();
         saveSettings();
@@ -5355,6 +5370,14 @@ function bulkArchive() {
                 packages: routePackages
             })
         }).catch(() => {});
+
+        // Оновлюємо головні пакети на сервері (як executeRouteStatusAction)
+        allFoundPackages.forEach(p => {
+            if (p._isRouteData) {
+                const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
+                if (mainPkg) updatePackageOnServer(mainPkg);
+            }
+        });
     }
 }
 

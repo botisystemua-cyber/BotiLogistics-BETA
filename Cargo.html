@@ -6337,14 +6337,23 @@ function savePackage() {
     }; 
     
     if (isEditing && existingP) {
-        // Знаходимо індекс в масиві
-        const i = packages.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
-        if (i !== -1) {
-            d._sheet = packages[i]._sheet;
-            d._rowNum = packages[i]._rowNum;
-            packages[i] = {...packages[i], ...d};
-            // Оновлюємо на сервері
-            updatePackageOnServer(packages[i]);
+        if (existingP._isRouteData) {
+            // Маршрутна посилка — оновлюємо в routePassengers
+            const ri = routePassengers.findIndex(p => p._uid === editingId);
+            if (ri !== -1) {
+                routePassengers[ri] = {...routePassengers[ri], ...d};
+                updatePackageOnServer(routePassengers[ri]);
+                renderRoutePassengers();
+            }
+        } else {
+            // Звичайна посилка — оновлюємо в packages
+            const i = packages.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
+            if (i !== -1) {
+                d._sheet = packages[i]._sheet;
+                d._rowNum = packages[i]._rowNum;
+                packages[i] = {...packages[i], ...d};
+                updatePackageOnServer(packages[i]);
+            }
         }
     } else {
         packages.unshift(d);

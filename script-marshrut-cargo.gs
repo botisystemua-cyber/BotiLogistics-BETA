@@ -1806,29 +1806,12 @@ function editRoutePackage(payload) {
       return { success: false, error: 'Рядок ' + rowNum + ' не існує' };
     }
 
-    var fieldMap = {
-      direction: COL.DIRECTION,
-      ttn: COL.TTN,
-      weight: COL.WEIGHT,
-      address: COL.ADDRESS,
-      phone: COL.PHONE,
-      amount: COL.AMOUNT,
-      payStatus: COL.PAY_STATUS,
-      payment: COL.PAYMENT,
-      phoneReg: COL.PHONE_REG,
-      note: COL.NOTE,
-      parcelStatus: COL.PARCEL_STATUS,
-      name: COL.NAME,
-      timing: COL.TIMING,
-      smsNote: COL.SMS_NOTE,
-      vehicle: COL.VEHICLE
-    };
-
+    // Використовуємо глобальний FIELD_MAP з усіма 22 полями (ідентичний до Logistics-Cargo)
     var fields = payload.fields || {};
     var updated = [];
     for (var key in fields) {
-      if (fields.hasOwnProperty(key) && fieldMap.hasOwnProperty(key)) {
-        sheet.getRange(rowNum, fieldMap[key] + 1).setValue(fields[key]);
+      if (fields.hasOwnProperty(key) && FIELD_MAP.hasOwnProperty(key)) {
+        sheet.getRange(rowNum, FIELD_MAP[key] + 1).setValue(fields[key]);
         updated.push(key);
       }
     }

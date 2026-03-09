@@ -4493,9 +4493,29 @@ function executeRouteStatusAction(uid, status, noteText) {
     if (!sheetName) return showToast('Невідомий аркуш маршруту');
 
     const statusNames = { 'refused': '❌ Відмова', 'deleted': '🗑️ Видалено', 'archived': '📦 Архів' };
-    showLoader((statusNames[status] || 'Обробка') + '...', '');
 
-    // 1) Архівуємо в маршрутній таблиці з правильним reason (= status)
+    // 1) Оновлюємо головний список локально (optimistic update)
+    const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
+    if (mainPkg) {
+        if (mainPkg.status !== 'archived') mainPkg.prevStatus = mainPkg.status || 'new';
+        mainPkg.status = 'archived';
+        mainPkg.archiveType = status;
+        mainPkg.archiveDate = new Date().toISOString().split('T')[0];
+        mainPkg.statusDate = mainPkg.archiveDate;
+        mainPkg.archivedBy = 'archived_' + getCompanyId();
+        if (noteText) mainPkg.note = noteText + (mainPkg.note ? ` | ${mainPkg.note}` : '');
+    }
+
+    // 2) Прибираємо з локального масиву маршруту одразу
+    routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+    routeStats.total = routePassengers.length;
+    openActionsId = null;
+    renderRoutePassengers();
+    updateAllCounts();
+    saveSettings();
+    showToast(`${statusNames[status] || '📦 Архів'} → готово`);
+
+    // 3) Архівуємо на сервері у фоні (fire-and-forget)
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -4508,35 +4528,12 @@ function executeRouteStatusAction(uid, status, noteText) {
         })
     })
     .then(r => r.json())
-    .then(data => {
-        // 2) Оновлюємо головний список (основна таблиця посилок)
-        const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
-        if (mainPkg) {
-            if (mainPkg.status !== 'archived') mainPkg.prevStatus = mainPkg.status || 'new';
-            mainPkg.status = 'archived';
-            mainPkg.archiveType = status;
-            mainPkg.archiveDate = new Date().toISOString().split('T')[0];
-            mainPkg.statusDate = mainPkg.archiveDate;
-            mainPkg.archivedBy = 'archived_' + getCompanyId();
-            if (noteText) mainPkg.note = noteText + (mainPkg.note ? ` | ${mainPkg.note}` : '');
-            updatePackageOnServer(mainPkg);
-        }
-
-        hideLoader();
-
-        // 3) Прибираємо з локального масиву маршруту
-        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
-        routeStats.total = routePassengers.length;
-        openActionsId = null;
-        renderRoutePassengers();
-        updateAllCounts();
-        saveSettings();
-        showToast(`${statusNames[status] || '📦 Архів'} → готово`);
+    .then(() => {
+        if (mainPkg) updatePackageOnServer(mainPkg);
     })
     .catch(err => {
-        hideLoader();
-        showToast('❌ Помилка мережі');
-        console.error('Route status action error:', err);
+        console.warn('Route archive server error:', err);
+        setTimeout(() => silentSync(), 2000);
     });
 }
 
@@ -4624,8 +4621,21 @@ function deleteFromRouteOnly(uid) {
     const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName;
     if (!sheetName) return showToast('Невідомий аркуш маршруту');
 
-    showLoader('Видаляю з маршруту...', '');
+    // 1) Оновлюємо локальний стейт одразу (optimistic update)
+    routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+    routeStats.total = routePassengers.length;
 
+    const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
+    if (mainPkg) {
+        mainPkg.status = 'work';
+    }
+
+    renderRoutePassengers();
+    updateAllCounts();
+    saveSettings();
+    showToast('📋 Видалено з маршруту');
+
+    // 2) Синхронізуємо з сервером у фоні (fire-and-forget)
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -4638,29 +4648,13 @@ function deleteFromRouteOnly(uid) {
         })
     })
     .then(r => r.json())
-    .then(data => {
-        hideLoader();
-        if (data.success) {
-            // Видаляємо з локального масиву маршруту
-            routePassengers = routePassengers.filter(rp => rp._uid !== uid);
-            routeStats.total = routePassengers.length;
-
-            // Повертаємо статус в головному списку назад на 'work'
-            const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
-            if (mainPkg) {
-                mainPkg.status = 'work';
-                updatePackageOnServer(mainPkg);
-                saveSettings();
-            }
-
-            renderRoutePassengers();
-            updateAllCounts();
-            showToast('📋 Видалено з маршруту');
-        } else {
-            showToast('❌ ' + (data.error || 'Помилка'));
-        }
+    .then(() => {
+        if (mainPkg) updatePackageOnServer(mainPkg);
     })
-    .catch(err => { hideLoader(); showToast('❌ Помилка мережі'); });
+    .catch(err => {
+        console.warn('Route delete server error:', err);
+        setTimeout(() => silentSync(), 2000);
+    });
 }
 
 // Видалити з маршруту + в корзину (архів)

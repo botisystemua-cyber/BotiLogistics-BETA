@@ -3872,18 +3872,24 @@ function renderRoutePassengers() {
     }
     
     // Фільтруємо по статусу
-    let filteredPassengers = routePassengers;
+    let filteredPassengers = routePassengers.filter(p => p.status !== 'archived');
     if (routeStatusFilter === 'not-notified') {
-        filteredPassengers = routePassengers.filter(p => !mailingIds.includes(String(p.id)));
+        filteredPassengers = filteredPassengers.filter(p => !mailingIds.includes(String(p.id)));
     } else if (routeStatusFilter === 'notified') {
-        filteredPassengers = routePassengers.filter(p => mailingIds.includes(String(p.id)));
+        filteredPassengers = filteredPassengers.filter(p => mailingIds.includes(String(p.id)));
     } else if (routeStatusFilter !== 'all') {
-        filteredPassengers = routePassengers.filter(p => p.driverStatus === routeStatusFilter);
+        filteredPassengers = filteredPassengers.filter(p => p.driverStatus === routeStatusFilter);
     }
     
-    // Рахуємо сповіщення
-    const notifiedCount = routePassengers.filter(p => mailingIds.includes(String(p.id))).length;
-    const notNotifiedCount = routePassengers.length - notifiedCount;
+    // Рахуємо сповіщення (без архівних)
+    const activeRoutePassengers = routePassengers.filter(p => p.status !== 'archived');
+    const notifiedCount = activeRoutePassengers.filter(p => mailingIds.includes(String(p.id))).length;
+    const notNotifiedCount = activeRoutePassengers.length - notifiedCount;
+    routeStats.total = activeRoutePassengers.length;
+    routeStats.pending = activeRoutePassengers.filter(p => !p.driverStatus || p.driverStatus === 'pending').length;
+    routeStats.inProgress = activeRoutePassengers.filter(p => p.driverStatus === 'in-progress').length;
+    routeStats.completed = activeRoutePassengers.filter(p => p.driverStatus === 'completed').length;
+    routeStats.cancelled = activeRoutePassengers.filter(p => p.driverStatus === 'cancelled').length;
     routeStats.notified = notifiedCount;
     routeStats.notNotified = notNotifiedCount;
     

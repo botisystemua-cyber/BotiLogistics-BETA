@@ -4551,6 +4551,31 @@ function inlineRouteSave(uid, field, value) {
     const indId = 'saveInd_' + uid.replace(/[^a-zA-Z0-9]/g, '_');
     const ind = document.getElementById(indId);
     if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
+
+    // Зберігаємо на сервері (маршрутна таблиця)
+    const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p.sheet;
+    const rowNum = p.rowNum;
+    if (sheetName && rowNum) {
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'updateField',
+                companyId: getCompanyId(),
+                payload: {
+                    sheet: sheetName,
+                    rowNum: rowNum,
+                    field: field,
+                    value: value
+                }
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) console.warn('Route inline save error:', data.error);
+        })
+        .catch(err => console.error('Route inline save error:', err));
+    }
 }
 
 // Видалення з маршруту — вибір дії
@@ -7317,13 +7342,20 @@ function showBulkParcelStatusModal() {
 function applyBulkParcelStatus(status) {
     document.getElementById('bulkParcelStatusModal')?.remove();
 
-    const items = [];
+    const mainItems = [];
+    const routeItems = [];
     selectedIds.forEach(uid => {
         const p = findPackageByUid(uid);
         if (p) {
             p.parcelStatus = status;
-            if (p._sheet && p._rowNum) {
-                items.push({ sheet: p._sheet, rowNum: p._rowNum });
+            if (p._isRouteData) {
+                // Маршрутний пакет — використовуємо ROUTE_API_URL
+                const sheetName = p._routeSheet || p.sheet;
+                if (sheetName && p.rowNum) {
+                    routeItems.push({ sheet: sheetName, rowNum: p.rowNum });
+                }
+            } else if (p._sheet && p._rowNum) {
+                mainItems.push({ sheet: p._sheet, rowNum: p._rowNum });
             }
         }
     });
@@ -7331,11 +7363,14 @@ function applyBulkParcelStatus(status) {
     saveSettings();
 
     // Зберігаємо на сервері масово
-    if (items.length > 0) {
+    const totalItems = mainItems.length + routeItems.length;
+    if (totalItems > 0) {
         showLoader('Оновлюю статус...', '');
-        // Update each item individually since API doesn't have bulk field update
         let completed = 0;
-        items.forEach(item => {
+        const checkDone = () => { completed++; if (completed >= totalItems) hideLoader(); };
+
+        // Основна таблиця
+        mainItems.forEach(item => {
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
@@ -7347,15 +7382,26 @@ function applyBulkParcelStatus(status) {
                     value: status
                 })
             })
-            .then(r => r.json())
-            .then(() => {
-                completed++;
-                if (completed >= items.length) hideLoader();
+            .then(r => r.json()).then(checkDone).catch(checkDone);
+        });
+
+        // Маршрутна таблиця
+        routeItems.forEach(item => {
+            fetch(ROUTE_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'updateField',
+                    companyId: getCompanyId(),
+                    payload: {
+                        sheet: item.sheet,
+                        rowNum: item.rowNum,
+                        field: 'parcelStatus',
+                        value: status
+                    }
+                })
             })
-            .catch(() => {
-                completed++;
-                if (completed >= items.length) hideLoader();
-            });
+            .then(r => r.json()).then(checkDone).catch(checkDone);
         });
     }
 

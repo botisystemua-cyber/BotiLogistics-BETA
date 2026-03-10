@@ -1967,12 +1967,11 @@
     <div class="modal" style="max-width:350px">
         <div class="modal-header"><span class="modal-title">⚙️ Колонки</span><button class="modal-close" onclick="closeModal('columnsModal')">×</button></div>
         <div class="modal-body">
-            <div class="columns-hint">Якщо в заголовку — не в деталях</div>
-            <div class="columns-section"><div class="columns-section-title">Заголовок</div><div class="columns-list" id="headerColList"></div></div>
-            <div class="columns-section"><div class="columns-section-title">Деталі</div><div class="columns-list" id="detailsColList"></div></div>
+            <div class="columns-hint" style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">Натисніть щоб сховати/показати поле на картці</div>
+            <div class="columns-list" id="colVisList"></div>
         </div>
         <div class="modal-footer" style="display:flex;gap:8px;">
-            <button class="btn-secondary" onclick="resetColumnsSettings()" style="flex:1;">🔄 Скинути</button>
+            <button class="btn-secondary" onclick="resetColumnsSettings()" style="flex:1;">🔄 Показати всі</button>
             <button class="btn-save" onclick="saveColumnsSettings()" style="flex:1;">💾 Зберегти</button>
         </div>
     </div>
@@ -2188,6 +2187,7 @@ const ALL_COLUMNS = {
 };
 
 let colSettings = {header:['name','phone','seats','from','to','date','payment'],details:['percent','note','mark','dispatcher','phoneReg','timing','dateReg','weight']};
+let hiddenCols = new Set();
 let passengers = [
     {id:'p1',date:'2025-02-20',name:'Семен Гора',phone:'+380639763484',from:'Кошице',to:'Ужгород',seats:2,payment:'60',vehicle:'v1',status:'new',isNew:true,order:0,direction:'eu-ua'},
     {id:'p2',date:'2025-02-20',name:'Катерина Ятухівська',phone:'+380973874545',from:'Братислава',to:'Ужгород',seats:1,payment:'60',vehicle:'v1',status:'work',isNew:false,order:1,direction:'eu-ua'},
@@ -3135,7 +3135,7 @@ function render() {
     
     if (!data.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>Не знайдено</div></div>'; return; }
     
-    const detailCols = colSettings.details;
+    const detailCols = colSettings.details.filter(k => !hiddenCols.has(k));
     const isRouteView = filters.statusFilter === 'route';
     const canDrag = true; // Завжди дозволяємо перетягування
     const hasSearch = filters.search && filters.search.trim();
@@ -3199,27 +3199,27 @@ function render() {
                     <div class="card-top-row">
                         ${orderNum}
                         <span class="card-direction" title="${p.direction === 'ua-eu' ? 'Україна → Європа' : 'Європа → Україна'}">${dirEmoji}</span>
-                        <span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${phoneDisplay}</span>
-                        <span class="card-seats">👥 ${seatsDisplay}</span>
-                        <span class="card-date">${dateDisplay}</span>
-                        <span class="card-price">${priceDisplay}</span>
+                        ${hiddenCols.has('phone')?'':`<span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${phoneDisplay}</span>`}
+                        ${hiddenCols.has('seats')?'':`<span class="card-seats">👥 ${seatsDisplay}</span>`}
+                        ${hiddenCols.has('date')?'':`<span class="card-date">${dateDisplay}</span>`}
+                        ${hiddenCols.has('payment')?'':`<span class="card-price">${priceDisplay}</span>`}
                     </div>
                     <div class="card-row2-wrap">
                         <div class="card-route-row">
-                            <span class="card-route"><span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeFrom}</span> <span class="card-route-arrow">→</span> <span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeTo}</span></span>
+                            ${hiddenCols.has('from')&&hiddenCols.has('to')?'':`<span class="card-route">${hiddenCols.has('from')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeFrom}</span>`} ${hiddenCols.has('from')||hiddenCols.has('to')?'':`<span class="card-route-arrow">→</span>`} ${hiddenCols.has('to')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeTo}</span>`}</span>`}
                         </div>
                         <div class="card-info-row">
-                            <span class="card-id copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${idDisplay}</span>
-                            <span class="card-name" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${nameDisplay}</span>
+                            ${hiddenCols.has('id')?'':`<span class="card-id copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${idDisplay}</span>`}
+                            ${hiddenCols.has('name')?'':`<span class="card-name" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${nameDisplay}</span>`}
                             ${p.isNew ? '<span class="new-tag">NEW</span>' : ''}
                         </div>
                     </div>
                 </div>
                 <div class="card-right-section">
-                    <div class="card-vehicle">
+                    ${hiddenCols.has('vehicle')?'':`<div class="card-vehicle">
                         ${vehicleBadge}
                         ${vehicleDropdown}
-                    </div>
+                    </div>`}
                     <button class="card-actions-toggle ${aOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleActions('${uniqueKey}')">▼</button>
                 </div>
             </div>
@@ -4053,50 +4053,50 @@ function renderRoutePassengers() {
                     </div>
                     <div class="card-body">
                         <div class="card-top-row">
-                            <span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)">${p.phone || '—'}</span>
-                            <span class="card-seats">👥 ${p.seats || 1}</span>
-                            <span class="card-date">${p.date || '—'}</span>
-                            ${p.payment ? `<span class="card-price">💰 ${p.payment}</span>` : ''}
+                            ${hiddenCols.has('phone')?'':`<span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)">${p.phone || '—'}</span>`}
+                            ${hiddenCols.has('seats')?'':`<span class="card-seats">👥 ${p.seats || 1}</span>`}
+                            ${hiddenCols.has('date')?'':`<span class="card-date">${p.date || '—'}</span>`}
+                            ${hiddenCols.has('payment')?'':( p.payment ? `<span class="card-price">💰 ${p.payment}</span>` : '')}
                         </div>
                         <div class="card-row2-wrap">
                             <div class="card-route-row">
-                                <span class="card-route"><span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.from || '?'}</span> <span class="card-route-arrow">→</span> <span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.to || '?'}</span></span>
+                                ${hiddenCols.has('from')&&hiddenCols.has('to')?'':`<span class="card-route">${hiddenCols.has('from')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.from || '?'}</span>`} ${hiddenCols.has('from')||hiddenCols.has('to')?'':`<span class="card-route-arrow">→</span>`} ${hiddenCols.has('to')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.to || '?'}</span>`}</span>`}
                             </div>
                             <div class="card-info-row">
-                                <span class="card-id copyable" onclick="event.stopPropagation();copyField(this)">${p.id || '—'}</span>
-                                <span class="card-name">${p.name || '—'}</span>
+                                ${hiddenCols.has('id')?'':`<span class="card-id copyable" onclick="event.stopPropagation();copyField(this)">${p.id || '—'}</span>`}
+                                ${hiddenCols.has('name')?'':`<span class="card-name">${p.name || '—'}</span>`}
                             </div>
                         </div>
                         <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${statusBadge}
                             ${notifyBadge}
-                            ${p.timing ? `<span style="font-size:10px;color:#666;">⏰ ${p.timing}</span>` : ''}
+                            ${hiddenCols.has('timing')?'':(p.timing ? `<span style="font-size:10px;color:#666;">⏰ ${p.timing}</span>` : '')}
                         </div>
-                        ${p.note ? `<div style="font-size:10px;color:#666;margin-top:4px;font-style:italic;">📝 ${p.note}</div>` : ''}
+                        ${hiddenCols.has('note')?'':(p.note ? `<div style="font-size:10px;color:#666;margin-top:4px;font-style:italic;">📝 ${p.note}</div>` : '')}
                     </div>
                     <div class="card-right-section">
-                        <div class="card-vehicle">
+                        ${hiddenCols.has('vehicle')?'':`<div class="card-vehicle">
                             ${vehicleBadge}
-                        </div>
+                        </div>`}
                         <button class="card-actions-toggle" onclick="event.stopPropagation();toggleRouteActions('${p._uid}')">▼</button>
                     </div>
                 </div>
                 <div class="card-details" id="details_${p._uid}" style="display:none;">
                     <div class="details-grid">
-                        <div class="detail-item"><span class="detail-label">📞 Телефон</span><span class="detail-value">${p.phone || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📞 Реєстратор</span><span class="detail-value">${p.phoneReg || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👤 ПІБ</span><span class="detail-value">${p.name || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👥 Місць</span><span class="detail-value">${p.seats || 1}</span></div>
-                        <div class="detail-item"><span class="detail-label">📍 Звідки</span><span class="detail-value">${p.from || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📍 Куди</span><span class="detail-value">${p.to || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">💰 Оплата</span><span class="detail-value">${p.payment || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📊 Відсоток</span><span class="detail-value">${p.percent || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">⏰ Таймінг</span><span class="detail-value">${p.timing || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📅 Дата виїзду</span><span class="detail-value">${p.date || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👨‍💼 Диспетчер</span><span class="detail-value">${p.dispatcher || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">⚖️ Вага</span><span class="detail-value">${p.weight || '—'}</span></div>
+                        ${hiddenCols.has('phone')?'':`<div class="detail-item"><span class="detail-label">📞 Телефон</span><span class="detail-value">${p.phone || '—'}</span></div>`}
+                        ${hiddenCols.has('phoneReg')?'':`<div class="detail-item"><span class="detail-label">📞 Реєстратор</span><span class="detail-value">${p.phoneReg || '—'}</span></div>`}
+                        ${hiddenCols.has('name')?'':`<div class="detail-item"><span class="detail-label">👤 ПІБ</span><span class="detail-value">${p.name || '—'}</span></div>`}
+                        ${hiddenCols.has('seats')?'':`<div class="detail-item"><span class="detail-label">👥 Місць</span><span class="detail-value">${p.seats || 1}</span></div>`}
+                        ${hiddenCols.has('from')?'':`<div class="detail-item"><span class="detail-label">📍 Звідки</span><span class="detail-value">${p.from || '—'}</span></div>`}
+                        ${hiddenCols.has('to')?'':`<div class="detail-item"><span class="detail-label">📍 Куди</span><span class="detail-value">${p.to || '—'}</span></div>`}
+                        ${hiddenCols.has('payment')?'':`<div class="detail-item"><span class="detail-label">💰 Оплата</span><span class="detail-value">${p.payment || '—'}</span></div>`}
+                        ${hiddenCols.has('percent')?'':`<div class="detail-item"><span class="detail-label">📊 Відсоток</span><span class="detail-value">${p.percent || '—'}</span></div>`}
+                        ${hiddenCols.has('timing')?'':`<div class="detail-item"><span class="detail-label">⏰ Таймінг</span><span class="detail-value">${p.timing || '—'}</span></div>`}
+                        ${hiddenCols.has('date')?'':`<div class="detail-item"><span class="detail-label">📅 Дата виїзду</span><span class="detail-value">${p.date || '—'}</span></div>`}
+                        ${hiddenCols.has('dispatcher')?'':`<div class="detail-item"><span class="detail-label">👨‍💼 Диспетчер</span><span class="detail-value">${p.dispatcher || '—'}</span></div>`}
+                        ${hiddenCols.has('weight')?'':`<div class="detail-item"><span class="detail-label">⚖️ Вага</span><span class="detail-value">${p.weight || '—'}</span></div>`}
                     </div>
-                    ${p.note ? `<div class="detail-note"><span class="detail-label">📝 Примітка</span><div>${p.note}</div></div>` : ''}
+                    ${hiddenCols.has('note')?'':(p.note ? `<div class="detail-note"><span class="detail-label">📝 Примітка</span><div>${p.note}</div></div>` : '')}
                 </div>
                 <div class="card-actions" id="actions_${p._uid}">
                     <button class="btn-card-action btn-call" onclick="event.stopPropagation();location.href='tel:${p.phone}'">📞 Дзвонити</button>
@@ -6239,46 +6239,34 @@ function savePassenger() {
 
 // COLUMNS
 function openColumnsModal() { renderColumnsList(); document.getElementById('columnsModal').classList.add('show'); }
-function renderColumnsList() { 
-    const keys = Object.keys(ALL_COLUMNS); 
-    document.getElementById('headerColList').innerHTML = keys.map(k => 
-        `<div class="column-item" onclick="toggleHeaderCol('${k}')">
-            <input type="checkbox" ${colSettings.header.includes(k)?'checked':''} onclick="event.stopPropagation();toggleHeaderCol('${k}')">
-            <label>${ALL_COLUMNS[k].label}</label>
-        </div>`
-    ).join(''); 
-    document.getElementById('detailsColList').innerHTML = keys.map(k => { 
-        const inH = colSettings.header.includes(k); 
-        return `<div class="column-item ${inH?'disabled':''}" onclick="${inH?'':`toggleDetailsCol('${k}')`}">
-            <input type="checkbox" ${colSettings.details.includes(k)&&!inH?'checked':''} ${inH?'disabled':''} onclick="event.stopPropagation();${inH?'':`toggleDetailsCol('${k}')`}">
-            <label>${ALL_COLUMNS[k].label}${inH?' (заг)':''}</label>
-        </div>`; 
-    }).join(''); 
+function renderColumnsList() {
+    const keys = Object.keys(ALL_COLUMNS);
+    document.getElementById('colVisList').innerHTML = keys.map(k => {
+        const isHidden = hiddenCols.has(k);
+        return `<div class="column-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${isHidden?'#f3f4f6':'white'};border:1px solid ${isHidden?'#e5e7eb':'var(--primary)'};border-radius:6px;margin-bottom:4px;cursor:pointer;transition:all 0.15s;" onclick="toggleColVisModal('${k}')">
+            <input type="checkbox" ${isHidden?'':'checked'} style="pointer-events:none;width:16px;height:16px;">
+            <span style="flex:1;font-size:12px;font-weight:600;${isHidden?'color:#9ca3af;text-decoration:line-through;':'color:var(--text-primary);'}">${ALL_COLUMNS[k].label}</span>
+            <span style="font-size:10px;color:${isHidden?'#ef4444':'var(--success)'};">${isHidden?'Сховано':'Видно'}</span>
+        </div>`;
+    }).join('');
 }
-function toggleHeaderCol(k) { 
-    const i = colSettings.header.indexOf(k); 
-    i !== -1 ? colSettings.header.splice(i,1) : colSettings.header.push(k); 
-    renderColumnsList(); 
-}
-function toggleDetailsCol(k) { 
-    if(colSettings.header.includes(k)) return; 
-    const i = colSettings.details.indexOf(k); 
-    i === -1 ? colSettings.details.push(k) : colSettings.details.splice(i,1); 
-    renderColumnsList(); 
+function toggleColVisModal(k) {
+    if (hiddenCols.has(k)) {
+        hiddenCols.delete(k);
+    } else {
+        hiddenCols.add(k);
+    }
+    renderColumnsList();
 }
 function resetColumnsSettings() {
-    colSettings = {
-        header: ['name','phone','seats','from','to','date','payment'],
-        details: ['percent','note','mark','dispatcher','phoneReg','timing','dateReg','weight']
-    };
+    hiddenCols.clear();
     renderColumnsList();
-    showToast('🔄 Скинуто');
+    showToast('🔄 Всі колонки видимі');
 }
-function saveColumnsSettings() { 
-    saveSettings(); 
-    closeModal('columnsModal'); 
-    render(); 
-    showToast('✅ Колонки збережено'); 
+function saveColumnsSettings() {
+    closeModal('columnsModal');
+    render();
+    showToast('✅ Колонки застосовано');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }

@@ -4400,12 +4400,59 @@ function moveOneToRoute(id) {
 
 function archivePassenger(id) {
     const p = passengers.find(x => x.id === id);
-    if (p) { if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; } p.archiveType = 'archived'; p.status = 'archived'; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві'); }
+    if (!p) return;
+    if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
+    p.archiveType = 'archived';
+    p.status = 'archived';
+    p.statusDate = new Date().toISOString().split('T')[0];
+    render(); updateAllCounts(); renderCalendars();
+    showToast('📦 В архіві');
+
+    // Відправляємо на сервер щоб silentSync не затер зміни
+    const sheet = p._sheet;
+    const rowNum = p._rowNum;
+    if (sheet && rowNum) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'bulkArchive',
+                payload: { passengers: [{ sheet, rowNum }], user: 'crm', reason: 'archived' }
+            })
+        })
+        .then(r => r.text())
+        .then(t => { try { return JSON.parse(t); } catch(e) { return { success: true }; } })
+        .catch(err => console.warn('archivePassenger API error:', err));
+    }
 }
 
 function restorePassenger(id) {
     const p = passengers.find(x => x.id === id);
-    if (p) { p.status = p.prevStatus || 'new'; delete p.prevStatus; delete p.archiveType; p.statusDate = ''; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('♻️ Відновлено'); }
+    if (!p) return;
+    const newStatus = p.prevStatus || 'new';
+    p.status = newStatus;
+    delete p.prevStatus;
+    delete p.archiveType;
+    p.statusDate = '';
+    render(); updateAllCounts(); renderCalendars();
+    showToast('♻️ Відновлено');
+
+    // Відправляємо на сервер щоб silentSync не затер зміни
+    const sheet = p._sheet;
+    const rowNum = p._rowNum;
+    if (sheet && rowNum) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'restorePassengers',
+                payload: { passengers: [{ sheet, rowNum }] }
+            })
+        })
+        .then(r => r.text())
+        .then(t => { try { return JSON.parse(t); } catch(e) { return { success: true }; } })
+        .catch(err => console.warn('restorePassenger API error:', err));
+    }
 }
 
 function bulkRestore() {

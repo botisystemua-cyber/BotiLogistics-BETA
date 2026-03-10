@@ -3394,6 +3394,19 @@ function clearSelection() {
     }
 }
 
+// Оновлює дані після bulk-дії, але залишає sidebar і вибір
+function refreshAfterAction() {
+    const currentData = getFilteredData();
+    const currentUids = new Set(currentData.map((p, idx) =>
+        (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${idx}`
+    ));
+    selectedIds.forEach(uid => {
+        if (!currentUids.has(uid)) selectedIds.delete(uid);
+    });
+    render();
+    updateBulkBar();
+}
+
 function switchToMenu() {
     // Ховаємо bulk sidebar, показуємо PC sidebar
     const bulk = document.getElementById('bulkActionsSidebar');

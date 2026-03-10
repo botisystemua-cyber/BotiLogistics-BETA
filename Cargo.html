@@ -2401,6 +2401,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     _rowNum: p.rowNum
                 };
             });
+
+            // Відновлюємо порядок оптимізації з localStorage
+            const savedOpt = loadOptimizationOrder();
+            packages.forEach(p => {
+                const key = `${p._sheet}_${p._rowNum}`;
+                if (savedOpt[key]) {
+                    p.status = 'optimize';
+                    p.order = savedOpt[key].order;
+                    p._notGeocoded = savedOpt[key]._notGeocoded || false;
+                }
+            });
         }
         // Відновлюємо офлайн-буферні ліди
         const offlineBuf = getOfflineBuffer();
@@ -2509,6 +2520,7 @@ function silentSync() {
             packages.forEach(p => {
                 if (p._sheet && p._rowNum) localMap[`${p._sheet}_${p._rowNum}`] = p;
             });
+            const savedOpt = loadOptimizationOrder();
             serverPackages.forEach(sp => {
                 const key = `${sp._sheet}_${sp._rowNum}`;
                 const local = localMap[key];
@@ -2518,6 +2530,12 @@ function silentSync() {
                     // Зберігаємо CRM-only поля (не зберігаються на сервері)
                     if (local.prevStatus) sp.prevStatus = local.prevStatus;
                     if (local.archiveType) sp.archiveType = local.archiveType;
+                }
+                // Відновлюємо дані оптимізації з localStorage
+                if (savedOpt[key]) {
+                    sp.status = 'optimize';
+                    sp.order = savedOpt[key].order;
+                    sp._notGeocoded = savedOpt[key]._notGeocoded || false;
                 }
             });
 
@@ -2587,7 +2605,30 @@ function playNotificationSound() {
 
 const SETTINGS_VERSION = 3;
 function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmPackagesV1')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.hiddenCols)hiddenCols=new Set(s.hiddenCols); if(s.columnLabels){Object.keys(s.columnLabels).forEach(k=>{if(ALL_COLUMNS[k])ALL_COLUMNS[k].label=s.columnLabels[k];});} if(s.vehicles&&s.vehicles.length&&s._v===SETTINGS_VERSION)vehicles=s.vehicles; } catch(e){} }
-function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({_v:SETTINGS_VERSION,colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); }
+function saveSettings() { const columnLabels={}; Object.keys(ALL_COLUMNS).forEach(k=>{columnLabels[k]=ALL_COLUMNS[k].label;}); localStorage.setItem('yuraCrmPackagesV1', JSON.stringify({_v:SETTINGS_VERSION,colSettings,vehicles,columnLabels,hiddenCols:[...hiddenCols]})); saveOptimizationOrder(); }
+
+// Збереження/відновлення порядку оптимізації в localStorage
+function saveOptimizationOrder() {
+    const optimized = packages.filter(p => p.status === 'optimize');
+    if (optimized.length === 0) {
+        localStorage.removeItem('cargoCrmOptOrder');
+        return;
+    }
+    const map = {};
+    optimized.forEach(p => {
+        const uid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : null;
+        if (uid) map[uid] = { order: p.order, _notGeocoded: p._notGeocoded || false };
+    });
+    localStorage.setItem('cargoCrmOptOrder', JSON.stringify(map));
+}
+
+function loadOptimizationOrder() {
+    try { return JSON.parse(localStorage.getItem('cargoCrmOptOrder') || '{}'); } catch(e) { return {}; }
+}
+
+function clearOptimizationOrder() {
+    localStorage.removeItem('cargoCrmOptOrder');
+}
 
 // === ОФЛАЙН БУФЕР: збереження незбережених лідів ===
 const OFFLINE_BUFFER_KEY = 'yuraCrmOfflineBuffer';
@@ -6086,6 +6127,32 @@ function applyOptimizedOrder(orderedPassengers, notGeocodedList) {
     saveSettings();
     refreshAfterAction();
     updateAllCounts();
+}
+
+// Підтвердити оптимізацію → перевести в маршрут
+function confirmOptimization() {
+    const optimized = packages.filter(p => p.status === 'optimize');
+    if (!optimized.length) return showToast('⚠️ Немає оптимізованих заявок');
+
+    selectedIds.clear();
+    optimized.forEach(p => {
+        const uid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : null;
+        if (uid) selectedIds.add(uid);
+    });
+
+    clearOptimizationOrder();
+
+    if (selectedIds.size > 0) {
+        bulkMoveToRoute();
+    } else {
+        showToast('⚠️ Синхронізуй дані перед маршрутом');
+    }
+    closeOptimization();
+}
+
+// Закрити панель оптимізації
+function closeOptimization() {
+    document.getElementById('optimizationPanel')?.classList.remove('show');
 }
 
 // UNDO SYSTEM

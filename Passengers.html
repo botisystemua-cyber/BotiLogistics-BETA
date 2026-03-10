@@ -3579,56 +3579,57 @@ function updatePcVehiclesList() {
     }
 }
 
-// ROUTES LIST - оновлюємо з реальними даними з таблиці
+// ROUTES LIST - оновлюємо з реальними даними з сервера (як у Cargo)
 function updateRoutesList() {
     // Спочатку показуємо з локальними даними
     renderRoutesListLocal();
-    
-    // Потім асинхронно оновлюємо з API
-    vehicles.forEach(v => {
-        fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'getRoutePassengers',
-                payload: { sheetName: v.routeSheet || v.name, companyId: getCompanyId() }
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                // Оновлюємо badge в desktop dropdown
-                const desktopBadge = document.querySelector(`#routesList [data-vehicle="${v.id}"] .badge`);
-                if (desktopBadge) {
-                    desktopBadge.textContent = data.stats.total;
-                    desktopBadge.style.background = data.stats.total > 0 ? 'var(--orange)' : 'var(--border)';
-                    desktopBadge.style.color = data.stats.total > 0 ? 'white' : 'var(--text-secondary)';
-                }
 
-                // Оновлюємо badge в mobile menu
-                const mobileBadge = document.querySelector(`#mobileRoutesList [data-vehicle="${v.id}"] .side-menu-item-count`);
-                if (mobileBadge) {
-                    mobileBadge.textContent = data.stats.total;
-                }
+    // Завантажуємо актуальні маршрути з сервера і перемальовуємо
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.routes) {
+            window._serverRoutes = data.routes.filter(r => isRouteSheet(r.name));
+            renderRoutesListLocal();
 
-                // Оновлюємо badge в PC sidebar
-                const pcBadge = document.querySelector(`#pcRoutesList [data-vehicle="${v.id}"] .item-count`);
-                if (pcBadge) {
-                    pcBadge.textContent = data.stats.total;
-                }
-            }
-        })
-        .catch(() => {});
+            // Оновлюємо загальний лічильник "Всі маршрути"
+            const totalCount = window._serverRoutes.reduce((sum, r) => sum + (r.count || 0), 0);
+            const countRoute = document.getElementById('countRoute');
+            const pcCount = document.getElementById('pcCountRoute');
+            const mobileCount = document.getElementById('mobileCountRoute');
+            if (countRoute) countRoute.textContent = totalCount;
+            if (pcCount) pcCount.textContent = totalCount;
+            if (mobileCount) mobileCount.textContent = totalCount;
+        }
+    })
+    .catch(() => {
+        // Fallback — показуємо з локальних даних
+        renderRoutesListLocal();
     });
 }
 
-// Рендер списку маршрутів з локальними даними (швидко)
+// Рендер списку маршрутів — бере дані з серверних маршрутів, НЕ з vehicles
 function renderRoutesListLocal() {
-    const routesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        return `<div class="dropdown-item" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')" style="color:var(--orange);">
-            <span>🚀 ${routeDisplayName}</span>
+    // Використовуємо серверні маршрути або fallback на vehicles.routeSheet
+    const routes = (window._serverRoutes || []).filter(r => isRouteSheet(r.name));
+    if (!routes.length) {
+        // fallback: беремо routeSheet з vehicles
+        vehicles.forEach(v => {
+            if (v.routeSheet && !routes.find(r => r.name === v.routeSheet)) {
+                routes.push({ name: v.routeSheet, count: 0 });
+            }
+        });
+    }
+
+    const routesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        return `<div class="dropdown-item" onclick="showRoute('${r.name.replace(/'/g, "\\'")}')" style="color:var(--orange);">
+            <span>🚀 ${displayName}</span>
             <span class="badge" style="background:${count > 0 ? 'var(--orange)' : 'var(--border)'};color:${count > 0 ? 'white' : 'var(--text-secondary)'}">${count}</span>
         </div>`;
     }).join('');
@@ -3637,11 +3638,12 @@ function renderRoutesListLocal() {
     if (routesList) routesList.innerHTML = routesHtml;
 
     // Mobile routes
-    const mobileRoutesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        return `<div class="side-menu-item route ${filters.routeVehicle === v.id ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}'); closeSideMenu();">
-            <span class="side-menu-item-left">🚀 ${routeDisplayName}</span>
+    const mobileRoutesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        const isActive = filters.routeVehicle === r.name;
+        return `<div class="side-menu-item route ${isActive ? 'active' : ''}" onclick="showRoute('${r.name.replace(/'/g, "\\'")}'); closeSideMenu();" style="color:var(--orange);">
+            <span class="side-menu-item-left">🚀 ${displayName}</span>
             <span class="side-menu-item-count">${count}</span>
         </div>`;
     }).join('');
@@ -3650,19 +3652,19 @@ function renderRoutesListLocal() {
     if (mobileRoutesList) mobileRoutesList.innerHTML = mobileRoutesHtml;
 
     // PC Sidebar routes
-    const pcRoutesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        const isActive = filters.routeVehicle === v.id;
-        return `<div class="pc-sidebar-item route ${isActive ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')">
-            <span><span class="item-icon">🚀</span>${routeDisplayName}</span>
+    const pcRoutesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        const isActive = filters.routeVehicle === r.name;
+        return `<div class="pc-sidebar-item route ${isActive ? 'active' : ''}" onclick="showRoute('${r.name.replace(/'/g, "\\'")}')" style="color:var(--orange);">
+            <span><span class="item-icon">🚀</span>${displayName}</span>
             <span class="item-count">${count}</span>
         </div>`;
     }).join('');
-    
+
     const pcRoutesList = document.getElementById('pcRoutesList');
     if (pcRoutesList) pcRoutesList.innerHTML = pcRoutesHtml;
-    
+
     // Оновлюємо лічильник "Всі маршрути" через API
     updateAllRoutesCount();
 }
@@ -3712,15 +3714,22 @@ function showAllRoutes() {
 function showVehicleRoute(vehicleId) {
     const v = vehicles.find(x => x.id === vehicleId);
     if (!v) return showToast('❌ Авто не знайдено');
-    
+    showRoute(v.routeSheet || v.name);
+}
+
+function showRoute(sheetName) {
     filters.statusFilter = 'route';
-    filters.routeVehicle = vehicleId;
+    filters.routeVehicle = sheetName;
     filters.showArchive = false;
     document.getElementById('routeDropdown')?.classList.remove('show');
     closeSideMenu();
-    
-    showLoader(`Завантаження: ${v.name}`, '');
-    
+
+    const displayName = sheetName.replace(/^Пас\.\s*/, '');
+    showLoader(`Завантаження: ${displayName}`, '');
+
+    // Знаходимо відповідне авто (якщо є)
+    const v = vehicles.find(x => x.routeSheet === sheetName || x.name === sheetName);
+
     // Завантажуємо дані з таблиці маршрутів + статус розсилки
     Promise.all([
         fetch(ROUTE_API_URL, {
@@ -3728,7 +3737,7 @@ function showVehicleRoute(vehicleId) {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'getRoutePassengers',
-                payload: { sheetName: v.routeSheet || v.name, companyId: getCompanyId() }
+                payload: { sheetName: sheetName, companyId: getCompanyId() }
             })
         }).then(r => r.json()),
         fetch(ROUTE_API_URL, {
@@ -3749,18 +3758,18 @@ function showVehicleRoute(vehicleId) {
             // Зберігаємо дані маршруту
             routePassengers = routeData.passengers.map((p, idx) => ({
                 ...p,
-                _uid: `route_${v.id}_${idx}`,
+                _uid: `route_${sheetName.replace(/\s+/g,'_')}_${idx}`,
                 _isRouteData: true,
-                _vehicleId: v.id,
-                _vehicleName: v.routeSheet || v.name
+                _vehicleId: v ? v.id : null,
+                _vehicleName: sheetName
             }));
             routeStats = routeData.stats;
-            currentRouteVehicle = v;
-            
+            currentRouteVehicle = v || { routeSheet: sheetName, name: sheetName };
+
             // Рендеримо
             renderRoutePassengers();
             updateFilterButtons();
-            showToast(`🚐 ${v.name}: ${routeData.stats.total} пасажирів`);
+            showToast(`🚐 ${displayName}: ${routeData.stats.total} пасажирів`);
         } else {
             showToast('❌ ' + routeData.error);
         }
@@ -3990,7 +3999,7 @@ function renderRoutePassengers() {
                     <div class="route-stat-label">🔔 Не спов.</div>
                 </div>
             </div>
-            ${currentRouteVehicle ? `<div style="text-align:center;margin-top:10px;"><button onclick="showVehicleRoute('${currentRouteVehicle.id}')" style="padding:8px 20px;border:none;border-radius:6px;background:var(--info);color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button></div>` : ''}
+            ${currentRouteVehicle ? `<div style="text-align:center;margin-top:10px;"><button onclick="showRoute('${(currentRouteVehicle.routeSheet || currentRouteVehicle.name).replace(/'/g, "\\'")}')" style="padding:8px 20px;border:none;border-radius:6px;background:var(--info);color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button></div>` : ''}
         </div>
     `;
     

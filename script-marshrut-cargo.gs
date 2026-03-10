@@ -482,7 +482,17 @@ function getAvailableRoutes(companyId) {
       if (isExcluded) continue;
 
       var lastRow = sheets[i].getLastRow();
-      if (lastRow < 2) continue;
+
+      // Порожній аркуш (тільки заголовок або зовсім порожній) — показуємо з count=0
+      if (lastRow < 2) {
+        routes.push({
+          name: name,
+          vehicle: name,
+          count: 0,
+          sheetId: sheets[i].getSheetId()
+        });
+        continue;
+      }
 
       // Фільтр по company_id — показуємо тільки маршрути де є рядки з цим company_id
       // Виключаємо архівовані записи з підрахунку

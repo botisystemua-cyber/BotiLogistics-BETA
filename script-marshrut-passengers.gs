@@ -392,7 +392,17 @@ function getAvailableRoutes(companyId) {
       if (isExcluded) continue;
 
       var lastRow = sheets[i].getLastRow();
-      if (lastRow < 2) continue;
+
+      // Порожній аркуш (тільки заголовок або зовсім порожній) — показуємо з count=0
+      if (lastRow < 2) {
+        routes.push({
+          name: name,
+          type: 'passenger',
+          count: 0,
+          sheetId: sheets[i].getSheetId()
+        });
+        continue;
+      }
 
       // Фільтр по company_id — показуємо тільки маршрути де є рядки з цим company_id
       // Виключаємо архівовані записи з підрахунку
@@ -410,7 +420,7 @@ function getAvailableRoutes(companyId) {
         }
         count++;
       }
-      // Маршрут показуємо навіть якщо count=0 (порожній або все заархівовано) — щоб можна було додати нові посилки
+      // Маршрут показуємо навіть якщо count=0 (порожній або все заархівовано) — щоб можна було додати нові записи
 
       routes.push({
         name: name,

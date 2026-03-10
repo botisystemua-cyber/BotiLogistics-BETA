@@ -1399,6 +1399,12 @@
         <button class="side-menu-close" onclick="closeSideMenu()">×</button>
     </div>
     <div class="side-menu-content">
+        <!-- Скинути всі фільтри -->
+        <div style="padding:8px 12px 4px;">
+            <div class="side-menu-item" onclick="resetFilters(); closeSideMenu();" style="background:linear-gradient(135deg,var(--primary),var(--info));color:white;font-weight:700;justify-content:center;cursor:pointer;border-radius:10px;padding:12px;font-size:14px;border:none;">
+                <span class="side-menu-item-left" style="color:white;justify-content:center;">🔄 Скинути всі фільтри</span>
+            </div>
+        </div>
         <!-- Напрямок -->
         <div class="side-menu-section">
             <div class="side-menu-section-header" onclick="toggleMobileSection('direction')">
@@ -1491,10 +1497,6 @@
                     <span class="side-menu-item-left">❌ Відмови</span>
                     <span class="side-menu-item-count" id="mobileCountRefused">0</span>
                 </div>
-                <div class="side-menu-item" onclick="showStatusFilter('transferred'); closeSideMenu();">
-                    <span class="side-menu-item-left">🤝 Пересадки</span>
-                    <span class="side-menu-item-count" id="mobileCountTransferred">0</span>
-                </div>
                 <div class="side-menu-item" onclick="showStatusFilter('deleted'); closeSideMenu();">
                     <span class="side-menu-item-left">🗑️ Видалені</span>
                     <span class="side-menu-item-count" id="mobileCountDeleted">0</span>
@@ -1525,6 +1527,12 @@
 <div class="main-layout">
     <!-- PC SIDEBAR -->
     <aside class="pc-sidebar" id="pcSidebar">
+        <!-- Скинути всі фільтри -->
+        <div style="padding:8px 10px;">
+            <div class="pc-sidebar-item" onclick="resetFilters()" style="background:linear-gradient(135deg,var(--primary),var(--info));color:white;font-weight:700;justify-content:center;cursor:pointer;border-radius:10px;padding:10px;font-size:13px;">
+                <span>🔄 Скинути всі фільтри</span>
+            </div>
+        </div>
         <!-- Напрямок -->
         <div class="pc-sidebar-section">
             <div class="pc-sidebar-header" onclick="togglePcSection('direction')">
@@ -1616,10 +1624,6 @@
                 <div class="pc-sidebar-item" id="pcRefused" onclick="showStatusFilter('refused')">
                     <span><span class="item-icon">❌</span>Відмови</span>
                     <span class="item-count" id="pcCountRefused">0</span>
-                </div>
-                <div class="pc-sidebar-item" id="pcTransferred" onclick="showStatusFilter('transferred')">
-                    <span><span class="item-icon">🤝</span>Пересадки</span>
-                    <span class="item-count" id="pcCountTransferred">0</span>
                 </div>
                 <div class="pc-sidebar-item" id="pcDeleted" onclick="showStatusFilter('deleted')">
                     <span><span class="item-icon">🗑️</span>Видалені</span>
@@ -1851,9 +1855,6 @@
         <div class="bulk-sidebar-secondary" id="bulkSecondaryActions">
             <button class="bulk-sidebar-btn" onclick="bulkArchive()">
                 <span class="btn-icon">📦</span> Архівувати
-            </button>
-            <button class="bulk-sidebar-btn" onclick="bulkTransfer()">
-                <span class="btn-icon">🤝</span> Пересадка
             </button>
             <button class="bulk-sidebar-btn" onclick="bulkRefuse()">
                 <span class="btn-icon">❌</span> Відмова

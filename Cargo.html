@@ -5347,7 +5347,64 @@ function confirmRefuse() {
 // ВИДАЛЕННЯ - з причиною
 function bulkDelete() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
+
+    // В маршруті — видаляємо назавжди (фізично рядки)
+    const isRouteView = filters.statusFilter === 'route' && filters.routeVehicle;
+    if (isRouteView) {
+        bulkDeleteFromRoute();
+        return;
+    }
+
     showDeleteModal();
+}
+
+// Масове видалення з маршруту — назавжди
+function bulkDeleteFromRoute() {
+    const selected = routePassengers.filter(p => selectedIds.has(p._uid));
+    if (selected.length === 0) return showToast('⚠️ Немає вибраних посилок у маршруті');
+
+    if (!confirm(`🗑️ Видалити назавжди ${selected.length} записів з маршруту?\n\nЦю дію НЕ МОЖНА скасувати!`)) return;
+
+    showRouteProgress('Видаляю з маршруту...');
+
+    const deletePromises = selected.map(p => {
+        const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName;
+        return fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'archivePackages',
+                companyId: getCompanyId(),
+                packages: [{ sheet: sheetName, rowNum: p.rowNum }],
+                user: 'crm',
+                reason: 'removed_from_route'
+            })
+        }).then(r => r.text()).catch(err => {
+            console.warn('deleteFromRoute error:', err);
+            return '{}';
+        });
+    });
+
+    Promise.all(deletePromises).then(() => {
+        hideRouteProgress();
+        const deletedUids = new Set(selected.map(p => p._uid));
+        // Повертаємо статус work для основних записів
+        selected.forEach(p => {
+            const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
+            if (mainPkg) mainPkg.status = 'work';
+        });
+        routePassengers = routePassengers.filter(p => !deletedUids.has(p._uid));
+        routeStats.total = routePassengers.length;
+        routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
+        routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
+        routeStats.completed = routePassengers.filter(p => p.driverStatus === 'completed').length;
+        routeStats.cancelled = routePassengers.filter(p => p.driverStatus === 'cancelled').length;
+        clearSelection();
+        renderRoutePassengers();
+        updateAllCounts();
+        saveSettings();
+        showToast(`🗑️ Видалено з маршруту: ${selected.length}`);
+    });
 }
 
 function showDeleteModal() {

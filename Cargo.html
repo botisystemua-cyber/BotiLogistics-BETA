@@ -1876,6 +1876,9 @@
                 <span class="btn-icon">🗑️</span> Видалити
             </button>
         </div>
+        <button class="bulk-sidebar-btn" id="btnSidebarDeleteDirect" onclick="bulkDelete()" style="display:none;background:rgba(220,53,69,0.25);">
+            <span class="btn-icon">🗑️</span> Видалити
+        </button>
         <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;">
             <span class="btn-icon">↩️</span> Відновити
         </button>
@@ -3801,6 +3804,20 @@ function updateBulkBar() {
     if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
     if (sidebarArchive) sidebarArchive.style.display = isRouteView ? 'none' : 'flex';
 
+    // В маршрутах ховаємо "Ще дії" дропдаун, показуємо окрему кнопку "Видалити"
+    const bulkMoreToggle = document.getElementById('bulkMoreToggle');
+    const bulkSecondaryActions = document.getElementById('bulkSecondaryActions');
+    const btnSidebarDeleteDirect = document.getElementById('btnSidebarDeleteDirect');
+    if (isRouteView) {
+        if (bulkMoreToggle) bulkMoreToggle.style.display = 'none';
+        if (bulkSecondaryActions) bulkSecondaryActions.style.display = 'none';
+        if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'flex';
+    } else {
+        if (bulkMoreToggle) bulkMoreToggle.style.display = '';
+        if (bulkSecondaryActions) { bulkSecondaryActions.style.display = ''; bulkSecondaryActions.classList.remove('expanded'); }
+        if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'none';
+    }
+
     // Відмітки — показуємо тільки в маршрутах
     const marksToggle = document.getElementById('bulkMarksToggle');
     const marksActions = document.getElementById('bulkMarksActions');
@@ -4248,6 +4265,12 @@ let currentRouteVehicle = null;
 let routeStatusFilter = 'all'; // Фільтр по статусу в маршруті
 
 // Рендер пасажирів маршруту в основному списку
+// Маппінг англійських статусів відміток на українські
+function routeMarkLabel(status) {
+    const map = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };
+    return map[status] || status || '—';
+}
+
 function renderRoutePassengers() {
     const container = document.getElementById('cardsList');
     if (!container) return;
@@ -4365,10 +4388,19 @@ function renderRoutePassengers() {
         const vehOpts = vehicles.map(v => `<option value="${esc(v.name)}" ${p.vehicle===v.name?'selected':''}>${v.name}</option>`).join('');
         const payStatuses = ['Оплачено','Неоплачено','Відправник','Отримувач'];
         const payments = ['При отр гот','При отр на карту','Відпр на карту','Картка','Готівка'];
-        const parcelStatuses = ['Невідомий','Зареєстровано','Оформлено','Кордон','Доставка'];
+        const routeMarkStatuses = [
+            {value:'pending', label:'⏳ Очікує'},
+            {value:'in-progress', label:'🔄 В процесі'},
+            {value:'completed', label:'✅ Готово'},
+            {value:'cancelled', label:'❌ Відмова'}
+        ];
         const selOpt = (field, val, options) => options.map(o => `<option value="${esc(o)}" ${val===o?'selected':''}>${o}</option>`).join('');
         const mkInput = (label, field, val, ph, type) => `<div class="inline-edit-field"><span class="inline-edit-label">${label}</span><input class="inline-edit-input" type="${type||'text'}" value="${esc(val)}" placeholder="${ph||'—'}" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"></div>`;
         const mkSelect = (label, field, val, opts) => `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${selOpt(field,val,opts)}</select></div>`;
+        const mkMarkSelect = (label, field, val) => {
+            const opts = routeMarkStatuses.map(s => `<option value="${esc(s.value)}" ${val===s.value?'selected':''}>${s.label}</option>`).join('');
+            return `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineRouteMarkSave('${uk}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${opts}</select></div>`;
+        };
 
         let inlineHtml = `<div class="inline-edit-grid">`;
         inlineHtml += `<div class="inline-section-title">Контакт</div>`;
@@ -4384,7 +4416,7 @@ function renderRoutePassengers() {
         inlineHtml += mkInput('Таймінг','timing',p.timing,'—');
         inlineHtml += mkInput('Примітка','note',p.note,'—');
         inlineHtml += mkInput('SMS','smsNote',p.smsNote,'—');
-        inlineHtml += mkSelect('Статус посилки','parcelStatus',p.parcelStatus,parcelStatuses);
+        inlineHtml += mkMarkSelect('Відмітка', 'parcelStatus', p.driverStatus || p.parcelStatus || 'pending');
         inlineHtml += `</div>`;
 
         html += `<div class="lead-card status-route ${sel?'selected':''}" data-uid="${uk}" data-id="${p.id}">
@@ -4422,7 +4454,7 @@ function renderRoutePassengers() {
                     <!-- ROW 5: Phone reg | Parcel Status -->
                     <div class="cg-row">
                         ${cc('phoneReg','cg-main',`<span class="cg-val">${p.phoneReg||'—'}</span>${p.phoneReg?cpBtn(p.phoneReg):''}`)}
-                        ${cc('parcelStatus','cg-sm',`<span class="cg-val">${p.parcelStatus||'—'}</span>`)}
+                        ${cc('parcelStatus','cg-sm',`<span class="cg-val">${routeMarkLabel(p.parcelStatus)}</span>`)}
                     </div>
                     <!-- ROW 6: ПІБ | SMS Note | Timing -->
                     <div class="cg-row">
@@ -4626,6 +4658,63 @@ function inlineRouteSave(uid, field, value) {
         })
         .catch(err => console.error('Route inline save error:', err));
     }
+}
+
+// Збереження відмітки (driverStatus + parcelStatus) з inline-редагування маршруту
+function inlineRouteMarkSave(uid, newStatus) {
+    const p = routePassengers.find(x => x._uid === uid);
+    if (!p) return;
+    p.driverStatus = newStatus;
+    p.parcelStatus = newStatus;
+
+    // Показуємо індикатор збереження
+    const indId = 'saveInd_' + uid.replace(/[^a-zA-Z0-9]/g, '_');
+    const ind = document.getElementById(indId);
+    if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
+
+    // Оновлюємо бейдж на картці
+    const card = document.querySelector(`.lead-card[data-uid="${uid}"]`);
+    if (card) {
+        const badge = card.querySelector('.status-badge');
+        if (badge) {
+            const badgeMap = { 'pending': '⏳', 'in-progress': '🔄', 'completed': '✅', 'cancelled': '❌' };
+            badge.className = 'status-badge ' + (newStatus || 'pending');
+            badge.style.cssText = 'font-size:10px;padding:2px 5px;';
+            badge.textContent = badgeMap[newStatus] || '⏳';
+        }
+    }
+
+    // Зберігаємо на сервері
+    const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p.sheet;
+    const rowNum = p.rowNum;
+    if (sheetName && rowNum) {
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'updateField',
+                companyId: getCompanyId(),
+                payload: {
+                    sheet: sheetName,
+                    rowNum: rowNum,
+                    field: 'parcelStatus',
+                    value: newStatus
+                }
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) console.warn('Route mark save error:', data.error);
+        })
+        .catch(err => console.error('Route mark save error:', err));
+    }
+
+    // Оновлюємо статистику
+    routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
+    routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
+    routeStats.completed = routePassengers.filter(p => p.driverStatus === 'completed').length;
+    routeStats.cancelled = routePassengers.filter(p => p.driverStatus === 'cancelled').length;
+    updateFilterButtons();
 }
 
 // Видалення з маршруту — назавжди видаляє рядок

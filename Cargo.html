@@ -4899,20 +4899,23 @@ async function loadDispatchForRoute(routeSheet) {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: 'getDispatchItems',
+                action: 'getRoutePassengers',
                 companyId: getCompanyId(),
                 payload: { sheetName: sheetName }
             })
         });
         const data = await response.json();
         if (data.success) {
-            const items = data.items || [];
-            dispatchData = items;
-            dispatchData.forEach((item, idx) => {
-                item._statusKey = 'disp_' + (item.rowNum || idx) + '_' + idx;
-            });
+            const items = data.passengers || data.packages || [];
+            dispatchData = items.map((p, idx) => ({
+                ...p,
+                driverStatus: p.parcelStatus || p.driverStatus || 'pending',
+                _statusKey: 'disp_' + (p.rowNum || idx) + '_' + idx,
+                _isDispatch: true,
+                _dispatchSheet: sheetName
+            }));
             dispatchLastUpdate = Date.now();
-            return items;
+            return dispatchData;
         }
         return [];
     } catch (err) {
@@ -5001,31 +5004,44 @@ function renderDispatchView(container) {
         </div>
     `;
 
-    // Dispatch cards
+    // Dispatch cards — та сама структура що й основний маршрут (Напрямок, ТТН, Вага, Адреса, Телефон, Сума, Оплата...)
     const esc = (v) => (v || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const cpBtn = (val) => `<button class="copy-btn-mini" onclick="event.stopPropagation();copyToClip('${esc(val)}',this)" title="Копіювати">📋</button>`;
 
     dispatchData.forEach((item, idx) => {
         const status = item.driverStatus || 'pending';
         const statusIcon = status === 'completed' ? '✅' : status === 'cancelled' ? '❌' : status === 'in-progress' ? '🔄' : '⏳';
         const statusColor = status === 'completed' ? '#28a745' : status === 'cancelled' ? '#dc3545' : status === 'in-progress' ? '#007bff' : '#6c757d';
 
+        const isCodeDir = item.direction === 'ua-eu' || item.direction === 'eu-ua';
+        const dirLabel = isCodeDir ? (item.direction === 'ua-eu' ? 'UA→EU' : 'EU→UA') : (item.direction || '—');
+        const dirClass = item.direction === 'eu-ua' ? ' eu-ua' : '';
+        const payStatusClass = item.payStatus === 'Оплачено' ? 'paid' : (item.payStatus === 'Неоплачено' ? 'unpaid' : '');
+        const payStatusBadge = item.payStatus ? `<span class="card-pay-badge ${payStatusClass||'neutral'}">${esc(item.payStatus)}</span>` : '';
+        const paymentBadge = item.payment ? `<span class="card-pay-badge neutral">${esc(item.payment)}</span>` : '';
+
         html += `
             <div class="lead-card" style="border-left: 4px solid ${statusColor}; margin-bottom: 8px;">
                 <div class="card-main" style="padding: 10px 12px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <span style="font-weight:700;font-size:13px;min-width:24px;text-align:center;color:var(--text-secondary);">${idx + 1}</span>
                         <span style="font-size:14px;">${statusIcon}</span>
+                        <span class="cg-val-dir${dirClass}" style="font-weight:700;font-size:12px;">${dirLabel}</span>
                         <span style="font-weight:700;font-size:13px;">${esc(item.name || 'Без імені')}</span>
-                        ${item.parcelNum ? `<span style="font-size:11px;color:var(--text-secondary);">📦 №${esc(item.parcelNum)}</span>` : ''}
+                        ${item.ttn ? `<span style="font-size:11px;color:var(--text-secondary);">ТТН:${esc(item.ttn)}${cpBtn(item.ttn)}</span>` : ''}
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;margin-bottom:6px;">
-                        ${item.city ? `<span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;">📍 ${esc(item.city)}</span>` : ''}
                         ${item.weight ? `<span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;">⚖ ${esc(item.weight)} кг</span>` : ''}
-                        ${item.amount ? `<span style="background:#dcfce7;padding:2px 8px;border-radius:4px;font-weight:700;color:#166534;">💰 ${esc(item.amount)} ${esc(item.currency || '')}</span>` : ''}
-                        ${item.paymentType ? `<span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;">💳 ${esc(item.paymentType)}</span>` : ''}
+                        ${item.address ? `<span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;">📍 ${esc(item.address.length > 40 ? item.address.substring(0, 40) + '...' : item.address)}</span>` : ''}
+                        ${item.amount ? `<span style="background:#dcfce7;padding:2px 8px;border-radius:4px;font-weight:700;color:#166534;">💰 €${esc(item.amount)}</span>` : ''}
+                        ${payStatusBadge}
+                        ${paymentBadge}
                     </div>
-                    ${item.senderPhone ? `<div style="font-size:12px;font-weight:600;margin-bottom:6px;">📞 ${esc(item.senderPhone)}</div>` : ''}
-                    ${item.description ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">📝 ${esc(item.description)}</div>` : ''}
-                    ${item.envelope ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">💼 Конверт: ${esc(item.envelope)}</div>` : ''}
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;">
+                        ${item.phone ? `<span style="font-weight:600;">📞 ${esc(item.phone)}${cpBtn(item.phone)}</span>` : ''}
+                        ${item.phoneReg ? `<span style="color:var(--text-secondary);">📱 Реєстратор: ${esc(item.phoneReg)}${cpBtn(item.phoneReg)}</span>` : ''}
+                    </div>
+                    ${item.note ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">📝 ${esc(item.note)}</div>` : ''}
                 </div>
             </div>
         `;

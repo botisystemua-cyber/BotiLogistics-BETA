@@ -950,11 +950,6 @@
             opacity: 1;
         }
 
-        .bulk-route-status-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
         /* ROUTE PROGRESS — centered overlay */
         .route-progress-overlay {
             position: fixed;
@@ -1865,9 +1860,10 @@
                 <span class="btn-icon">🗑️</span> Видалити
             </button>
         </div>
-        <div class="bulk-sidebar-divider bulk-route-status-divider" id="bulkRouteStatusDivider" style="display:none;"></div>
-        <div class="bulk-route-status-group" id="bulkRouteStatusGroup" style="display:none;">
-            <span style="font-size:10px;color:#aaa;padding:0 8px;text-transform:uppercase;letter-spacing:0.5px;">Відмітка</span>
+        <button class="bulk-sidebar-more-toggle bulk-route-marks-toggle" id="bulkMarksToggle" onclick="toggleBulkMarks()" style="display:none;">
+            <span>🏷️ Відмітки</span> <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="bulk-sidebar-secondary" id="bulkMarksActions" style="display:none;">
             <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('in-progress')" style="background:rgba(33,150,243,0.25);">
                 <span class="btn-icon">🔄</span> В процесі
             </button>
@@ -3500,8 +3496,8 @@ function updateBulkBar() {
     if (sidebarRestore) sidebarRestore.style.display = (canRestore && !isRouteView) ? 'flex' : 'none';
     if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
     // В маршрутах: ховаємо "Ще дії", Архівувати, Відмова, Відновити; показуємо тільки Видалити + кнопки відмітки
-    const routeStatusGroup = document.getElementById('bulkRouteStatusGroup');
-    const routeStatusDivider = document.getElementById('bulkRouteStatusDivider');
+    const marksToggle = document.getElementById('bulkMarksToggle');
+    const marksActions = document.getElementById('bulkMarksActions');
     const mobileRouteMarkBtns = document.querySelectorAll('.bulk-route-mark-btn');
     if (isRouteView) {
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
@@ -3509,8 +3505,8 @@ function updateBulkBar() {
         if (sidebarRefuse) sidebarRefuse.style.display = 'none';
         if (sidebarDelete) sidebarDelete.style.display = 'flex';
         if (sidebarSecondary) { sidebarSecondary.style.display = 'flex'; sidebarSecondary.classList.add('expanded'); }
-        if (routeStatusGroup) routeStatusGroup.style.display = 'block';
-        if (routeStatusDivider) routeStatusDivider.style.display = '';
+        if (marksToggle) marksToggle.style.display = '';
+        if (marksActions) marksActions.style.display = '';
         mobileRouteMarkBtns.forEach(b => b.style.display = 'inline-flex');
     } else {
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = '';
@@ -3518,8 +3514,8 @@ function updateBulkBar() {
         if (sidebarRefuse) sidebarRefuse.style.display = '';
         if (sidebarDelete) sidebarDelete.style.display = '';
         if (sidebarSecondary) sidebarSecondary.style.display = '';
-        if (routeStatusGroup) routeStatusGroup.style.display = 'none';
-        if (routeStatusDivider) routeStatusDivider.style.display = 'none';
+        if (marksToggle) marksToggle.style.display = 'none';
+        if (marksActions) marksActions.style.display = 'none';
         mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
     }
 }
@@ -4712,6 +4708,19 @@ function bulkMoveToRoute() {
 function toggleBulkSecondary() {
     const sec = document.getElementById('bulkSecondaryActions');
     const tog = document.getElementById('bulkMoreToggle');
+    if (sec.classList.contains('expanded')) {
+        sec.classList.remove('expanded');
+        tog.classList.remove('expanded');
+    } else {
+        sec.classList.add('expanded');
+        tog.classList.add('expanded');
+    }
+}
+
+// Toggle collapsible marks (Відмітки) submenu
+function toggleBulkMarks() {
+    const sec = document.getElementById('bulkMarksActions');
+    const tog = document.getElementById('bulkMarksToggle');
     if (sec.classList.contains('expanded')) {
         sec.classList.remove('expanded');
         tog.classList.remove('expanded');

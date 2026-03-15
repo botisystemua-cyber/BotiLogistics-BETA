@@ -4388,14 +4388,14 @@ function renderRoutePassengers() {
 
     let html = '';
 
-    // Перемикач Усього / Відправка зверху
+    // Перемикач Рейси / Відправка зверху
     const currentSheetName = filters.routeVehicle || '';
     const showDispatchToggle = currentSheetName && currentSheetName !== 'all';
     if (showDispatchToggle) {
         html += `
             <div class="dispatch-toggle-bar">
                 <button class="dispatch-toggle-btn active-regular" onclick="switchToRegularView()">
-                    📋 Усього <span class="toggle-count">${routeStats.total}</span>
+                    📋 Рейси <span class="toggle-count">${routeStats.total}</span>
                 </button>
                 <button class="dispatch-toggle-btn" onclick="switchToDispatchView()">
                     📦 Відправка <span class="toggle-count" id="dispatchToggleCount">${dispatchData.length || '...'}</span>
@@ -4948,7 +4948,7 @@ function renderDispatchView(container) {
     html += `
         <div class="dispatch-toggle-bar">
             <button class="dispatch-toggle-btn" onclick="switchToRegularView()">
-                📋 Усього <span class="toggle-count">${routeStats.total}</span>
+                📋 Рейси <span class="toggle-count">${routeStats.total}</span>
             </button>
             <button class="dispatch-toggle-btn active-dispatch" onclick="switchToDispatchView()">
                 📦 Відправка <span class="toggle-count">${dispatchData.length}</span>
@@ -4980,18 +4980,10 @@ function renderDispatchView(container) {
         return;
     }
 
-    // Тільки загальна кількість (без статусів)
+    // Кнопка оновлення
     html += `
-        <div class="route-stats-box">
-            <div style="display:flex;justify-content:center;align-items:center;gap:12px;">
-                <div class="route-stat-item active" style="background:#f97316;flex:0 0 auto;padding:10px 24px;">
-                    <div class="route-stat-num">${dispatchData.length}</div>
-                    <div class="route-stat-label">Всього</div>
-                </div>
-            </div>
-            <div style="text-align:center;margin-top:10px;">
-                <button onclick="dispatchLastUpdate=0;renderRoutePassengers();" style="padding:8px 20px;border:none;border-radius:6px;background:#f97316;color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button>
-            </div>
+        <div style="text-align:center;margin:10px 0;">
+            <button onclick="dispatchLastUpdate=0;renderRoutePassengers();" style="padding:8px 20px;border:none;border-radius:6px;background:#f97316;color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button>
         </div>
     `;
 
@@ -5116,7 +5108,6 @@ function renderDispatchView(container) {
                 <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.phone}',event)">💬 Писати</button>
                 <button class="btn-card-action btn-map" onclick="event.stopPropagation();openMapModal('${uk}')">🗺️ Карта</button>
                 <button class="btn-card-action btn-edit" onclick="event.stopPropagation();editPackage('${uk}')">✏️ Редагувати</button>
-                <button class="btn-card-action" style="background:#fee2e2;color:#dc2626;" onclick="event.stopPropagation();routeRefusePackage('${uk}')">❌ Відмова</button>
                 <button class="btn-card-action btn-delete" onclick="event.stopPropagation();showRouteDeleteChoice('${uk}')">🗑️ Видалити</button>
             </div>
         </div>`;

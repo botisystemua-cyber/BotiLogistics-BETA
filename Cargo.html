@@ -978,7 +978,47 @@
         .bulk-sidebar-close-btn:hover {
             background: rgba(255,255,255,0.1);
         }
-        
+        .bulk-sidebar-more-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border: 1px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .bulk-sidebar-more-toggle:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: rgba(255,255,255,0.5);
+        }
+        .bulk-sidebar-more-toggle .toggle-arrow {
+            transition: transform 0.3s ease;
+            font-size: 10px;
+        }
+        .bulk-sidebar-more-toggle.expanded .toggle-arrow {
+            transform: rotate(180deg);
+        }
+        .bulk-sidebar-secondary {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .bulk-sidebar-secondary.expanded {
+            max-height: 300px;
+            opacity: 1;
+        }
+
         /* Стара панель - приховуємо на PC */
         @media (min-width: 1100px) {
             .bulk-actions-bar { display: none !important; }
@@ -1845,6 +1885,23 @@
                 <span class="btn-icon">💀</span> Видалити назавжди
             </button>
         </div>
+        <button class="bulk-sidebar-more-toggle bulk-route-marks-toggle" id="bulkMarksToggle" onclick="toggleBulkMarks()" style="display:none;">
+            <span>🏷️ Відмітки</span> <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="bulk-sidebar-secondary" id="bulkMarksActions" style="display:none;">
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('in-progress')" style="background:rgba(33,150,243,0.25);">
+                <span class="btn-icon">🔄</span> В процесі
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('completed')" style="background:rgba(76,175,80,0.25);">
+                <span class="btn-icon">✅</span> Готово
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('cancelled')" style="background:rgba(220,53,69,0.25);">
+                <span class="btn-icon">❌</span> Відмова
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('pending')" style="background:rgba(255,193,7,0.15);">
+                <span class="btn-icon">⏳</span> Очікує
+            </button>
+        </div>
     </div>
     <div class="bulk-sidebar-close">
         <button class="bulk-sidebar-close-btn" onclick="clearSelection()">
@@ -1869,6 +1926,9 @@
             <button class="bulk-btn" onclick="bulkDelete()" style="background:rgba(220,53,69,0.4);">🗑️ Вид</button>
             <button class="bulk-btn archive" id="btnBulkArchive" onclick="bulkArchive()">📦 Архів</button>
             <button class="bulk-btn restore" id="btnBulkRestore" onclick="bulkRestore()" style="display:none;background:var(--success);">↩️</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('in-progress')" style="display:none;background:rgba(33,150,243,0.4);">🔄 Процес</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('completed')" style="display:none;background:rgba(76,175,80,0.4);">✅ Готово</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('cancelled')" style="display:none;background:rgba(220,53,69,0.4);">❌ Відмова</button>
         </div>
     </div>
 </div>
@@ -3743,6 +3803,20 @@ function updateBulkBar() {
     if (sidebarRestore) sidebarRestore.style.display = canRestore ? 'flex' : 'none';
     if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
     if (sidebarArchive) sidebarArchive.style.display = isRouteView ? 'none' : 'flex';
+
+    // Відмітки — показуємо тільки в маршрутах
+    const marksToggle = document.getElementById('bulkMarksToggle');
+    const marksActions = document.getElementById('bulkMarksActions');
+    const mobileRouteMarkBtns = document.querySelectorAll('.bulk-route-mark-btn');
+    if (isRouteView) {
+        if (marksToggle) marksToggle.style.display = '';
+        if (marksActions) marksActions.style.display = '';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'inline-flex');
+    } else {
+        if (marksToggle) marksToggle.style.display = 'none';
+        if (marksActions) marksActions.style.display = 'none';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
+    }
 }
 
 function handleSearch() { filters.search = document.getElementById('searchInput').value; render(); }
@@ -4029,6 +4103,7 @@ function showRoute(sheetName) {
             const items = routeData.passengers || routeData.packages || [];
             routePassengers = items.map((p, idx) => ({
                 ...p,
+                driverStatus: p.parcelStatus || p.driverStatus || 'pending',
                 _uid: `route_${sheetName.replace(/\s+/g,'_')}_${idx}`,
                 _isRouteData: true,
                 _routeSheet: sheetName,
@@ -4103,6 +4178,7 @@ async function loadAllRoutePassengers() {
                 if (items.length > 0) {
                     const mapped = items.map((p, idx) => ({
                         ...p,
+                        driverStatus: p.parcelStatus || p.driverStatus || 'pending',
                         _uid: `route_${route.name.replace(/\s+/g, '_')}_${idx}`,
                         _isRouteData: true,
                         _routeSheet: route.name,
@@ -6472,6 +6548,99 @@ function toggleBulkGroup(group) {
     if (!header || !items) return;
     header.classList.toggle('collapsed');
     items.classList.toggle('collapsed');
+}
+
+// Toggle collapsible marks (Відмітки) submenu
+function toggleBulkMarks() {
+    const sec = document.getElementById('bulkMarksActions');
+    const tog = document.getElementById('bulkMarksToggle');
+    if (sec.classList.contains('expanded')) {
+        sec.classList.remove('expanded');
+        tog.classList.remove('expanded');
+    } else {
+        sec.classList.add('expanded');
+        tog.classList.add('expanded');
+    }
+}
+
+// Масова зміна відмітки (driverStatus/parcelStatus) для маршрутних посилок
+function bulkSetDriverStatus(newStatus) {
+    if (selectedIds.size === 0) return showToast('Оберіть посилки');
+
+    const statusLabels = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };
+    const label = statusLabels[newStatus] || newStatus;
+
+    const selected = routePassengers.filter(p => selectedIds.has(p._uid));
+    if (selected.length === 0) return showToast('Немає вибраних посилок у маршруті');
+
+    if (!confirm(`${label}\n\nЗмінити відмітку для ${selected.length} посилок?`)) return;
+
+    showRouteProgress('Оновлюю відмітку...');
+
+    const items = selected.map(p => ({
+        sheet: p._routeSheet || currentRouteVehicle?.routeSheet || currentRouteVehicle?.name,
+        rowNum: p.rowNum || p._rowNum,
+        expectedId: p.id,
+        parcelStatus: newStatus
+    }));
+
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'updateMultiple',
+            companyId: getCompanyId(),
+            payload: { items: items }
+        })
+    })
+    .then(r => r.text())
+    .then(text => {
+        hideRouteProgress();
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                showToast(`${label} — оновлено ${data.updated || selected.length} записів`);
+            } else {
+                showToast('⚠️ ' + (data.error || 'Помилка оновлення'));
+            }
+        } catch(e) {
+            showToast(`${label} — оновлено`);
+        }
+        selected.forEach(p => {
+            p.driverStatus = newStatus;
+            p.parcelStatus = newStatus;
+        });
+        routeStats = { total: routePassengers.length, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
+        routePassengers.forEach(p => {
+            const ds = p.driverStatus || 'pending';
+            if (ds === 'pending') routeStats.pending++;
+            else if (ds === 'in-progress') routeStats.inProgress++;
+            else if (ds === 'completed') routeStats.completed++;
+            else if (ds === 'cancelled') routeStats.cancelled++;
+        });
+        clearSelection();
+        renderRoutePassengers();
+    })
+    .catch(err => {
+        hideRouteProgress();
+        console.warn('bulkSetDriverStatus error:', err);
+        selected.forEach(p => {
+            p.driverStatus = newStatus;
+            p.parcelStatus = newStatus;
+        });
+        routeStats = { total: routePassengers.length, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
+        routePassengers.forEach(p => {
+            const ds = p.driverStatus || 'pending';
+            if (ds === 'pending') routeStats.pending++;
+            else if (ds === 'in-progress') routeStats.inProgress++;
+            else if (ds === 'completed') routeStats.completed++;
+            else if (ds === 'cancelled') routeStats.cancelled++;
+        });
+        clearSelection();
+        renderRoutePassengers();
+        showToast(`${label} — збережено локально`);
+        setTimeout(() => silentSync(), 2000);
+    });
 }
 
 function inlineSave(uid, field, value) {

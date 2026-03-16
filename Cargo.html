@@ -3878,14 +3878,19 @@ function updateBulkBar() {
         if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'none';
     }
 
-    // Відмітки — показуємо тільки в маршрутах
+    // Відмітки — показуємо тільки в маршрутах (для dispatch — тільки кнопку з бета-повідомленням)
     const marksToggle = document.getElementById('bulkMarksToggle');
     const marksActions = document.getElementById('bulkMarksActions');
     const mobileRouteMarkBtns = document.querySelectorAll('.bulk-route-mark-btn');
-    if (isRouteView) {
+    if (isRouteView && !isDispatchView) {
         if (marksToggle) marksToggle.style.display = '';
         if (marksActions) marksActions.style.display = '';
         mobileRouteMarkBtns.forEach(b => b.style.display = 'inline-flex');
+    } else if (isRouteView && isDispatchView) {
+        // Для відправки — показуємо кнопку Відмітки, але з бета-повідомленням (guard в toggleBulkMarks)
+        if (marksToggle) marksToggle.style.display = '';
+        if (marksActions) marksActions.style.display = 'none'; // Ховаємо підменю відміток
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'none'); // На мобільному ховаємо окремі кнопки відміток
     } else {
         if (marksToggle) marksToggle.style.display = 'none';
         if (marksActions) marksActions.style.display = 'none';
@@ -4665,7 +4670,7 @@ function confirmRouteRefuse(uid) {
 
 // Архівація посилки в маршруті
 function routeArchivePackage(uid) {
-    const p = routePassengers.find(rp => rp._uid === uid);
+    const p = routePassengers.find(rp => rp._uid === uid) || dispatchData.find(rp => rp._uid === uid);
     if (!p) return;
 
     if (!confirm(`📦 Архівувати посилку?\n\n${p.name || 'Без імені'} (${p.phone || '—'})\n\nПосилка зникне з маршруту.`)) return;
@@ -4675,10 +4680,15 @@ function routeArchivePackage(uid) {
 
 // Універсальна функція зміни статусу посилки в маршруті
 function executeRouteStatusAction(uid, status, noteText) {
-    const p = routePassengers.find(rp => rp._uid === uid);
+    const isDispatch = uid.startsWith('disp_');
+    const p = isDispatch
+        ? dispatchData.find(rp => rp._uid === uid)
+        : routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
 
-    const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName;
+    const sheetName = isDispatch
+        ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle))
+        : (p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName);
     if (!sheetName) return showToast('Невідомий аркуш маршруту');
 
     const statusNames = { 'refused': '❌ Відмова', 'deleted': '🗑️ Видалено', 'archived': '📦 Архів' };
@@ -4696,8 +4706,12 @@ function executeRouteStatusAction(uid, status, noteText) {
     }
 
     // 2) Прибираємо з локального масиву маршруту одразу
-    routePassengers = routePassengers.filter(rp => rp._uid !== uid);
-    routeStats.total = routePassengers.length;
+    if (isDispatch) {
+        dispatchData = dispatchData.filter(rp => rp._uid !== uid);
+    } else {
+        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+        routeStats.total = routePassengers.length;
+    }
     openActionsId = null;
     renderRoutePassengers();
     updateAllCounts();
@@ -5108,6 +5122,7 @@ function renderDispatchView(container) {
                 <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.phone}',event)">💬 Писати</button>
                 <button class="btn-card-action btn-map" onclick="event.stopPropagation();openMapModal('${uk}')">🗺️ Карта</button>
                 <button class="btn-card-action btn-edit" onclick="event.stopPropagation();editPackage('${uk}')">✏️ Редагувати</button>
+                <button class="btn-card-action" style="background:#fee2e2;color:#dc2626;" onclick="event.stopPropagation();routeRefusePackage('${uk}')">❌ Відмова</button>
                 <button class="btn-card-action btn-delete" onclick="event.stopPropagation();showRouteDeleteChoice('${uk}')">🗑️ Видалити</button>
             </div>
         </div>`;
@@ -5693,11 +5708,11 @@ function bulkArchive() {
         const p = findPackageByUid(uid);
         if (!p) return;
         allFoundPackages.push(p);
-        const sheet = p._sheet || p.sheet;
+        const sheet = p._isDispatch ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle)) : (p._sheet || p.sheet);
         const rowNum = p._rowNum || p.rowNum;
         if (sheet && rowNum) {
             const item = { sheet, rowNum };
-            if (p._isRouteData) {
+            if (p._isRouteData || p._isDispatch) {
                 routePackages.push(item);
             } else {
                 mainPackages.push(item);
@@ -5721,8 +5736,8 @@ function bulkArchive() {
             p.statusDate = today;
             p.archivedBy = 'archived_' + getCompanyId();
 
-            // Для маршрутних — оновлюємо головний пакет (як executeRouteStatusAction)
-            if (p._isRouteData) {
+            // Для маршрутних та dispatch — оновлюємо головний пакет
+            if (p._isRouteData || p._isDispatch) {
                 const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
                 if (mainPkg && mainPkg !== p) {
                     if (mainPkg.status !== 'archived') mainPkg.prevStatus = mainPkg.status || 'new';
@@ -5735,11 +5750,15 @@ function bulkArchive() {
             }
         });
 
-        // Видаляємо маршрутних з routePassengers (як executeRouteStatusAction)
-        const archivedUids = new Set(allFoundPackages.filter(p => p._isRouteData).map(p => p._uid));
-        if (archivedUids.size > 0) {
-            routePassengers = routePassengers.filter(rp => !archivedUids.has(rp._uid));
+        // Видаляємо маршрутних з routePassengers та dispatch з dispatchData
+        const archivedRouteUids = new Set(allFoundPackages.filter(p => p._isRouteData).map(p => p._uid));
+        const archivedDispatchUids = new Set(allFoundPackages.filter(p => p._isDispatch).map(p => p._uid));
+        if (archivedRouteUids.size > 0) {
+            routePassengers = routePassengers.filter(rp => !archivedRouteUids.has(rp._uid));
             routeStats.total = routePassengers.length;
+        }
+        if (archivedDispatchUids.size > 0) {
+            dispatchData = dispatchData.filter(dp => !archivedDispatchUids.has(dp._uid));
         }
 
         refreshAfterAction();
@@ -5875,7 +5894,11 @@ function bulkDelete() {
 
 // Масове видалення з маршруту — назавжди
 function bulkDeleteFromRoute() {
-    const selected = routePassengers.filter(p => selectedIds.has(p._uid));
+    // Збираємо вибрані і з routePassengers, і з dispatchData
+    const selectedRoute = routePassengers.filter(p => selectedIds.has(p._uid));
+    const selectedDispatch = dispatchData.filter(p => selectedIds.has(p._uid));
+    const selected = [...selectedRoute, ...selectedDispatch];
+
     if (selected.length === 0) return showToast('⚠️ Немає вибраних посилок у маршруті');
 
     if (!confirm(`🗑️ Видалити назавжди ${selected.length} записів з маршруту?\n\nЦю дію НЕ МОЖНА скасувати!`)) return;
@@ -5883,7 +5906,9 @@ function bulkDeleteFromRoute() {
     showRouteProgress('Видаляю з маршруту...');
 
     const deletePromises = selected.map(p => {
-        const sheetName = p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName;
+        const sheetName = p._isDispatch
+            ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle))
+            : (p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName);
         return fetch(ROUTE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
@@ -5909,6 +5934,7 @@ function bulkDeleteFromRoute() {
             if (mainPkg) mainPkg.status = 'work';
         });
         routePassengers = routePassengers.filter(p => !deletedUids.has(p._uid));
+        dispatchData = dispatchData.filter(p => !deletedUids.has(p._uid));
         routeStats.total = routePassengers.length;
         routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
         routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
@@ -5967,10 +5993,14 @@ function bulkDeleteForever() {
     
     // Поки що просто ховаємо локально
     const deletedRouteUids = new Set();
+    const deletedDispatchUids = new Set();
     selectedIds.forEach(uid => {
         const p = findPackageByUid(uid);
         if (p && p._isRouteData) {
             deletedRouteUids.add(p._uid);
+        }
+        if (p && p._isDispatch) {
+            deletedDispatchUids.add(p._uid);
         }
         const idx = packages.findIndex(p => {
             const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${packages.indexOf(p)}`;
@@ -5985,6 +6015,10 @@ function bulkDeleteForever() {
     if (deletedRouteUids.size > 0) {
         routePassengers = routePassengers.filter(rp => !deletedRouteUids.has(rp._uid));
         routeStats.total = routePassengers.length;
+    }
+    // Видаляємо dispatch з dispatchData
+    if (deletedDispatchUids.size > 0) {
+        dispatchData = dispatchData.filter(dp => !deletedDispatchUids.has(dp._uid));
     }
 
     const deletedCount = selectedIds.size;
@@ -6117,18 +6151,39 @@ function getStatusName(status) {
 
 // SELECT ALL VISIBLE
 function selectAllVisible() {
-    const data = getFilteredData();
-    const visibleUids = data.map((p, idx) => 
-        (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${idx}`
-    );
-    
+    const isRouteView = filters.statusFilter === 'route' && filters.routeVehicle;
+
+    let visibleUids;
+    if (isRouteView && isDispatchView) {
+        // Dispatch view — вибираємо з dispatchData
+        visibleUids = dispatchData.map(p => p._uid).filter(Boolean);
+    } else if (isRouteView) {
+        // Route view — вибираємо з routePassengers
+        let filtered = routePassengers;
+        if (routeStatusFilter !== 'all') {
+            filtered = routePassengers.filter(p => p.driverStatus === routeStatusFilter);
+        }
+        visibleUids = filtered.map(p => p._uid).filter(Boolean);
+    } else {
+        const data = getFilteredData();
+        visibleUids = data.map((p, idx) =>
+            (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${idx}`
+        );
+    }
+
+    if (visibleUids.length === 0) return showToast('⚠️ Немає записів для вибору');
+
     // Перевіряємо чи всі вже вибрані
     const allSelected = visibleUids.every(uid => selectedIds.has(uid));
-    
+
     if (allSelected) {
         // Знімаємо всі галочки (але НЕ ховаємо sidebar)
         visibleUids.forEach(uid => selectedIds.delete(uid));
-        render();
+        if (isRouteView) {
+            renderRoutePassengers();
+        } else {
+            render();
+        }
         // Оновлюємо тільки лічильники, НЕ ховаємо панель
         document.getElementById('bulkCount').textContent = selectedIds.size;
         const sidebarCount = document.getElementById('bulkCountSidebar');
@@ -6137,7 +6192,11 @@ function selectAllVisible() {
     } else {
         // Ставимо всі галочки
         visibleUids.forEach(uid => selectedIds.add(uid));
-        render();
+        if (isRouteView) {
+            renderRoutePassengers();
+        } else {
+            render();
+        }
         updateBulkBar();
         showToast(`☑️ Вибрано ${visibleUids.length}`);
     }
@@ -6819,7 +6878,33 @@ function savePackage() {
     }; 
     
     if (isEditing && existingP) {
-        if (existingP._isRouteData) {
+        if (existingP._isDispatch) {
+            // Dispatch посилка — оновлюємо в dispatchData
+            const di = dispatchData.findIndex(p => p._uid === editingId);
+            if (di !== -1) {
+                dispatchData[di] = {...dispatchData[di], ...d};
+                // Зберігаємо на сервері через маршрутний API
+                const sheetName = dispatchData[di]._dispatchSheet || getDispatchSheetName(filters.routeVehicle);
+                const rowNum = dispatchData[di].rowNum;
+                if (sheetName && rowNum) {
+                    const fieldsToUpdate = ['name','phone','phoneReg','address','ttn','weight','amount','payStatus','payment','timing','note','smsNote','direction'];
+                    fieldsToUpdate.forEach(field => {
+                        if (d[field] !== undefined) {
+                            fetch(ROUTE_API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: JSON.stringify({
+                                    action: 'updateField',
+                                    companyId: getCompanyId(),
+                                    payload: { sheet: sheetName, rowNum: rowNum, field: field, value: d[field] }
+                                })
+                            }).catch(err => console.warn('Dispatch save error:', err));
+                        }
+                    });
+                }
+                renderRoutePassengers();
+            }
+        } else if (existingP._isRouteData) {
             // Маршрутна посилка — оновлюємо в routePassengers
             const ri = routePassengers.findIndex(p => p._uid === editingId);
             if (ri !== -1) {
@@ -7018,6 +7103,11 @@ function toggleBulkGroup(group) {
 
 // Toggle collapsible marks (Відмітки) submenu
 function toggleBulkMarks() {
+    // В режимі відправки — показуємо повідомлення про бета
+    if (isDispatchView) {
+        showToast('🚧 Відмітки наразі недоступні для Відправки (бета-версія). Спробуйте у режимі Рейсів.');
+        return;
+    }
     const sec = document.getElementById('bulkMarksActions');
     const tog = document.getElementById('bulkMarksToggle');
     if (sec.classList.contains('expanded')) {
@@ -7032,6 +7122,11 @@ function toggleBulkMarks() {
 // Масова зміна відмітки (driverStatus/parcelStatus) для маршрутних посилок
 function bulkSetDriverStatus(newStatus) {
     if (selectedIds.size === 0) return showToast('Оберіть посилки');
+
+    // В режимі відправки — бета-повідомлення
+    if (isDispatchView) {
+        return showToast('🚧 Відмітки наразі недоступні для Відправки (бета-версія). Спробуйте у режимі Рейсів.');
+    }
 
     const statusLabels = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };
     const label = statusLabels[newStatus] || newStatus;

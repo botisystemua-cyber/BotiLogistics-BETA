@@ -1,109 +1,150 @@
 # BOTI Logistics — CRM System
 
-CRM-система для логістичної компанії. Управління пасажирами, посилками, маршрутами та водіями.
+CRM-система для логістичної компанії BOTI. Управління пасажирами, посилками (карго), маршрутами та водіями.
+
+Архітектура: статичні HTML-сторінки (фронтенд) + Google Apps Script (бекенд) + Google Sheets (база даних).
+
+---
 
 ## Структура проекту
 
-### HTML-фронтенд (статичні сторінки)
-
-| Файл | Призначення |
-|------|-------------|
-| `Login.html` | Авторизація (логін/пароль → перенаправлення за роллю) |
-| `Passengers.html` | CRM пасажирів (UA↔EU) — менеджер |
-| `Cargo.html` | CRM посилок (ТТН, кур'єр) — менеджер |
-| `Drivers.html` | Панель водія — маршрути, навігація, статуси |
-
-### Google Apps Script (бекенд)
-
-| Файл | Сервіс | Таблиця (Spreadsheet ID) |
-|------|--------|--------------------------|
-| `script-passangers.gs` | CRM Пасажири | `1SvWAVYNKkWl7Sx_wWhTWPlDyKU9hIQCQzcWBTUGG2i8` |
-| `script-cargo.gs` | CRM Посилки | `1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY` |
-| `script-marshrut-passengers.gs` | Маршрути Пасажири | `1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0` |
-| `script-marshrut-cargo.gs` | Маршрути Посилки | `17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo` |
-| `script-auth-master.gs` | Авторизація | Окрема таблиця з аркушем "Паролі" |
-| `skript-arhiv.gs` | Архів | `1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U` |
-
-## API URL-и (deploy endpoints)
-
-### Авторизація
 ```
-AUTH_API_URL = AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4kkt4-pVqQmpE452vciAzD0tiF62AFbPJBYzkLw
-Скрипт: script-auth-master.gs
+BOTI-Logistics/
+├── Login.html                    — Авторизація (логін/пароль → перенаправлення за роллю)
+├── Passengers.html               — CRM пасажирів (UA↔EU)
+├── Cargo.html                    — CRM посилок (ТТН, кур'єр, маршрути карго)
+├── Drivers.html                  — Панель водія (маршрути, навігація, статуси)
+├── script-passengers.gs          — Бекенд: CRM пасажирів
+├── script-cargo.gs               — Бекенд: CRM посилок
+├── script-marshrut-passengers.gs — Бекенд: маршрути пасажирів
+├── script-marshrut-cargo.gs      — Бекенд: маршрути посилок
+├── script-auth-master.gs         — Бекенд: авторизація
+└── README.md
 ```
 
-### Пасажири (CRM)
-```
-API_URL = AKfycbwYosdq_nL89nlZXHpBQd4mh3bzJt7grXaEATPplmQm71Zhg_W2WVI6NSDi9y_M2SZwnw
-Скрипт: script-passangers.gs
-Таблиця: Logistics-Passengers
-```
+---
 
-### Посилки (CRM)
-```
-API_URL = AKfycbyjygnhQtrTFrbmmuNEdulvsIgD7eOKagyD7_8Ogc-FOPDlEhl6i-Oo4ewPkb2SZRbz5g
-Скрипт: script-cargo.gs
-Таблиця: Logistics-Cargo
-```
-
-### Маршрути Пасажири
-```
-API_URL = AKfycbwd_jczf4mQRkYJgFUG2IhVGkZF-LQ9pmVEFew9gMNn2ziiKsrC3McQ4h5rfaP_FyS9
-Скрипт: script-marshrut-passengers.gs
-Використовується: Drivers.html (PASSENGER_API_URL, ROUTES_API_URL), Passengers.html (ROUTE_API_URL)
-```
-
-### Маршрути Посилки
-```
-API_URL = AKfycbwHiX1phfTEMXKQfBgHATRQ116-TFZYiJeXiswKu4eAhkjPTyRO9XMezre-LZwLPiU
-Скрипт: script-marshrut-cargo.gs
-Використовується: Drivers.html (DELIVERY_API_URL), Cargo.html (ROUTE_API_URL)
-```
-
-### Архів
-```
-API_URL = AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn
-Скрипт: skript-arhiv.gs
-```
-
-## Аркуші Google Sheets
-
-### Пасажири (CRM)
-- `Україна-єв` — UA→EU пасажири
-- `Європа-ук` — EU→UA пасажири
-- `Логи` — логування дій
-
-### Посилки (CRM)
-- `Реєстрація ТТН` — UA→EU посилки
-- `Виклик курєра` — EU→UA посилки
-- `Логи` — логування дій
-
-### Маршрути Посилки
-- `Братислава марш.`, `Нітра марш.`, `Словаччина марш.`, `Кошице+прешов марш.`
-- `Маршрути водіїв` — логи
-- `Провірка розсилки` — розсилка
-
-### Маршрути Пасажири
-- Динамічні аркуші (створюються через CRM)
-- `Логи`, `Провірка розсилки`
-
-### Архів
-- `Посилки`, `Посилки маршрут` — архів посилок
-- `Пасажири`, `Пасажири маршрут` — архів пасажирів
-- `Логи`
-
-## Ролі
+## Ролі користувачів
 
 | Роль | Сторінка | Можливості |
 |------|----------|------------|
-| Менеджер | Passengers.html / Cargo.html | CRUD, маршрути, архівація, розсилка |
-| Водій | Drivers.html | Перегляд маршрутів, оновлення статусів, навігація |
+| Менеджер | `Passengers.html` | CRUD пасажирів, створення маршрутів, архівація, розсилка |
+| Менеджер | `Cargo.html` | CRUD посилок, маршрути карго, архівація, розсилка |
+| Водій | `Drivers.html` | Перегляд маршрутів (пасажири + карго), оновлення статусів, навігація |
+
+Авторизація через `Login.html` → перенаправлення на відповідну сторінку залежно від ролі.
+
+---
+
+## API Endpoints (Google Apps Script deploy URLs)
+
+### Авторизація
+```
+URL:    https://script.google.com/macros/s/AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4kkt4-pVqQmpE452vciAzD0tiF62AFbPJBYzkLw/exec
+Скрипт: script-auth-master.gs
+Де:     Login.html → AUTH_API_URL
+```
+
+### CRM Пасажири
+```
+URL:    https://script.google.com/macros/s/AKfycbyqpnqCPxeLm8NJTxm1Pgyml4A1BmwiWsA-yvwBbgS7QAP8r9cHmuB3Yioup4Bi3aFteQ/exec
+Скрипт: script-passengers.gs
+Де:     Passengers.html → API_URL
+```
+
+### Маршрути Пасажирів
+```
+URL:    https://script.google.com/macros/s/AKfycbw08lN_3L-52v68_H-I27JtOptPYAnNI02hsrKgzlb0r6BUb4iZJ2IffrT2KYFfkb8n/exec
+Скрипт: script-marshrut-passengers.gs
+Де:     Passengers.html → ROUTE_API_URL
+        Drivers.html → CONFIG.PASSENGER_API_URL
+```
+
+### CRM Посилки (Карго)
+```
+URL:    https://script.google.com/macros/s/AKfycbw3Ul5TXVWeSQqAT6oaTW6xyfs6-PlfRFGsdp2kAZT0w4q9NoVsu2B7zMnzrfytMSP8Og/exec
+Скрипт: script-cargo.gs
+Де:     Cargo.html → API_URL
+```
+
+### Маршрути Посилок (Карго)
+```
+URL:    https://script.google.com/macros/s/AKfycbx4JV7tK_GeQPCnHFpCxVXg6LccS4QHPPxR6lxTWCK2wTJthccwIzWbNVddGWJwOGxG/exec
+Скрипт: script-marshrut-cargo.gs
+Де:     Cargo.html → ROUTE_API_URL
+        Drivers.html → CONFIG.DELIVERY_API_URL
+```
+
+### Drivers.html (водій) — використовує 2 API
+```
+DELIVERY_API_URL:  https://script.google.com/macros/s/AKfycbxIWqEOOWiHEec6-y-_JWNCYNKnAEtU1X0La_4kMZuk8fe_ueFq2vHub1K2Zm-qe7ho/exec  (маршрути карго)
+PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbwURZGmXohAcuqzdKgEZBaRCwLorswNA99vwAGbUGloLQ0Ivj10OJHeqbKcAKNmf3MT/exec  (маршрути пасажирів)
+```
+
+---
+
+## Google Sheets (база даних)
+
+Кожен бекенд-скрипт працює зі своєю Google Таблицею.
+
+### Пасажири — `script-passengers.gs`
+- **Spreadsheet ID:** `1SvWAVYNKkWl7Sx_wWhTWPlDyKU9hIQCQzcWBTUGG2i8`
+- **Route Spreadsheet ID:** `1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0`
+- Аркуші: `Україна-єв` (UA→EU), `Європа-ук` (EU→UA), `Логи`
+
+### Посилки (Карго) — `script-cargo.gs`
+- **Spreadsheet ID:** `1E9wYOmVTtlDc52kQAekSpc6rw7Mdnot-m24pRvTUlaY`
+- Аркуші: `Реєстрація ТТН` (UA→EU), `Виклик курєра` (EU→UA), `Логи`
+
+### Маршрути Пасажирів — `script-marshrut-passengers.gs`
+- **Spreadsheet ID:** `1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0`
+- Аркуші: динамічні (створюються через CRM), `Логи`, `Провірка розсилки`
+
+### Маршрути Посилок (Карго) — `script-marshrut-cargo.gs`
+- **Spreadsheet ID:** `17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo`
+- Аркуші: `Братислава марш.`, `Нітра марш.`, `Словаччина марш.`, `Кошице+прешов марш.` та інші
+- Спец. аркуші: `Маршрути водіїв` (логи), `Провірка розсилки` (розсилка)
+
+---
+
+## Як працює система
+
+### Потік даних
+1. **Менеджер** створює запис (пасажир/посилка) через CRM-сторінку
+2. Дані зберігаються в Google Sheets через Apps Script API
+3. **Менеджер** формує маршрут (відправку) — дані копіюються на відповідний аркуш маршруту
+4. **Водій** бачить маршрут у `Drivers.html`, оновлює статуси (забрав, доставив)
+5. Після завершення — записи архівуються
+
+### Видалення рядків (safe delete)
+При видаленні записів з аркушів маршрутів використовується захист від помилки Google Sheets "не може мати 0 рядків":
+- Перед `deleteRow()` перевіряється чи це не останній рядок даних
+- Якщо останній — `clearContent()` замість видалення
+- Додатково `try-catch` fallback на всі операції видалення
+
+### Архівація
+Архівація працює через статуси (`archived`, `refused`, `deleted`, `transferred`) і поле `ARCHIVE_ID` / `Дата архів`. Записи не видаляються фізично, а позначаються відповідним статусом.
+
+---
 
 ## Деплой скриптів
 
-1. Відкрий відповідну Google Таблицю → Розширення → Apps Script
-2. Заміни код на відповідний `.gs` файл
-3. Deploy → New deployment → Web app
-   - Execute as: Me
-   - Who has access: Anyone
-4. Скопіюй URL і оновити в HTML файлах
+1. Відкрий відповідну Google Таблицю → **Розширення** → **Apps Script**
+2. Заміни код на відповідний `.gs` файл з цього репозиторію
+3. **Deploy** → **New deployment** → **Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+4. Скопіюй новий URL і оновити відповідну змінну в HTML файлі
+5. Закоміть зміни в репозиторій
+
+### Де оновлювати URL після деплою
+
+| Скрипт | HTML файл | Змінна |
+|--------|-----------|--------|
+| `script-auth-master.gs` | `Login.html` | `AUTH_API_URL` |
+| `script-passengers.gs` | `Passengers.html` | `API_URL` |
+| `script-marshrut-passengers.gs` | `Passengers.html` | `ROUTE_API_URL` |
+| `script-marshrut-passengers.gs` | `Drivers.html` | `CONFIG.PASSENGER_API_URL` |
+| `script-cargo.gs` | `Cargo.html` | `API_URL` |
+| `script-marshrut-cargo.gs` | `Cargo.html` | `ROUTE_API_URL` |
+| `script-marshrut-cargo.gs` | `Drivers.html` | `CONFIG.DELIVERY_API_URL` |

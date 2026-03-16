@@ -5369,10 +5369,10 @@ function archivePackage(id) {
     p.archivedBy = 'archived_' + getCompanyId();
 
     // Якщо є серверні дані — видаляємо/архівуємо на сервері з companyId
-    const pSheet = p._sheet || p.sheet;
+    const pSheet = p._sheet || p.sheet || p._dispatchSheet || (p._isDispatch ? getDispatchSheetName(filters.routeVehicle) : '');
     const pRowNum = p._rowNum || p.rowNum;
     if (pSheet && pRowNum) {
-        const isRoute = !!p._isRouteData;
+        const isRoute = !!p._isRouteData || !!p._isDispatch;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
         const body = isRoute
             ? { action: 'deletePackagesPermanently', companyId: getCompanyId(), payload: { packages: [{ sheet: pSheet, rowNum: pRowNum }] } }
@@ -5787,25 +5787,25 @@ function bulkDeleteFromRoute() {
 
     showRouteProgress('Видаляю з маршруту...');
 
-    const deletePromises = selected.map(p => {
+    // Збираємо всі елементи в один батч-запит (щоб уникнути race condition зі зміщенням рядків)
+    const allPackages = selected.map(p => {
         const sheetName = p._isDispatch
             ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle))
             : (p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName);
-        return fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'deletePackagesPermanently',
-                companyId: getCompanyId(),
-                payload: { packages: [{ sheet: sheetName, rowNum: p.rowNum }] }
-            })
-        }).then(r => r.text()).catch(err => {
-            console.warn('deleteFromRoute error:', err);
-            return '{}';
-        });
+        return { sheet: sheetName, rowNum: p.rowNum };
     });
 
-    Promise.all(deletePromises).then(() => {
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'deletePackagesPermanently',
+            companyId: getCompanyId(),
+            payload: { packages: allPackages }
+        })
+    }).then(r => r.text()).catch(err => {
+        console.warn('deleteFromRoute error:', err);
+    }).then(() => {
         hideRouteProgress();
         const deletedUids = new Set(selected.map(p => p._uid));
         // Повертаємо статус work для основних записів
@@ -5871,7 +5871,7 @@ function confirmDelete() {
         const p = findPackageByUid(uid);
         if (!p) return;
         deletedUids.add(uid);
-        const pSheet = p._sheet || p.sheet;
+        const pSheet = p._sheet || p.sheet || p._dispatchSheet || (p._isDispatch ? getDispatchSheetName(filters.routeVehicle) : '');
         const pRowNum = p._rowNum || p.rowNum;
         if (pSheet && pRowNum) {
             const isRoute = !!p._isRouteData || !!p._isDispatch;
@@ -6701,7 +6701,7 @@ function confirmDeletePassenger(uid) {
     const p = findPackageByUid(uid);
     if (!p) return;
 
-    const pSheet = p._sheet || p.sheet;
+    const pSheet = p._sheet || p.sheet || p._dispatchSheet || (p._isDispatch ? getDispatchSheetName(filters.routeVehicle) : '');
     const pRowNum = p._rowNum || p.rowNum;
 
     // Закриваємо дії картки

@@ -906,6 +906,7 @@
             document.getElementById('routeNameDisplay').textContent = route;
             showToast('Відкрито ' + route);
             loadDeliveries();
+            startDriverSync();
         }
         function showPasswordModal(route, correctPassword, routeType) {
             var modal = document.createElement('div');
@@ -952,6 +953,7 @@
             openRoute(route, routeType);
         }
         function goBack() {
+            stopDriverSync();
             showScreen('routeScreen');
         }
         async function loadDeliveries() {
@@ -1097,6 +1099,132 @@
                 renderDeliveryCards();
             } else {
                 renderPassengerCards();
+            }
+        }
+        // ============ SMART AUTO-SYNC (кожні 30 сек) ============
+        let _syncInterval = null;
+        function startDriverSync() {
+            if (_syncInterval) return;
+            _syncInterval = setInterval(silentSyncDriver, 30000);
+        }
+        function stopDriverSync() {
+            if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
+        }
+        async function silentSyncDriver() {
+            // Тільки якщо водій на екрані списку
+            var listScreen = document.getElementById('listScreen');
+            if (!listScreen || !listScreen.classList.contains('active')) return;
+            // Не оновлюємо якщо відкрита панель деталей або редагування
+            if (document.querySelector('.card-expandable.show') ||
+                document.getElementById('editOverlay')?.classList.contains('show') ||
+                document.querySelector('.cancel-reason[style*="display: block"]')) return;
+            if (!currentSheet) return;
+            try {
+                var items;
+                if (currentFilter === 'dispatch') {
+                    // Синхронізуємо відправки
+                    var resp = await fetch(CONFIG.DELIVERY_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: 'getDispatchItems',
+                            companyId: getCompanyId(),
+                            payload: { sheetName: getDispatchSheetName() }
+                        })
+                    });
+                    var dData = await resp.json();
+                    if (!dData.success) return;
+                    items = dData.items || [];
+                    // Порівнюємо — якщо кількість та ключові поля не змінились, скіпаємо
+                    if (items.length === dispatchData.length) {
+                        var same = true;
+                        for (var i = 0; i < items.length; i++) {
+                            if (items[i].rowNum !== dispatchData[i].rowNum ||
+                                items[i].name !== dispatchData[i].name ||
+                                (items[i].driverStatus || '') !== (dispatchData[i].driverStatus || '')) {
+                                same = false; break;
+                            }
+                        }
+                        if (same) return;
+                    }
+                    dispatchData = items;
+                    dispatchData.forEach(function(item, idx) {
+                        item._statusKey = 'disp_' + item.rowNum + '_' + idx;
+                        if (item.driverStatus && item.driverStatus !== 'pending') {
+                            deliveryStatuses[item._statusKey] = item.driverStatus;
+                        }
+                    });
+                    saveStatuses();
+                    dispatchLastUpdate = Date.now();
+                    renderDispatchCards();
+                    document.getElementById('countDispatch').textContent = dispatchData.length;
+                    showToast('🔄 Дані оновлено');
+                } else {
+                    // Синхронізуємо основні рейси/пасажирів
+                    var apiUrl = currentRouteType === 'delivery' ? CONFIG.DELIVERY_API_URL : CONFIG.PASSENGER_API_URL;
+                    var body = currentRouteType === 'delivery'
+                        ? { action: 'getRoutePassengers', companyId: getCompanyId(), payload: { vehicleName: currentSheet } }
+                        : { action: 'getRoutePassengers', companyId: getCompanyId(), payload: { sheetName: currentSheet } };
+                    var resp = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(body)
+                    });
+                    var rData = await resp.json();
+                    if (!rData.success) return;
+                    items = rData.passengers || rData.packages || rData.deliveries || [];
+                    if (!items || items.length === 0) return;
+                    // Порівнюємо — скіпаємо якщо нічого не змінилось
+                    if (items.length === deliveries.length) {
+                        var same = true;
+                        for (var i = 0; i < items.length; i++) {
+                            var oldKey = currentRouteType === 'delivery' ? (deliveries[i].id || deliveries[i].ttn || deliveries[i].rowNum) : deliveries[i].rowNum;
+                            var newKey = currentRouteType === 'delivery' ? (items[i].id || items[i].ttn || items[i].rowNum) : items[i].rowNum;
+                            var oldStatus = currentRouteType === 'delivery' ? (deliveries[i].parcelStatus || '') : (deliveries[i].driverStatus || '');
+                            var newStatus = currentRouteType === 'delivery' ? (items[i].parcelStatus || '') : (items[i].driverStatus || '');
+                            if (oldKey !== newKey || oldStatus !== newStatus ||
+                                (deliveries[i].name || '') !== (items[i].name || '') ||
+                                (deliveries[i].address || '') !== (items[i].address || '')) {
+                                same = false; break;
+                            }
+                        }
+                        if (same) return;
+                    }
+                    // Є зміни — оновлюємо
+                    var oldIds = deliveries.map(function(d) {
+                        return currentRouteType === 'delivery' ? (d.id || d.ttn || d.rowNum) : d.rowNum;
+                    });
+                    newDeliveries = items.filter(function(d) {
+                        var id = currentRouteType === 'delivery' ? (d.id || d.ttn || d.rowNum) : d.rowNum;
+                        return !oldIds.includes(id);
+                    }).map(function(d) {
+                        return currentRouteType === 'delivery' ? (d.id || d.ttn || d.rowNum) : d.rowNum;
+                    });
+                    deliveries = items;
+                    deliveries.forEach(function(item, idx) {
+                        item._statusKey = currentRouteType === 'delivery'
+                            ? 'del_' + (item.id || item.ttn || item.rowNum) + '_' + idx
+                            : 'pas_' + item.rowNum + '_' + idx;
+                        var apiStatus;
+                        if (currentRouteType === 'delivery') {
+                            var ps = item.parcelStatus || '';
+                            var validMarks = ['pending', 'in-progress', 'completed', 'cancelled'];
+                            apiStatus = validMarks.indexOf(ps) !== -1 ? ps : 'pending';
+                        } else {
+                            apiStatus = item.driverStatus;
+                        }
+                        if (apiStatus && apiStatus !== 'pending') {
+                            deliveryStatuses[item._statusKey] = apiStatus;
+                        }
+                    });
+                    saveStatuses();
+                    lastUpdateTime = Date.now();
+                    renderDeliveries();
+                    updateStats();
+                    showToast('🔄 Дані оновлено');
+                }
+            } catch (e) {
+                console.log('Silent sync failed:', e);
             }
         }
         // ============ ВІДПРАВКА (DISPATCH) ============

@@ -571,7 +571,12 @@ function copyToRoute(payload) {
       if (lastRow > 1 && conflictAction !== 'add') {
         if (conflictAction === 'clear') {
           totalCleared += lastRow - 1;
-          sheet.deleteRows(2, lastRow - 1);
+          try {
+            sheet.deleteRows(2, lastRow - 1);
+          } catch (e) {
+            // Fallback: якщо deleteRows впав — очищуємо вміст
+            sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+          }
         } else if (conflictAction === 'archive') {
           totalArchived += lastRow - 1;
           // Архівуємо старі рядки (ставимо статус)
@@ -944,8 +949,21 @@ function deletePackagesPermanently(payload) {
       var rows = bySheet[sheetName].sort(function(a, b) { return b - a; });
       for (var d = 0; d < rows.length; d++) {
         if (rows[d] >= 2 && rows[d] <= sheet.getLastRow()) {
-          sheet.deleteRow(rows[d]);
-          deleted++;
+          try {
+            if (sheet.getLastRow() <= 1) {
+              // Останній рядок даних — очищуємо вміст замість видалення
+              sheet.getRange(rows[d], 1, 1, sheet.getLastColumn()).clearContent();
+            } else {
+              sheet.deleteRow(rows[d]);
+            }
+            deleted++;
+          } catch (e) {
+            // Fallback: якщо deleteRow впав — очищуємо вміст
+            try {
+              sheet.getRange(rows[d], 1, 1, sheet.getLastColumn()).clearContent();
+              deleted++;
+            } catch (ignore) {}
+          }
         }
       }
     }
@@ -1365,7 +1383,12 @@ function clearMailing(payload) {
     if (mode === 'all') {
       // Видаляємо ВСЕ крім заголовка
       var totalRows = sheet.getLastRow() - 1;
-      sheet.deleteRows(2, totalRows);
+      try {
+        sheet.deleteRows(2, totalRows);
+      } catch (e) {
+        // Fallback: якщо deleteRows впав — очищуємо вміст
+        sheet.getRange(2, 1, totalRows, sheet.getLastColumn()).clearContent();
+      }
       writeLog('clearMailing', SHEET_MAILING, 0, 'all', totalRows + ' рядків');
       return { success: true, deleted: totalRows, mode: 'all' };
     }
@@ -1387,7 +1410,15 @@ function clearMailing(payload) {
 
     // Видаляємо знизу вгору
     for (var d = 0; d < rowsToDelete.length; d++) {
-      sheet.deleteRow(rowsToDelete[d]);
+      try {
+        if (sheet.getLastRow() <= 1) {
+          sheet.getRange(rowsToDelete[d], 1, 1, sheet.getLastColumn()).clearContent();
+        } else {
+          sheet.deleteRow(rowsToDelete[d]);
+        }
+      } catch (e) {
+        try { sheet.getRange(rowsToDelete[d], 1, 1, sheet.getLastColumn()).clearContent(); } catch (ignore) {}
+      }
     }
 
     writeLog('clearMailing', SHEET_MAILING, 0, 'archived', rowsToDelete.length + ' рядків');
@@ -1436,7 +1467,15 @@ function clearOldMailing(payload) {
 
     // Видаляємо знизу вгору
     for (var d = 0; d < rowsToDelete.length; d++) {
-      sheet.deleteRow(rowsToDelete[d]);
+      try {
+        if (sheet.getLastRow() <= 1) {
+          sheet.getRange(rowsToDelete[d], 1, 1, sheet.getLastColumn()).clearContent();
+        } else {
+          sheet.deleteRow(rowsToDelete[d]);
+        }
+      } catch (e) {
+        try { sheet.getRange(rowsToDelete[d], 1, 1, sheet.getLastColumn()).clearContent(); } catch (ignore) {}
+      }
     }
 
     writeLog('clearOldMailing', SHEET_MAILING, 0, '>' + days + ' днів', rowsToDelete.length + ' рядків');

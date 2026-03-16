@@ -4496,7 +4496,7 @@ function renderRoutePassengers() {
             <div class="route-stats-grid">
                 <div class="route-stat-item ${routeStatusFilter === 'all' ? 'active' : ''}" onclick="filterRouteByStatus('all')">
                     <div class="route-stat-num">${routeStats.total}</div>
-                    <div class="route-stat-label">Всього</div>
+                    <div class="route-stat-label">Рейси</div>
                 </div>
                 <div class="route-stat-item ${routeStatusFilter === 'pending' ? 'active pending' : ''}" onclick="filterRouteByStatus('pending')" style="${routeStatusFilter !== 'pending' ? 'color:#6c757d;' : ''}">
                     <div class="route-stat-num">${routeStats.pending}</div>

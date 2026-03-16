@@ -1192,12 +1192,7 @@
                     '<button class="btn-small-card" onclick="navigateDispatch(' + index + ')">&#128506; Карта</button>' +
                     '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
                 '</div>' +
-                '<div class="status-buttons-card">' +
-                    '<button class="status-btn-card status-in-progress-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
-                    '<button class="status-btn-card status-completed-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
-                    '<button class="status-btn-card status-cancelled-btn" onclick="setDispatchStatus(\'' + safeStatusKey + '\',\'cancelled\')">&#10060;</button>' +
-                    '<button class="status-btn-card" onclick="openEditDispatch(' + index + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
-                '</div>' +
+                '' +
                 '<div class="card-expandable" id="expand-' + uid + '">' +
                     renderExpandedInfoDispatch(item) +
                 '</div>';

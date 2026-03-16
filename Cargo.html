@@ -3887,6 +3887,21 @@ function updateBulkBar() {
         // Відновлюємо мобільні кнопки
         document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
         document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
+
+        // У Відправці ховаємо "В маршрут" — додавати у маршрут з відправки неможливо
+        if (isDispatchView) {
+            // Sidebar кнопка "В маршрут"
+            const sidebarRouteBtn = document.querySelector('.bulk-sidebar-btn[onclick="bulkMoveToRoute()"]');
+            if (sidebarRouteBtn) sidebarRouteBtn.style.display = 'none';
+            // Мобільна кнопка "Маршрут"
+            document.querySelectorAll('#bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = 'none');
+            // Sidebar кнопки авто і оптимізація також ховаємо у відправці
+            const sidebarVehicleBtn = document.querySelector('.bulk-sidebar-btn[onclick="openBulkVehicleModal()"]');
+            const sidebarOptimizeBtn = document.querySelector('.bulk-sidebar-btn[onclick="bulkOptimize()"]');
+            if (sidebarVehicleBtn) sidebarVehicleBtn.style.display = 'none';
+            if (sidebarOptimizeBtn) sidebarOptimizeBtn.style.display = 'none';
+            document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize').forEach(b => b.style.display = 'none');
+        }
     } else {
         if (bulkMoreToggle) bulkMoreToggle.style.display = '';
         if (bulkSecondaryActions) { bulkSecondaryActions.style.display = ''; bulkSecondaryActions.classList.remove('expanded'); }
@@ -4251,10 +4266,12 @@ async function loadAllRoutePassengers() {
     routePassengers = [];
     routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
     currentRouteVehicle = null;
-    
+    dispatchData = [];
+    dispatchLastUpdate = 0;
+
     // Показуємо loader
     showLoader('Завантаження маршрутів...', '');
-    
+
     // Паралельно завантажуємо: статус розсилки + список маршрутів
     try {
         const routesResponse = await fetch(ROUTE_API_URL, {
@@ -4266,9 +4283,9 @@ async function loadAllRoutePassengers() {
         if (routesResponse.success && routesResponse.routes && routesResponse.routes.length > 0) {
             const routes = routesResponse.routes.filter(r => isRouteSheet(r.name));
             updateLoader('Завантаження пасажирів...', `0 / ${routes.length}`);
-            
-            // Паралельно завантажуємо ВСІ маршрути одночасно
-            const routePromises = routes.map(route => 
+
+            // Паралельно завантажуємо ВСІ маршрути одночасно (рейси + відправки)
+            const routePromises = routes.map(route =>
                 fetch(ROUTE_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
@@ -4282,16 +4299,36 @@ async function loadAllRoutePassengers() {
                 .then(data => ({ route, data }))
                 .catch(err => ({ route, data: { success: false, error: err } }))
             );
-            
-            // Чекаємо всі результати
-            const results = await Promise.all(routePromises);
-            
-            // Обробляємо результати
+
+            // Паралельно завантажуємо відправки для всіх маршрутів
+            const dispatchPromises = routes.map(route => {
+                const dispSheetName = route.name + ' (відпр)';
+                return fetch(ROUTE_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'getDispatchItems',
+                        companyId: getCompanyId(),
+                        payload: { sheetName: dispSheetName }
+                    })
+                })
+                .then(r => r.json())
+                .then(data => ({ route, dispSheetName, data }))
+                .catch(err => ({ route, dispSheetName, data: { success: false, error: err } }));
+            });
+
+            // Чекаємо всі результати паралельно
+            const [routeResults, dispatchResults] = await Promise.all([
+                Promise.all(routePromises),
+                Promise.all(dispatchPromises)
+            ]);
+
+            // Обробляємо результати рейсів
             let loaded = 0;
-            for (const { route, data } of results) {
+            for (const { route, data } of routeResults) {
                 loaded++;
                 updateLoader(`Обробка: ${route.name}`, `${loaded} / ${routes.length}`);
-                
+
                 const items = data.success ? (data.passengers || data.packages || []) : [];
                 if (items.length > 0) {
                     const mapped = items.map((p, idx) => ({
@@ -4315,15 +4352,35 @@ async function loadAllRoutePassengers() {
                     routeStats.archived += st.archived || 0;
                 }
             }
+
+            // Обробляємо результати відправок
+            for (const { route, dispSheetName, data } of dispatchResults) {
+                if (data.success) {
+                    const items = data.items || [];
+                    if (items.length > 0) {
+                        const mapped = items.map((p, idx) => ({
+                            ...p,
+                            _uid: 'disp_' + route.name.replace(/\s+/g, '_') + '_' + idx,
+                            driverStatus: p.driverStatus || 'pending',
+                            _statusKey: 'disp_' + (p.rowNum || idx) + '_' + idx,
+                            _isDispatch: true,
+                            _dispatchSheet: dispSheetName,
+                            _routeSheet: route.name
+                        }));
+                        dispatchData = dispatchData.concat(mapped);
+                    }
+                }
+            }
+            dispatchLastUpdate = Date.now();
         }
     } catch (err) {
         console.error('Error loading routes:', err);
     }
-    
+
     hideLoader();
     renderRoutePassengers();
     updateFilterButtons();
-    showToast(`📋 Всі маршрути: ${routeStats.total} пасажирів`);
+    showToast(`📋 Всі маршрути: ${routeStats.total} посилок (рейси), ${dispatchData.length} відправок`);
 }
 
 // Loader functions
@@ -4405,9 +4462,9 @@ function renderRoutePassengers() {
 
     let html = '';
 
-    // Перемикач Рейси / Відправка зверху
+    // Перемикач Рейси / Відправка зверху (показуємо і для окремих маршрутів, і для "Всі маршрути")
     const currentSheetName = filters.routeVehicle || '';
-    const showDispatchToggle = currentSheetName && currentSheetName !== 'all';
+    const showDispatchToggle = !!currentSheetName;
     if (showDispatchToggle) {
         html += `
             <div class="dispatch-toggle-bar">
@@ -4994,33 +5051,43 @@ function renderDispatchView(container) {
     `;
 
     // Показуємо loader якщо ще не завантажено
+    const isAllRoutes = currentSheetName === 'all';
     if (dispatchLastUpdate === 0 || (Date.now() - dispatchLastUpdate) > 60000) {
-        html += `<div style="text-align:center;padding:30px;color:var(--text-secondary);">
-            <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-            <div>Завантаження відправок...</div>
-        </div>`;
-        container.innerHTML = html;
-        // Завантажуємо дані
-        loadDispatchForRoute(currentSheetName).then(() => {
-            renderDispatchView(container);
-        });
-        return;
+        if (isAllRoutes) {
+            // Для "Всі маршрути" дані вже мали завантажитися в loadAllRoutePassengers
+            // Якщо пусто — просто показуємо пусто
+        } else {
+            html += `<div style="text-align:center;padding:30px;color:var(--text-secondary);">
+                <div style="font-size:24px;margin-bottom:8px;">⏳</div>
+                <div>Завантаження відправок...</div>
+            </div>`;
+            container.innerHTML = html;
+            // Завантажуємо дані
+            loadDispatchForRoute(currentSheetName).then(() => {
+                renderDispatchView(container);
+            });
+            return;
+        }
     }
 
     if (dispatchData.length === 0) {
+        const emptyMsg = isAllRoutes ? 'Відправок не знайдено в жодному маршруті' : `Аркуш "${getDispatchSheetName(currentSheetName)}" порожній`;
         html += `<div style="text-align:center;padding:40px;color:var(--text-secondary);">
             <div style="font-size:48px;margin-bottom:12px;">📦</div>
             <div style="font-size:14px;font-weight:600;">Відправок не знайдено</div>
-            <div style="font-size:12px;margin-top:8px;">Аркуш "${getDispatchSheetName(currentSheetName)}" порожній</div>
+            <div style="font-size:12px;margin-top:8px;">${emptyMsg}</div>
         </div>`;
         container.innerHTML = html;
         return;
     }
 
     // Кнопка оновлення
+    const refreshAction = isAllRoutes
+        ? 'loadAllRoutePassengers().then(()=>{isDispatchView=true;renderRoutePassengers();})'
+        : 'dispatchLastUpdate=0;renderRoutePassengers();';
     html += `
         <div style="text-align:center;margin:10px 0;">
-            <button onclick="dispatchLastUpdate=0;renderRoutePassengers();" style="padding:8px 20px;border:none;border-radius:6px;background:#f97316;color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button>
+            <button onclick="${refreshAction}" style="padding:8px 20px;border:none;border-radius:6px;background:#f97316;color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button>
         </div>
     `;
 
@@ -7140,11 +7207,47 @@ function toggleBulkGroup(group) {
     items.classList.toggle('collapsed');
 }
 
+// Модалка попередження для Відмітки у Відправці (бета)
+function showMarksBetaModal() {
+    // Видаляємо попередній оверлей якщо є
+    const prev = document.getElementById('betaMarksOverlay');
+    if (prev) prev.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'betaMarksOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div style="background:#ffffff;border-radius:16px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;animation:slideUp 0.25s ease;border:1px solid #e2e8f0;">
+            <div style="background:linear-gradient(135deg,#f8fafc,#edf2f7);padding:18px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:24px;">🏷️</span>
+                <span style="color:#1e293b;font-size:17px;font-weight:700;">Відмітки</span>
+            </div>
+            <div style="padding:24px;text-align:left;font-size:14px;line-height:1.8;color:#475569;">
+                <p style="margin:0 0 14px;">У бета-версії <b style="color:#1a3a5e;">відмітки недоступні для Відправки</b></p>
+                <p style="margin:0 0 10px;"><b style="color:#1a3a5e;">Що таке відмітки:</b></p>
+                <ul style="padding-left:20px;margin:0 0 14px;">
+                    <li style="margin-bottom:6px;">⏳ <b>Очікує</b> — посилка чекає обробки</li>
+                    <li style="margin-bottom:6px;">🔄 <b>В процесі</b> — посилка обробляється</li>
+                    <li style="margin-bottom:6px;">✅ <b>Готово</b> — посилка доставлена</li>
+                    <li style="margin-bottom:6px;">❌ <b>Відмова</b> — посилку відхилено</li>
+                </ul>
+                <p style="margin:0;font-size:13px;color:#94a3b8;">Використовуйте відмітки в режимі <b>Рейсів</b>. Функція для Відправки буде доступна у повній версії.</p>
+            </div>
+            <div style="padding:0 24px 20px;text-align:right;">
+                <button onclick="document.getElementById('betaMarksOverlay').remove()" style="padding:10px 28px;background:linear-gradient(135deg,#1a3a5e,#0d1f3c);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Зрозуміло 👌</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
 // Toggle collapsible marks (Відмітки) submenu
 function toggleBulkMarks() {
-    // В режимі відправки — показуємо повідомлення про бета
+    // В режимі відправки — показуємо модалку про бета
     if (isDispatchView) {
-        showToast('🚧 Відмітки наразі недоступні для Відправки (бета-версія). Спробуйте у режимі Рейсів.');
+        showMarksBetaModal();
         return;
     }
     const sec = document.getElementById('bulkMarksActions');
@@ -7162,9 +7265,9 @@ function toggleBulkMarks() {
 function bulkSetDriverStatus(newStatus) {
     if (selectedIds.size === 0) return showToast('Оберіть посилки');
 
-    // В режимі відправки — бета-повідомлення
+    // В режимі відправки — модалка про бета
     if (isDispatchView) {
-        return showToast('🚧 Відмітки наразі недоступні для Відправки (бета-версія). Спробуйте у режимі Рейсів.');
+        return showMarksBetaModal();
     }
 
     const statusLabels = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };

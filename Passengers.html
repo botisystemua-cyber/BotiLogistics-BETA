@@ -1828,7 +1828,8 @@
         <button class="bulk-sidebar-btn" onclick="selectAllVisible()">
             <span class="btn-icon">☑️</span> Вибрати всіх
         </button>
-        <div class="bulk-sidebar-divider"></div>
+        <div class="bulk-sidebar-divider" id="bulkSidebarDivider1"></div>
+        <div id="bulkSidebarMainActions">
         <button class="bulk-sidebar-btn" onclick="openBulkVehicleModal()">
             <span class="btn-icon">🚐</span> Призначити авто
         </button>
@@ -1841,7 +1842,8 @@
         <button class="bulk-sidebar-btn" onclick="openTagModal()" style="background:rgba(139,92,246,0.3);">
             <span class="btn-icon">🏷️</span> Протегувати
         </button>
-        <div class="bulk-sidebar-divider"></div>
+        </div>
+        <div class="bulk-sidebar-divider" id="bulkSidebarDivider2"></div>
         <button class="bulk-sidebar-more-toggle" id="bulkMoreToggle" onclick="toggleBulkSecondary()">
             <span>Ще дії</span> <span class="toggle-arrow">▼</span>
         </button>
@@ -1873,7 +1875,7 @@
                 <span class="btn-icon">⏳</span> Очікує
             </button>
         </div>
-        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;">
+        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;background:rgba(34,197,94,0.35);font-weight:700;">
             <span class="btn-icon">↩️</span> Відновити
         </button>
         <button class="bulk-sidebar-btn" id="btnSidebarDeleteForever" onclick="bulkDeleteForever()" style="display:none;">
@@ -3479,8 +3481,8 @@ function updateBulkBar() {
     const restoreBtn = document.getElementById('btnBulkRestore');
     const archiveBtn = document.getElementById('btnBulkArchive');
     if (restoreBtn) restoreBtn.style.display = (canRestore && !isRouteView) ? 'inline-flex' : 'none';
-    if (archiveBtn) archiveBtn.style.display = isRouteView ? 'none' : '';
-    
+    if (archiveBtn) archiveBtn.style.display = (isRouteView || canRestore) ? 'none' : '';
+
     // PC Sidebar кнопки
     const sidebarRestore = document.getElementById('btnSidebarRestore');
     const sidebarDeleteForever = document.getElementById('btnSidebarDeleteForever');
@@ -3489,30 +3491,58 @@ function updateBulkBar() {
     const sidebarRefuse = document.getElementById('btnSidebarRefuse');
     const sidebarDelete = document.getElementById('btnSidebarDelete');
     const sidebarSecondary = document.getElementById('bulkSecondaryActions');
+    const bulkSidebarMainActions = document.getElementById('bulkSidebarMainActions');
+    const bulkSidebarDivider1 = document.getElementById('bulkSidebarDivider1');
+    const bulkSidebarDivider2 = document.getElementById('bulkSidebarDivider2');
     if (sidebarRestore) sidebarRestore.style.display = (canRestore && !isRouteView) ? 'flex' : 'none';
     if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
-    // В маршрутах: ховаємо "Ще дії", Архівувати, Відмова, Відновити; показуємо тільки Видалити + кнопки відмітки
+
     const marksToggle = document.getElementById('bulkMarksToggle');
     const marksActions = document.getElementById('bulkMarksActions');
     const mobileRouteMarkBtns = document.querySelectorAll('.bulk-route-mark-btn');
-    if (isRouteView) {
+
+    if (canRestore && !isRouteView) {
+        // Архівний вигляд — ховаємо ВСЕ крім Відновити
+        if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
+        if (sidebarSecondary) sidebarSecondary.style.display = 'none';
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = 'none';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = 'none';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = 'none';
+        if (marksToggle) marksToggle.style.display = 'none';
+        if (marksActions) marksActions.style.display = 'none';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
+        // Ховаємо мобільні кнопки: авто, опт, маршрут, тег, видалити
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = 'none');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = 'none');
+    } else if (isRouteView) {
+        // В маршрутах: ховаємо "Ще дії", Архівувати, Відмова; показуємо тільки Видалити + кнопки відмітки
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
         if (sidebarArchive) sidebarArchive.style.display = 'none';
         if (sidebarRefuse) sidebarRefuse.style.display = 'none';
         if (sidebarDelete) sidebarDelete.style.display = 'flex';
         if (sidebarSecondary) { sidebarSecondary.style.display = 'flex'; sidebarSecondary.classList.add('expanded'); }
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = '';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = '';
         if (marksToggle) marksToggle.style.display = '';
         if (marksActions) marksActions.style.display = '';
         mobileRouteMarkBtns.forEach(b => b.style.display = 'inline-flex');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
     } else {
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = '';
         if (sidebarArchive) sidebarArchive.style.display = '';
         if (sidebarRefuse) sidebarRefuse.style.display = '';
         if (sidebarDelete) sidebarDelete.style.display = '';
         if (sidebarSecondary) sidebarSecondary.style.display = '';
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = '';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = '';
         if (marksToggle) marksToggle.style.display = 'none';
         if (marksActions) marksActions.style.display = 'none';
         mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
     }
 }
 

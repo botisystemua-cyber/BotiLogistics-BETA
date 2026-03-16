@@ -423,21 +423,22 @@
         .side-menu-close:hover { background: rgba(255,255,255,0.25); }
         .side-menu-content { flex: 1; overflow-y: auto; padding: 8px; }
         .side-menu-section { margin-bottom: 6px; }
-        .side-menu-section-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 10px 12px; 
-            background: rgba(255,255,255,0.1); 
-            border-radius: 8px; 
-            cursor: pointer; 
-            margin-bottom: 4px; 
+        .side-menu-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(100,180,255,0.15);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
             border: none;
+            border-left: 3px solid rgba(100,180,255,0.5);
             transition: all 0.2s ease;
         }
-        .side-menu-section-header:hover { background: rgba(255,255,255,0.15); }
-        .side-menu-section-title { font-size: 11px; font-weight: 600; color: white; }
-        .section-toggle { font-size: 8px; color: rgba(255,255,255,0.6); transition: transform 0.2s; }
+        .side-menu-section-header:hover { background: rgba(100,180,255,0.25); }
+        .side-menu-section-title { font-size: 13px; font-weight: 700; color: white; letter-spacing: 0.3px; }
+        .section-toggle { font-size: 10px; color: rgba(255,255,255,0.7); transition: transform 0.2s; }
         .section-toggle.open { transform: rotate(180deg); }
         .side-menu-collapsible { display: none; }
         .side-menu-collapsible.open { display: block; }

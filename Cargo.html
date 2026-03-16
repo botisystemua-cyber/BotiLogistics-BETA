@@ -4939,6 +4939,7 @@ async function loadDispatchForRoute(routeSheet) {
             const items = data.passengers || data.packages || [];
             dispatchData = items.map((p, idx) => ({
                 ...p,
+                _uid: 'disp_' + idx,
                 driverStatus: p.parcelStatus || p.driverStatus || 'pending',
                 _statusKey: 'disp_' + (p.rowNum || idx) + '_' + idx,
                 _isDispatch: true,

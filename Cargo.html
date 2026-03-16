@@ -1935,12 +1935,6 @@
         <button class="bulk-sidebar-btn" id="btnSidebarDeleteDirect" onclick="bulkDelete()" style="display:none;background:rgba(220,53,69,0.25);">
             <span class="btn-icon">🗑️</span> Видалити
         </button>
-        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;">
-            <span class="btn-icon">↩️</span> Відновити
-        </button>
-        <button class="bulk-sidebar-btn" id="btnSidebarDeleteForever" onclick="bulkDeleteForever()" style="display:none;">
-            <span class="btn-icon">💀</span> Видалити назавжди
-        </button>
         <button class="bulk-sidebar-btn bulk-route-marks-toggle" id="bulkMarksToggle" onclick="toggleBulkMarks()" style="display:none;">
             <span class="btn-icon">🏷️</span> Відмітки <span class="toggle-arrow" style="margin-left:auto;font-size:10px;transition:transform 0.3s ease;">▼</span>
         </button>
@@ -1981,7 +1975,6 @@
             <button class="bulk-btn" onclick="openTagModal()" style="background:rgba(139,92,246,0.4);">🏷️ Тег</button>
             <button class="bulk-btn" onclick="bulkDelete()" style="background:rgba(220,53,69,0.4);">🗑️ Вид</button>
             <button class="bulk-btn archive" id="btnBulkArchive" onclick="bulkArchive()">📦 Архів</button>
-            <button class="bulk-btn restore" id="btnBulkRestore" onclick="bulkRestore()" style="display:none;background:var(--success);">↩️</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('in-progress')" style="display:none;background:rgba(33,150,243,0.4);">🔄 Процес</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('completed')" style="display:none;background:rgba(76,175,80,0.4);">✅ Готово</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('cancelled')" style="display:none;background:rgba(220,53,69,0.4);">❌ Відмова</button>
@@ -3843,25 +3836,13 @@ function updateBulkBar() {
     }
     
     const isRouteView = filters.statusFilter === 'route' && filters.routeVehicle;
-    const isArchiveView = filters.showArchive;
-    const isSpecialStatus = !!filters.specialStatus; // archived, refused, transferred, deleted
-    const canRestore = isArchiveView || isSpecialStatus;
-    const canDeleteForever = filters.specialStatus === 'deleted';
-    
-    // Mobile кнопки
-    const restoreBtn = document.getElementById('btnBulkRestore');
-    if (restoreBtn) restoreBtn.style.display = canRestore ? 'inline-flex' : 'none';
 
     // Ховаємо архів у маршрутах
     const archiveBtn = document.getElementById('btnBulkArchive');
     if (archiveBtn) archiveBtn.style.display = isRouteView ? 'none' : 'inline-flex';
 
     // PC Sidebar кнопки
-    const sidebarRestore = document.getElementById('btnSidebarRestore');
-    const sidebarDeleteForever = document.getElementById('btnSidebarDeleteForever');
     const sidebarArchive = document.getElementById('btnSidebarArchive');
-    if (sidebarRestore) sidebarRestore.style.display = canRestore ? 'flex' : 'none';
-    if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
     if (sidebarArchive) sidebarArchive.style.display = isRouteView ? 'none' : 'flex';
 
     // В маршрутах ховаємо "Ще дії" дропдаун, показуємо окрему кнопку "Видалити"
@@ -5397,110 +5378,6 @@ function archivePackage(id) {
     saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
 }
 
-function restorePackage(id) {
-    const p = packages.find(x => x.id === id);
-    if (!p) return;
-    p.status = p.prevStatus || 'new';
-    delete p.prevStatus;
-    delete p.archiveType;
-    p.statusDate = '';
-
-    // Серверний виклик — очищаємо архівні поля через bulkUpdateStatus
-    const pSheet = p._sheet || p.sheet;
-    const pRowNum = p._rowNum || p.rowNum;
-    if (pSheet && pRowNum && !p._isRouteData) {
-        fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'bulkUpdateStatus',
-                items: [{ sheet: pSheet, rowNum: pRowNum }],
-                status: 'new'
-            })
-        }).catch(() => {});
-    }
-    saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('♻️ Відновлено');
-}
-
-function bulkRestore() {
-    if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
-
-    // Збираємо дані для API — розділяємо на основні та маршрутні
-    const mainPackages = [];
-    const routePackages = [];
-    let totalCount = 0;
-    selectedIds.forEach(uid => {
-        const p = findPackageByUid(uid);
-        if (!p) return;
-        if (p.status !== 'archived') return;
-        totalCount++;
-        const sheet = p._sheet || p.sheet;
-        const rowNum = p._rowNum || p.rowNum;
-        if (sheet && rowNum) {
-            const item = { sheet, rowNum };
-            if (p._isRouteData) {
-                routePackages.push(item);
-            } else {
-                mainPackages.push(item);
-            }
-        }
-    });
-
-    if (mainPackages.length === 0 && routePackages.length === 0 && totalCount === 0) {
-        return showToast('⚠️ Немає заявок для відновлення');
-    }
-
-    // Відновлюємо локально одразу
-    selectedIds.forEach(uid => {
-        const p = findPackageByUid(uid);
-        if (p && p.status === 'archived') {
-            p.status = p.prevStatus || 'new';
-            p.statusDate = '';
-            delete p.prevStatus;
-            delete p.archiveType;
-            if (p.note) {
-                p.note = p.note.replace(/^(Відмова|Перенос|Пересадка|Видалено):.*?\|?\s*/i, '');
-            }
-        }
-    });
-    saveSettings();
-    refreshAfterAction();
-    updateAllCounts();
-    showToast(`↩️ Відновлено: ${totalCount}`);
-
-    // Відправляємо на сервер (fire-and-forget)
-    const requests = [];
-    if (mainPackages.length > 0) {
-        requests.push(
-            fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    action: 'bulkUpdateStatus',
-                    items: mainPackages,
-                    status: 'new'
-                })
-            }).then(r => r.json())
-        );
-    }
-    if (routePackages.length > 0) {
-        requests.push(
-            fetch(ROUTE_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    action: 'restorePackages',
-                    companyId: getCompanyId(),
-                    packages: routePackages
-                })
-            }).then(r => r.json())
-        );
-    }
-
-    if (requests.length > 0) {
-        Promise.all(requests).catch(err => console.error('Restore error:', err));
-    }
-}
 
 // BULK ACTIONS
 let selectedBulkVehicleId = null;
@@ -5951,84 +5828,98 @@ function bulkDeleteFromRoute() {
 
 function showDeleteModal() {
     document.getElementById('deleteModal')?.remove();
-    
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay show';
     modal.id = 'deleteModal';
     modal.innerHTML = `
         <div class="modal" style="max-width:400px;">
-            <div class="modal-header" style="background:#f3f4f6;">
-                <span class="modal-title" style="color:#6b7280;">🗑️ Видалення</span>
+            <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
+                <span class="modal-title" style="color:#dc2626;">🗑️ Видалити назавжди</span>
                 <button class="modal-close" onclick="document.getElementById('deleteModal').remove()">✕</button>
             </div>
-            <div class="modal-body">
-                <div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary);">Вибрано: <strong>${selectedIds.size}</strong> заявок</div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block;">Причина видалення</label>
-                <input type="text" id="deleteReasonText" placeholder="Дубль, тест, помилка..." style="width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;">
+            <div class="modal-body" style="text-align:center;padding:24px;">
+                <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+                <div style="font-size:14px;margin-bottom:8px;">Вибрано: <strong>${selectedIds.size}</strong> заявок</div>
+                <div style="background:#fee2e2;padding:12px;border-radius:8px;font-size:12px;color:#991b1b;">
+                    Записи будуть <strong>видалені назавжди</strong>.<br>
+                    Цю дію НЕ МОЖНА скасувати!
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('deleteModal').remove()">Скасувати</button>
-                <button class="btn-save" style="background:#6b7280;" onclick="confirmDelete()">🗑️ Видалити</button>
+                <button class="btn-save" style="background:#dc2626;" onclick="confirmDelete()">🗑️ Видалити назавжди</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
-    document.getElementById('deleteReasonText')?.focus();
 }
 
 function confirmDelete() {
-    const reason = document.getElementById('deleteReasonText')?.value?.trim() || 'Без причини';
-    document.getElementById('deleteModal').remove();
-    applyStatusToSelected('deleted', `Видалено: ${reason}`);
-}
+    document.getElementById('deleteModal')?.remove();
 
-// ВИДАЛИТИ НАЗАВЖДИ
-function bulkDeleteForever() {
-    if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
-    
-    if (!confirm(`💀 УВАГА!\n\nВи точно хочете НАЗАВЖДИ видалити ${selectedIds.size} заявок?\n\nЦю дію НЕ МОЖНА скасувати!`)) {
-        return;
-    }
-    
     showLoader('Видаляю назавжди...', '');
-    
-    // Поки що просто ховаємо локально
-    const deletedRouteUids = new Set();
-    const deletedDispatchUids = new Set();
+
+    // Збираємо дані для серверного видалення
+    const mainItems = [];
+    const routeItems = [];
+    const deletedUids = new Set();
+
     selectedIds.forEach(uid => {
         const p = findPackageByUid(uid);
-        if (p && p._isRouteData) {
-            deletedRouteUids.add(p._uid);
-        }
-        if (p && p._isDispatch) {
-            deletedDispatchUids.add(p._uid);
-        }
-        const idx = packages.findIndex(p => {
-            const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${packages.indexOf(p)}`;
-            return pUid === uid;
-        });
-        if (idx !== -1) {
-            packages.splice(idx, 1);
+        if (!p) return;
+        deletedUids.add(uid);
+        const pSheet = p._sheet || p.sheet;
+        const pRowNum = p._rowNum || p.rowNum;
+        if (pSheet && pRowNum) {
+            const isRoute = !!p._isRouteData || !!p._isDispatch;
+            if (isRoute) {
+                routeItems.push({ sheet: pSheet, rowNum: pRowNum });
+            } else {
+                mainItems.push({ sheet: pSheet, rowNum: pRowNum });
+            }
         }
     });
 
-    // Видаляємо маршрутних з routePassengers
-    if (deletedRouteUids.size > 0) {
-        routePassengers = routePassengers.filter(rp => !deletedRouteUids.has(rp._uid));
-        routeStats.total = routePassengers.length;
-    }
-    // Видаляємо dispatch з dispatchData
-    if (deletedDispatchUids.size > 0) {
-        dispatchData = dispatchData.filter(dp => !deletedDispatchUids.has(dp._uid));
-    }
+    // Видаляємо з локальних масивів
+    deletedUids.forEach(uid => {
+        const idx = packages.findIndex(pkg => {
+            const pkgUid = (pkg._sheet && pkg._rowNum) ? `${pkg._sheet}_${pkg._rowNum}` : `local_${packages.indexOf(pkg)}`;
+            return pkgUid === uid;
+        });
+        if (idx !== -1) packages.splice(idx, 1);
+    });
 
-    const deletedCount = selectedIds.size;
+    routePassengers = routePassengers.filter(rp => !deletedUids.has(rp._uid));
+    dispatchData = dispatchData.filter(dp => !deletedUids.has(dp._uid));
+    routeStats.total = routePassengers.length;
+
+    const totalDeleted = deletedUids.size;
     hideLoader();
+    clearSelection();
     saveSettings();
-    refreshAfterAction();
+    render();
     updateAllCounts();
-    showToast(`💀 Видалено назавжди: ${deletedCount}`);
+    renderCalendars();
+    showToast(`🗑️ Видалено назавжди: ${totalDeleted}`);
+
+    // Серверне видалення (fire-and-forget)
+    if (mainItems.length > 0) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'deletePackagesPermanently', packages: mainItems })
+        }).catch(err => console.error('Bulk delete main error:', err));
+    }
+    if (routeItems.length > 0) {
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'deletePackagesPermanently', companyId: getCompanyId(), packages: routeItems })
+        }).catch(err => console.error('Bulk delete route error:', err));
+    }
 }
+
 
 // Універсальна функція застосування статусу
 function applyStatusToSelected(status, note) {
@@ -6790,9 +6681,9 @@ function showDeleteConfirmModal(uid, displayName, passengerId) {
                 <div style="font-size:14px;margin-bottom:8px;">Ви впевнені що хочете видалити:</div>
                 <div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;">${displayName}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">ID: ${passengerId}</div>
-                <div style="background:#fef3c7;padding:12px;border-radius:8px;font-size:12px;color:#92400e;">
-                    Лід буде переміщений в <strong>Архів</strong>.<br>
-                    Ви зможете відновити його пізніше.
+                <div style="background:#fee2e2;padding:12px;border-radius:8px;font-size:12px;color:#991b1b;">
+                    ⚠️ Запис буде <strong>видалений назавжди</strong>.<br>
+                    Цю дію НЕ МОЖНА скасувати!
                 </div>
             </div>
             <div class="modal-footer">
@@ -6806,45 +6697,51 @@ function showDeleteConfirmModal(uid, displayName, passengerId) {
 
 function confirmDeletePassenger(uid) {
     document.getElementById('deleteConfirmModal')?.remove();
-    
+
     const p = findPackageByUid(uid);
     if (!p) return;
 
-    // Зберігаємо попередній статус для відновлення
-    if (p.status !== 'archived') {
-        p.prevStatus = p.status || 'new';
-    }
-    p.archiveType = 'deleted';
-    p.status = 'archived';
-    p.archiveDate = new Date().toISOString().split('T')[0];
-    p.statusDate = p.archiveDate;
-    p.archivedBy = 'archived_' + getCompanyId();
-    p.isNew = false;
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
 
     // Закриваємо дії картки
     openActionsId = null;
 
-    // Одразу оновлюємо UI (не чекаємо на сервер)
+    // Видаляємо з локального масиву
+    const idx = packages.findIndex(pkg => {
+        const pkgUid = (pkg._sheet && pkg._rowNum) ? `${pkg._sheet}_${pkg._rowNum}` : `local_${packages.indexOf(pkg)}`;
+        return pkgUid === uid;
+    });
+    if (idx !== -1) packages.splice(idx, 1);
+
+    // Якщо маршрутний — видаляємо з routePassengers/dispatchData
+    if (p._isRouteData) {
+        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+        routeStats.total = routePassengers.length;
+    }
+    if (p._isDispatch) {
+        dispatchData = dispatchData.filter(dp => dp._uid !== uid);
+    }
+
+    // Оновлюємо UI
     saveSettings();
     render();
     updateAllCounts();
     renderCalendars();
-    showToast('🗑️ Переміщено в архів');
+    showToast('🗑️ Видалено назавжди');
 
-    // Якщо є серверні дані - архівуємо на сервері (fire-and-forget)
-    const pSheet = p._sheet || p.sheet;
-    const pRowNum = p._rowNum || p.rowNum;
+    // Фізично видаляємо рядок на сервері (fire-and-forget)
     if (pSheet && pRowNum) {
-        const isRoute = !!p._isRouteData;
+        const isRoute = !!p._isRouteData || !!p._isDispatch;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
-        const body = isRoute
-            ? { action: 'archivePackages', companyId: getCompanyId(), packages: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'deleted' }
-            : { action: 'archivePackage', companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'deleted' };
-
         fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({
+                action: 'deletePackagesPermanently',
+                companyId: getCompanyId(),
+                packages: [{ sheet: pSheet, rowNum: pRowNum }]
+            })
         }).catch(err => console.error('Delete error:', err));
     }
 }

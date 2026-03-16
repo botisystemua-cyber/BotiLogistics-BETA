@@ -143,6 +143,9 @@ function doPost(e) {
       case 'deletePackage':
         return respond(deletePackage(data));
 
+      case 'deletePackagesPermanently':
+        return respond(deletePackagesPermanently(data));
+
       // --- АРХІВАЦІЯ ---
       case 'archivePackage':
         return respond(archivePackage(data));
@@ -634,6 +637,50 @@ function deletePackage(data) {
     'ІД: ' + recordId + ' | ПіБ: ' + recordName);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, id: recordId };
+}
+
+// ============================================
+// deletePackagesPermanently — Фізичне видалення рядків
+// ============================================
+function deletePackagesPermanently(data) {
+  try {
+    var packages = data.packages || data.items || [];
+    if (packages.length === 0) {
+      return { success: false, error: 'Немає посилок' };
+    }
+
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var deleted = 0;
+
+    // Групуємо по аркушам
+    var bySheet = {};
+    for (var i = 0; i < packages.length; i++) {
+      var p = packages[i];
+      if (!bySheet[p.sheet]) bySheet[p.sheet] = [];
+      bySheet[p.sheet].push(parseInt(p.rowNum));
+    }
+
+    // Видаляємо знизу вгору
+    for (var sheetName in bySheet) {
+      if (!bySheet.hasOwnProperty(sheetName)) continue;
+      var sheet = ss.getSheetByName(sheetName);
+      if (!sheet) continue;
+
+      var rows = bySheet[sheetName].sort(function(a, b) { return b - a; });
+      for (var d = 0; d < rows.length; d++) {
+        if (rows[d] >= 2 && rows[d] <= sheet.getLastRow()) {
+          sheet.deleteRow(rows[d]);
+          deleted++;
+        }
+      }
+    }
+
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+
+    return { success: true, deleted: deleted };
+  } catch (err) {
+    return { success: false, error: err.toString() };
+  }
 }
 
 // ============================================

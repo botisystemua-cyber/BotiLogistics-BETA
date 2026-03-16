@@ -209,6 +209,9 @@ function doPost(e) {
       case 'deletePackages':
         return respond(changeStatus(payload, 'deleted'));
 
+      case 'deletePackagesPermanently':
+        return respond(deletePackagesPermanently(payload));
+
       case 'archiveToExternal':
         return respond(archiveToExternal(payload));
 
@@ -908,6 +911,47 @@ function changeStatus(payload, newStatus) {
       status: newStatus,
       errors: errors.length > 0 ? errors : undefined
     };
+  } catch (err) {
+    return { success: false, error: err.toString() };
+  }
+}
+
+// ============================================
+// deletePackagesPermanently — Фізичне видалення рядків
+// ============================================
+function deletePackagesPermanently(payload) {
+  try {
+    var items = payload.packages || payload.items || [];
+    if (items.length === 0) {
+      return { success: false, error: 'Немає посилок' };
+    }
+
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var deleted = 0;
+
+    var bySheet = {};
+    for (var i = 0; i < items.length; i++) {
+      var p = items[i];
+      if (!bySheet[p.sheet]) bySheet[p.sheet] = [];
+      bySheet[p.sheet].push(parseInt(p.rowNum));
+    }
+
+    for (var sheetName in bySheet) {
+      if (!bySheet.hasOwnProperty(sheetName)) continue;
+      var sheet = ss.getSheetByName(sheetName);
+      if (!sheet) continue;
+
+      var rows = bySheet[sheetName].sort(function(a, b) { return b - a; });
+      for (var d = 0; d < rows.length; d++) {
+        if (rows[d] >= 2 && rows[d] <= sheet.getLastRow()) {
+          sheet.deleteRow(rows[d]);
+          deleted++;
+        }
+      }
+    }
+
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+    return { success: true, deleted: deleted };
   } catch (err) {
     return { success: false, error: err.toString() };
   }

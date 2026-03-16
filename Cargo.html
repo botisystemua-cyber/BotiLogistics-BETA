@@ -1902,6 +1902,7 @@
         </button>
 
         <!-- Призначення -->
+        <div id="bulkSidebarMainActions">
         <div class="bulk-group-header" onclick="toggleBulkGroup('assign')">
             <span>Призначення</span><span class="bulk-group-toggle" id="bulkToggleAssign">▼</span>
         </div>
@@ -1919,8 +1920,9 @@
                 <span class="btn-icon">🏷️</span> Протегувати
             </button>
         </div>
+        </div>
 
-        <div class="bulk-sidebar-divider"></div>
+        <div class="bulk-sidebar-divider" id="bulkSidebarDivider"></div>
         <button class="bulk-sidebar-more-toggle" id="bulkMoreToggle" onclick="toggleBulkSecondary()">
             <span>Ще дії</span> <span class="toggle-arrow">▼</span>
         </button>
@@ -1934,6 +1936,9 @@
         </div>
         <button class="bulk-sidebar-btn" id="btnSidebarDeleteDirect" onclick="bulkDelete()" style="display:none;background:rgba(220,53,69,0.25);">
             <span class="btn-icon">🗑️</span> Видалити
+        </button>
+        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;">
+            <span class="btn-icon">↩️</span> Відновити
         </button>
         <button class="bulk-sidebar-btn bulk-route-marks-toggle" id="bulkMarksToggle" onclick="toggleBulkMarks()" style="display:none;">
             <span class="btn-icon">🏷️</span> Відмітки <span class="toggle-arrow" style="margin-left:auto;font-size:10px;transition:transform 0.3s ease;">▼</span>
@@ -1975,6 +1980,7 @@
             <button class="bulk-btn" onclick="openTagModal()" style="background:rgba(139,92,246,0.4);">🏷️ Тег</button>
             <button class="bulk-btn" onclick="bulkDelete()" style="background:rgba(220,53,69,0.4);">🗑️ Вид</button>
             <button class="bulk-btn archive" id="btnBulkArchive" onclick="bulkArchive()">📦 Архів</button>
+            <button class="bulk-btn restore" id="btnBulkRestore" onclick="bulkRestore()" style="display:none;background:rgba(34,197,94,0.4);">↩️</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('in-progress')" style="display:none;background:rgba(33,150,243,0.4);">🔄 Процес</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('completed')" style="display:none;background:rgba(76,175,80,0.4);">✅ Готово</button>
             <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('cancelled')" style="display:none;background:rgba(220,53,69,0.4);">❌ Відмова</button>
@@ -3836,27 +3842,60 @@ function updateBulkBar() {
     }
     
     const isRouteView = filters.statusFilter === 'route' && filters.routeVehicle;
+    const isArchiveView = filters.showArchive;
+    const isSpecialStatus = !!filters.specialStatus; // archived, refused, deleted
+    const canRestore = isArchiveView || isSpecialStatus;
 
-    // Ховаємо архів у маршрутах
+    // Mobile кнопки
+    const restoreBtn = document.getElementById('btnBulkRestore');
     const archiveBtn = document.getElementById('btnBulkArchive');
-    if (archiveBtn) archiveBtn.style.display = isRouteView ? 'none' : 'inline-flex';
+    if (restoreBtn) restoreBtn.style.display = (canRestore && !isRouteView) ? 'inline-flex' : 'none';
+    if (archiveBtn) archiveBtn.style.display = (isRouteView || canRestore) ? 'none' : 'inline-flex';
 
     // PC Sidebar кнопки
     const sidebarArchive = document.getElementById('btnSidebarArchive');
-    if (sidebarArchive) sidebarArchive.style.display = isRouteView ? 'none' : 'flex';
+    const sidebarDelete = document.getElementById('btnSidebarDelete');
+    const sidebarRestore = document.getElementById('btnSidebarRestore');
+    if (sidebarArchive) sidebarArchive.style.display = (isRouteView || canRestore) ? 'none' : 'flex';
+    if (sidebarRestore) sidebarRestore.style.display = (canRestore && !isRouteView) ? 'flex' : 'none';
 
     // В маршрутах ховаємо "Ще дії" дропдаун, показуємо окрему кнопку "Видалити"
     const bulkMoreToggle = document.getElementById('bulkMoreToggle');
     const bulkSecondaryActions = document.getElementById('bulkSecondaryActions');
     const btnSidebarDeleteDirect = document.getElementById('btnSidebarDeleteDirect');
-    if (isRouteView) {
+
+    // Отримуємо посилання на всі звичайні кнопки sidebar (авто, оптимізація, маршрут, тег)
+    const bulkSidebarBtnsGroup = document.getElementById('bulkSidebarMainActions');
+    const bulkSidebarDivider = document.getElementById('bulkSidebarDivider');
+
+    if (canRestore && !isRouteView) {
+        // Архівний вигляд — ховаємо ВСЕ крім Відновити
+        if (bulkMoreToggle) bulkMoreToggle.style.display = 'none';
+        if (bulkSecondaryActions) bulkSecondaryActions.style.display = 'none';
+        if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'none';
+        if (bulkSidebarBtnsGroup) bulkSidebarBtnsGroup.style.display = 'none';
+        if (bulkSidebarDivider) bulkSidebarDivider.style.display = 'none';
+        // Ховаємо мобільні кнопки: авто, опт, маршрут, тег, видалити
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = 'none');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = 'none');
+    } else if (isRouteView) {
         if (bulkMoreToggle) bulkMoreToggle.style.display = 'none';
         if (bulkSecondaryActions) bulkSecondaryActions.style.display = 'none';
         if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'flex';
+        if (bulkSidebarBtnsGroup) bulkSidebarBtnsGroup.style.display = '';
+        if (bulkSidebarDivider) bulkSidebarDivider.style.display = '';
+        // Відновлюємо мобільні кнопки
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
     } else {
         if (bulkMoreToggle) bulkMoreToggle.style.display = '';
         if (bulkSecondaryActions) { bulkSecondaryActions.style.display = ''; bulkSecondaryActions.classList.remove('expanded'); }
         if (btnSidebarDeleteDirect) btnSidebarDeleteDirect.style.display = 'none';
+        if (bulkSidebarBtnsGroup) bulkSidebarBtnsGroup.style.display = '';
+        if (bulkSidebarDivider) bulkSidebarDivider.style.display = '';
+        // Відновлюємо мобільні кнопки
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
     }
 
     // Відмітки — показуємо тільки в маршрутах (для dispatch — тільки кнопку з бета-повідомленням)
@@ -5690,6 +5729,103 @@ function bulkArchive() {
                 if (mainPkg) updatePackageOnServer(mainPkg);
             }
         });
+    }
+}
+
+// МАСОВЕ ВІДНОВЛЕННЯ З АРХІВУ
+function bulkRestore() {
+    if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
+
+    const mainPackages = [];
+    const routePackages = [];
+    let totalCount = 0;
+    selectedIds.forEach(uid => {
+        const p = findPackageByUid(uid);
+        if (!p || p.status !== 'archived') return;
+        totalCount++;
+        const sheet = p._isDispatch ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle)) : (p._sheet || p.sheet);
+        const rowNum = p._rowNum || p.rowNum;
+        if (sheet && rowNum) {
+            const item = { sheet, rowNum };
+            if (p._isRouteData || p._isDispatch) {
+                routePackages.push(item);
+            } else {
+                mainPackages.push(item);
+            }
+        }
+    });
+
+    if (mainPackages.length === 0 && routePackages.length === 0 && totalCount === 0) {
+        return showToast('⚠️ Немає заявок для відновлення');
+    }
+
+    // Відновлюємо локально
+    selectedIds.forEach(uid => {
+        const p = findPackageByUid(uid);
+        if (p && p.status === 'archived') {
+            p.status = p.prevStatus || 'new';
+            p.statusDate = '';
+            delete p.prevStatus;
+            delete p.archiveType;
+            delete p.archivedBy;
+            if (p.note) {
+                p.note = p.note.replace(/^(Відмова|Пересадка|Перенос|Видалено):.*?\|?\s*/i, '');
+            }
+        }
+    });
+
+    clearSelection();
+    saveSettings();
+    render();
+    updateAllCounts();
+    renderCalendars();
+    showToast(`↩️ Відновлено: ${totalCount}`);
+
+    // Відправляємо на сервер (fire-and-forget)
+    if (mainPackages.length > 0) {
+        function doRestoreMain(retries) {
+            fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'bulkUpdateStatus',
+                    items: mainPackages,
+                    status: 'new'
+                })
+            })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(t => { try { JSON.parse(t); } catch(e) {} })
+            .catch(err => {
+                if (retries > 0) {
+                    console.warn('Restore main retry (' + retries + ' left):', err.message);
+                    setTimeout(() => doRestoreMain(retries - 1), 1500);
+                }
+            });
+        }
+        doRestoreMain(2);
+    }
+    if (routePackages.length > 0) {
+        function doRestoreRoute(retries) {
+            fetch(ROUTE_API_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'restorePackages',
+                    companyId: getCompanyId(),
+                    payload: { packages: routePackages }
+                })
+            })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(t => { try { JSON.parse(t); } catch(e) {} })
+            .catch(err => {
+                if (retries > 0) {
+                    console.warn('Restore route retry (' + retries + ' left):', err.message);
+                    setTimeout(() => doRestoreRoute(retries - 1), 1500);
+                }
+            });
+        }
+        doRestoreRoute(2);
     }
 }
 

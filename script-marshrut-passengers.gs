@@ -1517,9 +1517,15 @@ function addPassengerToRoute(payload) {
     newRow[COL.SEATS] = payload.seats || 1;
     newRow[COL.NAME] = payload.name || '';
     newRow[COL.PHONE] = payload.phone || '';
+    newRow[COL.MARK] = payload.mark || '';
+    newRow[COL.PAYMENT] = payload.payment || '';
+    newRow[COL.PERCENT] = payload.percent || '';
     newRow[COL.DISPATCHER] = 'Driver';
     newRow[COL.ID] = newId;
+    newRow[COL.PHONE_REG] = payload.phoneReg || '';
+    newRow[COL.WEIGHT] = payload.weight || '';
     newRow[COL.VEHICLE] = sheetName;
+    newRow[COL.TIMING] = payload.timing || '';
     newRow[COL.DATE_REG] = today;
     newRow[COL.NOTE] = payload.note || '';
     newRow[COL.STATUS] = 'new';

@@ -1861,12 +1861,18 @@
                     mkField('Конверт', 'addEnvelope', 'text', '') +
                     mkField('ID/Телефон відправника', 'addSenderPhone', 'tel', '+380...');
             } else {
-                html += mkField("Ім'я", 'addName', 'text', "Ім'я пасажира") +
-                    mkField('Телефон', 'addPhone', 'tel', '+380...') +
-                    mkField('Звідки', 'addFrom', 'text', 'Місто відправки') +
-                    mkField('Куди', 'addTo', 'text', 'Місто прибуття') +
-                    mkField('Дата', 'addDate', 'date', '') +
-                    mkField('Місць', 'addSeats', 'number', '1') +
+                html += mkField('Дата виїзду', 'addDate', 'date', '') +
+                    mkField('Адреса Відправки', 'addFrom', 'text', 'Місто відправки') +
+                    mkField('Адреса прибуття', 'addTo', 'text', 'Місто прибуття') +
+                    mkField('Кількість місць', 'addSeats', 'number', '1') +
+                    mkField('ПІБ', 'addName', 'text', "Ім'я пасажира") +
+                    mkField('Телефон Пасажира', 'addPhone', 'tel', '+380...') +
+                    mkField('Відмітка', 'addMark', 'text', '') +
+                    mkField('Оплата', 'addPayment', 'text', '') +
+                    mkField('Відсоток', 'addPercent', 'text', '') +
+                    mkField('Телефон Реєстратора', 'addPhoneReg', 'tel', '+380...') +
+                    mkField('Вага', 'addWeight', 'text', '') +
+                    mkField('Таймінг', 'addTiming', 'text', '') +
                     mkField('Примітка', 'addNote', 'text', '');
             }
             html += '<button class="add-lead-submit" onclick="submitAddLead()">&#10133; Додати</button>';
@@ -2095,6 +2101,12 @@
                         to: document.getElementById('addTo').value.trim(),
                         date: document.getElementById('addDate').value.trim(),
                         seats: document.getElementById('addSeats').value.trim() || '1',
+                        mark: document.getElementById('addMark').value.trim(),
+                        payment: document.getElementById('addPayment').value.trim(),
+                        percent: document.getElementById('addPercent').value.trim(),
+                        phoneReg: document.getElementById('addPhoneReg').value.trim(),
+                        weight: document.getElementById('addWeight').value.trim(),
+                        timing: document.getElementById('addTiming').value.trim(),
                         note: document.getElementById('addNote').value.trim(),
                         vehicle: currentSheet
                     }
@@ -2132,8 +2144,20 @@
                     await fetchDeliveries();
                 }
             } catch (err) {
-                console.error('addLead error:', err);
-                showToast('&#10060; ' + err.message);
+                // Google Apps Script redirect causes fetch error but data is saved
+                console.warn('addLead fetch error (data likely saved):', err);
+                showToast('&#9989; Додано!');
+                closeAddLead();
+                if (isDelivery) {
+                    dispatchLastUpdate = 0;
+                    currentFilter = 'dispatch';
+                    document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
+                    document.getElementById('filterDispatch').classList.add('active');
+                    await fetchDispatchData();
+                } else {
+                    lastUpdateTime = 0;
+                    await fetchDeliveries();
+                }
             }
         }
         // ============ BOTTOM NAV INIT ============

@@ -4699,16 +4699,14 @@ function executeRouteStatusAction(uid, status, noteText) {
     saveSettings();
     showToast(`${statusNames[status] || '📦 Архів'} → готово`);
 
-    // 3) Архівуємо на сервері у фоні (fire-and-forget)
+    // 3) Фізично видаляємо рядок на сервері (fire-and-forget)
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-            action: 'archivePackages',
+            action: 'deletePackagesPermanently',
             companyId: getCompanyId(),
-            packages: [{ sheet: sheetName, rowNum: p.rowNum }],
-            user: 'crm',
-            reason: status
+            payload: { packages: [{ sheet: sheetName, rowNum: p.rowNum }] }
         })
     })
     .then(r => r.json())
@@ -4716,7 +4714,7 @@ function executeRouteStatusAction(uid, status, noteText) {
         if (mainPkg) updatePackageOnServer(mainPkg);
     })
     .catch(err => {
-        console.warn('Route archive server error:', err);
+        console.warn('Route delete server error:', err);
         setTimeout(() => silentSync(), 2000);
     });
 }
@@ -4819,7 +4817,8 @@ function inlineRouteMarkSave(uid, newStatus) {
 function showRouteDeleteChoice(uid) {
     const p = routePassengers.find(rp => rp._uid === uid) || dispatchData.find(rp => rp._uid === uid);
     if (!p) return;
-    if (!confirm(`🗑️ Видалити назавжди?\n\n${p.name || 'Без імені'} (${p.phone || '—'})\n\nЗапис буде видалений з маршруту назавжди.`)) return;
+    const displayPhone = p.senderPhone || p.phone || '—';
+    if (!confirm(`🗑️ Видалити назавжди?\n\n${p.name || 'Без імені'} (${displayPhone})\n\nЗапис буде видалений з маршруту назавжди.`)) return;
     deleteFromRouteOnly(uid);
 }
 
@@ -4853,16 +4852,14 @@ function deleteFromRouteOnly(uid) {
     saveSettings();
     showToast('📋 Видалено з маршруту');
 
-    // 2) Синхронізуємо з сервером у фоні (fire-and-forget)
+    // 2) Фізично видаляємо рядок на сервері (fire-and-forget)
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-            action: 'archivePackages',
+            action: 'deletePackagesPermanently',
             companyId: getCompanyId(),
-            packages: [{ sheet: sheetName, rowNum: p.rowNum }],
-            user: 'crm',
-            reason: 'removed_from_route'
+            payload: { packages: [{ sheet: sheetName, rowNum: p.rowNum }] }
         })
     })
     .then(r => r.json())
@@ -4910,18 +4907,18 @@ async function loadDispatchForRoute(routeSheet) {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: 'getRoutePassengers',
+                action: 'getDispatchItems',
                 companyId: getCompanyId(),
                 payload: { sheetName: sheetName }
             })
         });
         const data = await response.json();
         if (data.success) {
-            const items = data.passengers || data.packages || [];
+            const items = data.items || [];
             dispatchData = items.map((p, idx) => ({
                 ...p,
                 _uid: 'disp_' + idx,
-                driverStatus: p.parcelStatus || p.driverStatus || 'pending',
+                driverStatus: p.driverStatus || 'pending',
                 _statusKey: 'disp_' + (p.rowNum || idx) + '_' + idx,
                 _isDispatch: true,
                 _dispatchSheet: sheetName
@@ -4983,12 +4980,10 @@ function renderDispatchView(container) {
         </div>
     `;
 
-    // Dispatch cards — повна структура як в основному маршруті
-    const hc = hiddenCols;
+    // Dispatch cards — структура під колонки відправки (ПІБ, № посилки, Місто, Опис, Вага, Сума, Тип оплати, Валюта, Конверт, Тел. відправника)
     const hasSearch = filters.search && filters.search.trim();
     const esc = (v) => (v || '').toString().replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     const cpBtn = (val) => `<button class="copy-btn-mini" onclick="event.stopPropagation();copyToClip('${esc(val)}',this)" title="Копіювати">📋</button>`;
-    const cc = (col, cls, content) => `<div class="cg-cell ${cls}" data-col="${col}" ${hc.has(col)?'style="display:none"':''}>${content}</div>`;
 
     dispatchData.forEach((p, idx) => {
         const uk = p._uid || ('disp_' + idx);
@@ -4996,99 +4991,74 @@ function renderDispatchView(container) {
         const dOpen = openDetailsId === uk;
         const aOpen = openActionsId === uk;
         const dispatchSheet = p._dispatchSheet || getDispatchSheetName(currentSheetName);
-        const isCodeDir = p.direction === 'ua-eu' || p.direction === 'eu-ua';
-        const dirLabel = isCodeDir ? (p.direction === 'ua-eu' ? 'UA→EU' : 'EU→UA') : (p.direction || '—');
-        const dirClass = p.direction === 'eu-ua' ? ' eu-ua' : '';
 
-        const phoneRaw = p.phone || '—';
+        const phoneRaw = p.senderPhone || '—';
         const phoneDisplay = hasSearch ? highlightSearch(phoneRaw) : phoneRaw;
-        const weightDisplay = p.weight ? p.weight + ' кг' : '';
-        const ttnRaw = p.ttn || '';
-        const ttnDisplay = hasSearch ? highlightSearch(ttnRaw) : ttnRaw;
-        const idRaw = p.id || '—';
-        const idDisplay = hasSearch ? highlightSearch(idRaw) : idRaw;
         const nameDisplay = hasSearch ? highlightSearch(p.name || '—') : (p.name || '—');
-        const numberDisplay = p.number || '';
-        const priceDisplay = p.amount ? '€' + p.amount : '';
-        const dateDisplay = p.dateReg || p.date || '—';
-        const dateRecvDisplay = p.dateReceive || '';
-        const addressShort = p.address ? (p.address.length > 45 ? p.address.substring(0, 45) + '...' : p.address) : '—';
-        const addressDisplay = hasSearch ? highlightSearch(addressShort) : addressShort;
-        const noteShort = p.note ? (p.note.length > 30 ? p.note.substring(0, 30) + '...' : p.note) : '';
+        const parcelDisplay = p.parcelNum || '—';
+        const cityDisplay = p.city || '—';
+        const weightDisplay = p.weight ? p.weight + ' кг' : '';
+        const amountDisplay = p.amount || '—';
+        const descShort = p.description ? (p.description.length > 40 ? p.description.substring(0, 40) + '...' : p.description) : '';
+        const paymentTypeBadge = p.paymentType ? `<span class="card-pay-badge neutral">${p.paymentType}</span>` : '';
+        const currencyBadge = p.currency ? `<span class="card-pay-badge neutral">${p.currency}</span>` : '';
+        const envelopeBadge = p.envelope ? `<span class="card-pay-badge neutral">${p.envelope}</span>` : '';
 
-        // Payment badges
-        const payStatusClass = p.payStatus === 'Оплачено' ? 'paid' : (p.payStatus === 'Неоплачено' ? 'unpaid' : '');
-        const payStatusBadge = p.payStatus ? `<span class="card-pay-badge ${payStatusClass||'neutral'}">${p.payStatus}</span>` : '';
-        const paymentBadge = p.payment ? `<span class="card-pay-badge neutral">${p.payment}</span>` : '';
-
-        // Vehicle badge
-        const vehicleBadge = `<span class="card-vehicle-badge" style="cursor:default;">${dispatchSheet}</span>`;
-
-        // Inline edit fields for details panel
-        const payStatuses = ['Оплачено','Неоплачено','Відправник','Отримувач'];
-        const payments = ['При отр гот','При отр на карту','Відпр на карту','Картка','Готівка'];
+        // Inline edit fields for details panel — dispatch fields
+        const paymentTypes = ['Готівка','На карту','При отриманні','Безготівка'];
+        const currencies = ['UAH','EUR','USD','PLN','CZK'];
         const selOpt = (field, val, options) => options.map(o => `<option value="${esc(o)}" ${val===o?'selected':''}>${o}</option>`).join('');
-        const mkInput = (label, field, val, ph, type) => `<div class="inline-edit-field"><span class="inline-edit-label">${label}</span><input class="inline-edit-input" type="${type||'text'}" value="${esc(val)}" placeholder="${ph||'—'}" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"></div>`;
-        const mkSelect = (label, field, val, opts) => `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineRouteSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${selOpt(field,val,opts)}</select></div>`;
+        const mkInput = (label, field, val, ph, type) => `<div class="inline-edit-field"><span class="inline-edit-label">${label}</span><input class="inline-edit-input" type="${type||'text'}" value="${esc(val)}" placeholder="${ph||'—'}" onchange="inlineDispatchSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"></div>`;
+        const mkSelect = (label, field, val, opts) => `<div class="inline-edit-field select-field"><span class="inline-edit-label">${label}</span><select class="inline-edit-select" onchange="inlineDispatchSave('${uk}','${field}',this.value)" onclick="event.stopPropagation()"><option value="">—</option>${selOpt(field,val,opts)}</select></div>`;
 
         let inlineHtml = `<div class="inline-edit-grid">`;
-        inlineHtml += `<div class="inline-section-title">Контакт</div>`;
-        inlineHtml += mkInput('Телефон','phone',p.phone,'+380...');
-        inlineHtml += mkInput('Тел. реєстратора','phoneReg',p.phoneReg,'+380...');
-        inlineHtml += mkInput('ТТН','ttn',p.ttn,'—');
-        inlineHtml += `<div class="inline-section-title">Деталі</div>`;
-        inlineHtml += mkInput("ПІБ",'name',p.name,'—');
+        inlineHtml += `<div class="inline-section-title">Відправник</div>`;
+        inlineHtml += mkInput('ПІБ','name',p.name,'—');
+        inlineHtml += mkInput('Телефон відправника','senderPhone',p.senderPhone,'+380...');
+        inlineHtml += `<div class="inline-section-title">Посилка</div>`;
+        inlineHtml += mkInput('№ посилки','parcelNum',p.parcelNum,'—');
+        inlineHtml += mkInput('Місто/Нова Пошта','city',p.city,'—');
+        inlineHtml += mkInput('Опис/фото','description',p.description,'—');
         inlineHtml += mkInput('Вага','weight',p.weight,'—');
-        inlineHtml += mkInput('Адреса','address',p.address,'—');
+        inlineHtml += `<div class="inline-section-title">Оплата</div>`;
         inlineHtml += mkInput('Сума','amount',p.amount,'—');
-        inlineHtml += mkSelect('Оплата','payment',p.payment,payments);
-        inlineHtml += mkInput('Таймінг','timing',p.timing,'—');
-        inlineHtml += mkInput('Примітка','note',p.note,'—');
-        inlineHtml += mkInput('SMS','smsNote',p.smsNote,'—');
+        inlineHtml += mkSelect('Тип оплати','paymentType',p.paymentType,paymentTypes);
+        inlineHtml += mkSelect('Валюта','currency',p.currency,currencies);
+        inlineHtml += mkInput('Конверт','envelope',p.envelope,'—');
         inlineHtml += `</div>`;
 
-        html += `<div class="lead-card status-dispatch ${sel?'selected':''}" data-uid="${uk}" data-id="${p.id}">
+        html += `<div class="lead-card status-dispatch ${sel?'selected':''}" data-uid="${uk}">
             <div class="card-main">
                 <div class="card-cb" style="flex-direction:column;gap:4px;">
                     <input type="checkbox" class="card-checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleSelect('${uk}')">
                     <span class="route-order-num">${idx + 1}</span>
                 </div>
                 <div class="card-grid" onclick="toggleDetails('${uk}')">
-                    <!-- ROW 1: Direction + TTN | Weight | Date -->
+                    <!-- ROW 1: ПІБ | Вага -->
                     <div class="cg-row">
-                        ${cc('ttn','cg-main',`<span class="cg-val-dir${dirClass}">${dirLabel}</span>${ttnRaw ? `<span class="cg-val-ttn">ТТН:${ttnDisplay}${cpBtn(ttnRaw)}</span>` : ''}`)}
-                        ${cc('weight','cg-sm',`${weightDisplay ? `<span class="cg-val-weight">${weightDisplay}</span>` : '<span style="opacity:0.3">—</span>'}`)}
-                        ${cc('dateReg','cg-sm',`<span class="cg-val-date">${dateDisplay}</span>`)}
+                        <div class="cg-cell cg-main"><span class="cg-val-name">${nameDisplay}</span>${cpBtn(p.name||'')}</div>
+                        <div class="cg-cell cg-sm">${weightDisplay ? `<span class="cg-val-weight">${weightDisplay}</span>` : '<span style="opacity:0.3">—</span>'}</div>
                     </div>
-                    <!-- ROW 2: Phone | АВТО | Amount | DateReceive -->
+                    <!-- ROW 2: Телефон відправника | Сума -->
                     <div class="cg-row">
-                        ${cc('phone','cg-main',`<span class="cg-val-phone" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${phoneDisplay}${cpBtn(phoneRaw)}</span>`)}
-                        ${cc('vehicle','cg-sm',`${vehicleBadge}`)}
-                        ${cc('amount','cg-sm',`<span class="cg-val-price">${priceDisplay||'—'}</span>`)}
-                        ${cc('dateReceive','cg-sm',`<span class="cg-val-date">${dateRecvDisplay||'—'}</span>`)}
+                        <div class="cg-cell cg-main"><span class="cg-val-phone" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${phoneDisplay}${cpBtn(phoneRaw)}</span></div>
+                        <div class="cg-cell cg-sm"><span class="cg-val-price">${amountDisplay}</span></div>
                     </div>
-                    <!-- ROW 3: ID | PayStatus | Payment | Note -->
+                    <!-- ROW 3: № посилки | Тип оплати | Валюта -->
                     <div class="cg-row">
-                        ${cc('id','cg-main',`<span class="cg-val-id" onclick="event.stopPropagation()">${idDisplay}${cpBtn(idRaw)}</span>`)}
-                        ${cc('payStatus','cg-sm',`${payStatusBadge||'<span style="opacity:0.3">—</span>'}`)}
-                        ${cc('payment','cg-sm',`${paymentBadge||'<span style="opacity:0.3">—</span>'}`)}
-                        ${cc('note','cg-sm',`${noteShort ? `<span class="cg-val-note">${noteShort}</span>` : '<span style="opacity:0.3">—</span>'}`)}
+                        <div class="cg-cell cg-main"><span class="cg-val">№ ${parcelDisplay}</span>${cpBtn(p.parcelNum||'')}</div>
+                        <div class="cg-cell cg-sm">${paymentTypeBadge||'<span style="opacity:0.3">—</span>'}</div>
+                        <div class="cg-cell cg-sm">${currencyBadge||'<span style="opacity:0.3">—</span>'}</div>
                     </div>
-                    <!-- ROW 4: Address | Internal number -->
+                    <!-- ROW 4: Місто/НП | Конверт -->
                     <div class="cg-row">
-                        ${cc('address','cg-main',`<span class="cg-val-address" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">📍 ${addressDisplay}${cpBtn(p.address||'')}${(p.address||'').trim() ? `<a class="cg-map-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.address)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Навігація">➤</a>` : ''}</span>`)}
-                        ${cc('number','cg-sm',`<span class="cg-val">${numberDisplay||'—'}</span>`)}
+                        <div class="cg-cell cg-main"><span class="cg-val-address">📍 ${hasSearch ? highlightSearch(cityDisplay) : cityDisplay}</span>${cpBtn(p.city||'')}</div>
+                        <div class="cg-cell cg-sm">${envelopeBadge||'<span style="opacity:0.3">—</span>'}</div>
                     </div>
-                    <!-- ROW 5: Phone reg -->
-                    <div class="cg-row">
-                        ${cc('phoneReg','cg-main',`<span class="cg-val">${p.phoneReg||'—'}</span>${p.phoneReg?cpBtn(p.phoneReg):''}`)}
-                    </div>
-                    <!-- ROW 6: ПІБ | SMS Note | Timing -->
-                    <div class="cg-row">
-                        ${cc('name','cg-main',`<span class="cg-val-name">${nameDisplay}</span>${cpBtn(p.name||'')}`)}
-                        ${cc('smsNote','cg-sm',`<span class="cg-val">${p.smsNote ? (p.smsNote.length>25?p.smsNote.substring(0,25)+'...':p.smsNote) : '—'}</span>`)}
-                        ${cc('timing','cg-sm',`<span class="cg-val">${p.timing||'—'}</span>`)}
-                    </div>
+                    <!-- ROW 5: Опис -->
+                    ${descShort ? `<div class="cg-row">
+                        <div class="cg-cell cg-main"><span class="cg-val-note">${descShort}</span></div>
+                    </div>` : ''}
                 </div>
                 <div class="card-right-panel" style="gap:6px;">
                     <button class="card-actions-toggle ${aOpen?'open':''}" onclick="event.stopPropagation();toggleActions('${uk}')">▼</button>
@@ -5100,17 +5070,52 @@ function renderDispatchView(container) {
                 <span class="inline-save-indicator" id="saveInd_${uk.replace(/[^a-zA-Z0-9]/g,'_')}">✓ Збережено</span>
             </div>
             <div class="card-actions ${aOpen?'show':''}">
-                <button class="btn-card-action btn-call" onclick="event.stopPropagation();location.href='tel:${p.phone}'">📞 Дзвонити</button>
-                <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.phone}',event)">💬 Писати</button>
-                <button class="btn-card-action btn-map" onclick="event.stopPropagation();openMapModal('${uk}')">🗺️ Карта</button>
-                <button class="btn-card-action btn-edit" onclick="event.stopPropagation();editPackage('${uk}')">✏️ Редагувати</button>
-                <button class="btn-card-action" style="background:#fee2e2;color:#dc2626;" onclick="event.stopPropagation();routeRefusePackage('${uk}')">❌ Відмова</button>
+                <button class="btn-card-action btn-call" onclick="event.stopPropagation();location.href='tel:${p.senderPhone}'">📞 Дзвонити</button>
+                <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.senderPhone}',event)">💬 Писати</button>
                 <button class="btn-card-action btn-delete" onclick="event.stopPropagation();showRouteDeleteChoice('${uk}')">🗑️ Видалити</button>
             </div>
         </div>`;
     });
 
     container.innerHTML = html;
+}
+
+// Збереження інлайн-полів для відправок (dispatch)
+function inlineDispatchSave(uid, field, value) {
+    const p = dispatchData.find(x => x._uid === uid);
+    if (!p) return;
+    p[field] = value;
+
+    // Показуємо індикатор збереження
+    const indId = 'saveInd_' + uid.replace(/[^a-zA-Z0-9]/g, '_');
+    const ind = document.getElementById(indId);
+    if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
+
+    // Зберігаємо на сервері через editDispatchItem
+    const sheetName = p._dispatchSheet || getDispatchSheetName(filters.routeVehicle);
+    const rowNum = p.rowNum;
+    if (sheetName && rowNum) {
+        const fields = {};
+        fields[field] = value;
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'editDispatchItem',
+                companyId: getCompanyId(),
+                payload: {
+                    sheetName: sheetName,
+                    rowNum: rowNum,
+                    fields: fields
+                }
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) console.warn('Dispatch inline save error:', data.error);
+        })
+        .catch(err => console.error('Dispatch inline save error:', err));
+    }
 }
 
 // Розгортання деталей картки маршруту - використовує основний toggleDetails()
@@ -5363,16 +5368,15 @@ function archivePackage(id) {
     p.statusDate = today;
     p.archivedBy = 'archived_' + getCompanyId();
 
-    // Якщо є серверні дані — архівуємо на сервері з companyId
+    // Якщо є серверні дані — видаляємо/архівуємо на сервері з companyId
     const pSheet = p._sheet || p.sheet;
     const pRowNum = p._rowNum || p.rowNum;
     if (pSheet && pRowNum) {
         const isRoute = !!p._isRouteData;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
-        const action = isRoute ? 'archivePackages' : 'archivePackage';
         const body = isRoute
-            ? { action, companyId: getCompanyId(), packages: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'archived' }
-            : { action, companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'archived' };
+            ? { action: 'deletePackagesPermanently', companyId: getCompanyId(), payload: { packages: [{ sheet: pSheet, rowNum: pRowNum }] } }
+            : { action: 'archivePackage', companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'archived' };
         fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).catch(() => {});
     }
     saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
@@ -5668,9 +5672,9 @@ function bulkArchive() {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: 'archivePackages',
+                action: 'deletePackagesPermanently',
                 companyId: getCompanyId(),
-                packages: routePackages
+                payload: { packages: routePackages }
             })
         }).catch(() => {});
 
@@ -5791,11 +5795,9 @@ function bulkDeleteFromRoute() {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
-                action: 'archivePackages',
+                action: 'deletePackagesPermanently',
                 companyId: getCompanyId(),
-                packages: [{ sheet: sheetName, rowNum: p.rowNum }],
-                user: 'crm',
-                reason: 'removed_from_route'
+                payload: { packages: [{ sheet: sheetName, rowNum: p.rowNum }] }
             })
         }).then(r => r.text()).catch(err => {
             console.warn('deleteFromRoute error:', err);
@@ -5958,7 +5960,7 @@ function applyStatusToSelected(status, note) {
                     if (note) mainPkg.note = note + (mainPkg.note ? ` | ${mainPkg.note}` : '');
                     updatePackageOnServer(mainPkg);
                 }
-                // Серверне архівування маршрутного пакету
+                // Фізично видаляємо маршрутний пакет
                 const pSheet = p._sheet || p.sheet;
                 const pRowNum = p._rowNum || p.rowNum;
                 if (pSheet && pRowNum) {
@@ -5966,11 +5968,9 @@ function applyStatusToSelected(status, note) {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
-                            action: 'archivePackages',
+                            action: 'deletePackagesPermanently',
                             companyId: getCompanyId(),
-                            packages: [{ sheet: pSheet, rowNum: pRowNum }],
-                            user: 'crm',
-                            reason: status
+                            payload: { packages: [{ sheet: pSheet, rowNum: pRowNum }] }
                         })
                     }).catch(() => {});
                 }

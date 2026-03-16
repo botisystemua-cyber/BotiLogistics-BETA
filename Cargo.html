@@ -4193,6 +4193,9 @@ function showRoute(sheetName) {
             renderRoutePassengers();
             updateFilterButtons();
             showToast(`🚀 ${sheetName}: ${routeStats.total} пасажирів`);
+
+            // Prefetch відправок у фоні, щоб при перемиканні на вкладку дані були готові
+            loadDispatchForRoute(sheetName).catch(() => {});
         } else {
             showToast('❌ ' + routeData.error);
         }
@@ -4892,7 +4895,8 @@ function getDispatchSheetName(routeSheet) {
 
 function switchToDispatchView() {
     isDispatchView = true;
-    dispatchLastUpdate = 0; // Force reload
+    // Якщо дані вже prefetch-нуті — не скидаємо кеш, показуємо одразу
+    if (!dispatchData.length) dispatchLastUpdate = 0;
     renderRoutePassengers(); // Will call renderDispatchView
 }
 

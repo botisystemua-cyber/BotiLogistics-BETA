@@ -4354,17 +4354,6 @@ function renderRoutePassengers() {
         return;
     }
 
-    if (routePassengers.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center;padding:40px;color:var(--text-secondary);">
-                <div style="font-size:48px;margin-bottom:12px;">📭</div>
-                <div style="font-size:14px;font-weight:600;">Маршрут порожній</div>
-                <div style="font-size:12px;margin-top:8px;">Додайте посилки через кнопку "🚀 Маршрут"</div>
-            </div>
-        `;
-        return;
-    }
-
     // Фільтруємо по статусу
     let filteredPassengers = routePassengers;
     if (routeStatusFilter !== 'all') {
@@ -4388,6 +4377,18 @@ function renderRoutePassengers() {
                 </button>
             </div>
         `;
+    }
+
+    if (routePassengers.length === 0) {
+        html += `
+            <div style="text-align:center;padding:40px;color:var(--text-secondary);">
+                <div style="font-size:48px;margin-bottom:12px;">📭</div>
+                <div style="font-size:14px;font-weight:600;">Маршрут порожній</div>
+                <div style="font-size:12px;margin-top:8px;">Додайте посилки через кнопку "🚀 Маршрут"</div>
+            </div>
+        `;
+        container.innerHTML = html;
+        return;
     }
 
     // Статистика зверху - клікабельна, адаптивна

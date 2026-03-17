@@ -3244,24 +3244,30 @@ function render() {
 // DRAG & DROP
 function handleDragStart(e, id) { draggedId = id; e.target.classList.add('dragging'); }
 function handleDragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedId = null; }
-function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.id !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
+function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.uid !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
 function handleDrop(e, targetId) {
     e.preventDefault();
     if (!draggedId || draggedId === targetId) return;
+    const savedDraggedId = draggedId;
+    draggedId = null;
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     const data = getFilteredData();
-    const dragIdx = data.findIndex(p => p.id === draggedId);
-    const targetIdx = data.findIndex(p => p.id === targetId);
+    const getUid = (p, i) => (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${i}`;
+    const dragIdx = data.findIndex((p, i) => getUid(p, i) === savedDraggedId);
+    const targetIdx = data.findIndex((p, i) => getUid(p, i) === targetId);
     if (dragIdx === -1 || targetIdx === -1) return;
+    const draggedP = data[dragIdx];
+    const targetP = data[targetIdx];
     // Reorder
-    data.forEach((p, i) => { const orig = passengers.find(x => x.id === p.id); if(orig) orig.order = i * 10; });
-    const draggedP = passengers.find(p => p.id === draggedId);
-    const targetP = passengers.find(p => p.id === targetId);
-    if (draggedP && targetP) {
-        const newOrder = dragIdx < targetIdx ? targetP.order + 1 : targetP.order - 1;
-        draggedP.order = newOrder;
+    data.forEach((p, i) => { const orig = passengers.find(x => x._sheet === p._sheet && x._rowNum === p._rowNum); if(orig) orig.order = i * 10; });
+    const origDragged = passengers.find(x => x._sheet === draggedP._sheet && x._rowNum === draggedP._rowNum);
+    const origTarget = passengers.find(x => x._sheet === targetP._sheet && x._rowNum === targetP._rowNum);
+    if (origDragged && origTarget) {
+        origDragged.order = dragIdx < targetIdx ? origTarget.order + 1 : origTarget.order - 1;
     }
     saveSettings();
-    render();
+    setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
 

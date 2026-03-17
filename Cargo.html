@@ -3577,18 +3577,20 @@ function render() {
 // DRAG & DROP
 function handleDragStart(e, id) { draggedId = id; e.target.classList.add('dragging'); }
 function handleDragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedId = null; }
-function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.id !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
+function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.uid !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
 function handleDrop(e, targetId) {
     e.preventDefault();
     if (!draggedId || draggedId === targetId) return;
+    const savedDraggedId = draggedId;
+    draggedId = null;
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     const data = getFilteredData();
-    // Шукаємо по uid (sheet_rowNum), а не по id
     const getUid = (p, i) => (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${i}`;
-    const dragIdx = data.findIndex((p, i) => getUid(p, i) === draggedId);
+    const dragIdx = data.findIndex((p, i) => getUid(p, i) === savedDraggedId);
     const targetIdx = data.findIndex((p, i) => getUid(p, i) === targetId);
     if (dragIdx === -1 || targetIdx === -1) return;
 
-    // Копіюємо всі дані при переміщенні (зберігаємо повний об'єкт)
     const draggedP = data[dragIdx];
     const targetP = data[targetIdx];
 
@@ -3605,7 +3607,7 @@ function handleDrop(e, targetId) {
     }
 
     saveSettings();
-    render();
+    setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
 

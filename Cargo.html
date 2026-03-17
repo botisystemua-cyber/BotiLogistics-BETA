@@ -5521,7 +5521,7 @@ function archivePackage(id) {
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
         const body = isRoute
             ? { action: 'deletePackagesPermanently', companyId: getCompanyId(), payload: { packages: [{ sheet: pSheet, rowNum: pRowNum }] } }
-            : { action: 'archivePackage', companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'archived' };
+            : { action: 'archivePackage', companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, reason: 'archived' };
         fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).catch(() => {});
     }
     saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
@@ -5807,7 +5807,6 @@ function bulkArchive() {
                 action: 'bulkArchive',
                 companyId: getCompanyId(),
                 items: mainPackages,
-                user: 'crm',
                 reason: 'bulk_archive'
             })
         }).catch(() => {});

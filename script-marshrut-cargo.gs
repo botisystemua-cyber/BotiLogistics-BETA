@@ -24,6 +24,9 @@ var SPREADSHEET_ID = '17g3TFYg11EqdQ9eGrOKQV3n_nqPDFx7dqsJVaGWeDOo';
 var SHEET_LOGS = 'Маршрути водіїв';
 var SHEET_MAILING = 'Провірка розсилки';
 
+// Джерело для логів
+var LOG_SOURCE = 'Маршрути-Посилки';
+
 // Кольори статусів для водіїв
 var STATUS_COLORS = {
   'pending':     { bg: '#fffbf0', border: '#ffc107', font: '#ffc107' },
@@ -163,8 +166,9 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
     var payload = data.payload || data;
-    // Прокидуємо companyId в payload (фронтенд шле його в data, не в payload)
+    // Прокидуємо companyId та user в payload (фронтенд шле їх в data, не в payload)
     payload.companyId = payload.companyId || data.companyId || '';
+    payload.user = payload.user || data.user || '';
 
     switch (action) {
       // --- CRM: МАРШРУТИ ---
@@ -645,7 +649,7 @@ function copyToRoute(payload) {
     }
 
     writeLog('copyToRoute', 'bulk', 0, 'copied: ' + totalCopied,
-      'archived: ' + totalArchived + ' cleared: ' + totalCleared);
+      'archived: ' + totalArchived + ' cleared: ' + totalCleared, payload.user);
 
     return {
       success: true,
@@ -710,7 +714,7 @@ function createRouteSheet(payload) {
       .setFontWeight('bold');
     sheet.setFrozenRows(1);
 
-    writeLog('createRouteSheet', sheetName, 0, 'created', '');
+    writeLog('createRouteSheet', sheetName, 0, 'created', '', payload.user);
 
     return { success: true, sheetName: sheetName, vehicleName: vehicleName };
   } catch (err) {
@@ -744,7 +748,7 @@ function deleteRouteSheet(payload) {
     }
 
     ss.deleteSheet(sheet);
-    writeLog('deleteRouteSheet', sheetName, 0, 'deleted', '');
+    writeLog('deleteRouteSheet', sheetName, 0, 'deleted', '', payload.user);
 
     return { success: true, sheetName: sheetName, deleted: true };
   } catch (err) {
@@ -786,7 +790,7 @@ function updateField(payload) {
   }
 
   sheet.getRange(rowNum, FIELD_MAP[field] + 1).setValue(value);
-  writeLog('updateField', sheetName, rowNum, field, String(value));
+  writeLog('updateField', sheetName, rowNum, field, String(value), payload.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, field: field };
 }
@@ -818,7 +822,7 @@ function updateStatus(payload) {
     );
   }
 
-  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '');
+  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '', payload.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, status: newStatus };
 }
@@ -907,7 +911,7 @@ function changeStatus(payload, newStatus) {
       changed++;
     }
 
-    writeLog('changeStatus:' + newStatus, 'bulk', 0, changed + '/' + items.length, note || '');
+    writeLog('changeStatus:' + newStatus, 'bulk', 0, changed + '/' + items.length, note || '', payload.user);
 
     return {
       success: true,
@@ -968,7 +972,7 @@ function deletePackagesPermanently(payload) {
       }
     }
 
-    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '', payload.user);
     return { success: true, deleted: deleted };
   } catch (err) {
     return { success: false, error: err.toString() };
@@ -1027,7 +1031,7 @@ function archiveToExternal(payload) {
     }
 
     writeLog('archivePackages', 'bulk', 0, 'archived: ' + count,
-      count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
+      count + '/' + items.length + ' архівовано in-place | reason: ' + reason, user);
 
     return {
       success: true,
@@ -1389,7 +1393,7 @@ function clearMailing(payload) {
         // Fallback: якщо deleteRows впав — очищуємо вміст
         sheet.getRange(2, 1, totalRows, sheet.getLastColumn()).clearContent();
       }
-      writeLog('clearMailing', SHEET_MAILING, 0, 'all', totalRows + ' рядків');
+      writeLog('clearMailing', SHEET_MAILING, 0, 'all', totalRows + ' рядків', payload.user);
       return { success: true, deleted: totalRows, mode: 'all' };
     }
 
@@ -1421,7 +1425,7 @@ function clearMailing(payload) {
       }
     }
 
-    writeLog('clearMailing', SHEET_MAILING, 0, 'archived', rowsToDelete.length + ' рядків');
+    writeLog('clearMailing', SHEET_MAILING, 0, 'archived', rowsToDelete.length + ' рядків', payload.user);
 
     return {
       success: true,
@@ -1478,7 +1482,7 @@ function clearOldMailing(payload) {
       }
     }
 
-    writeLog('clearOldMailing', SHEET_MAILING, 0, '>' + days + ' днів', rowsToDelete.length + ' рядків');
+    writeLog('clearOldMailing', SHEET_MAILING, 0, '>' + days + ' днів', rowsToDelete.length + ' рядків', payload.user);
 
     return {
       success: true,
@@ -1583,7 +1587,7 @@ function addPackageToRoute(data) {
     }
 
     writeLog('addPackage', sheetName, newRowNum, 'new',
-      'ПіБ: ' + (fields.name || '') + ' | ТТН: ' + (fields.ttn || '') + ' | Тел: ' + (fields.phone || '') + ' | Driver UI');
+      'ПіБ: ' + (fields.name || '') + ' | ТТН: ' + (fields.ttn || '') + ' | Тел: ' + (fields.phone || '') + ' | Driver UI', data.user);
 
     return {
       success: true,
@@ -1601,15 +1605,15 @@ function addPackageToRoute(data) {
 // ============================================
 var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
 
-function writeLog(action, sheetName, rowNum, detail, extra) {
+function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {
     var archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
     var logSheet = archiveSS.getSheetByName('Логи');
 
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
-      logSheet.getRange(1, 1, 1, 6)
+      logSheet.appendRow(['Дата/Час', 'Джерело', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі']);
+      logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e')
         .setFontColor('#ffffff')
         .setFontWeight('bold');
@@ -1617,7 +1621,9 @@ function writeLog(action, sheetName, rowNum, detail, extra) {
     }
 
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, action, sheetName, rowNum, detail, extra || '']);
+    var details = detail || '';
+    if (extra) details += ' | ' + extra;
+    logSheet.appendRow([timestamp, LOG_SOURCE, user || '', action, sheetName, rowNum, details]);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }
@@ -1798,7 +1804,7 @@ function addDispatchItem(payload) {
     var newRowNum = sheet.getLastRow();
 
     writeLog('addDispatchItem', sheetName, newRowNum, 'new',
-      'ПІБ: ' + (payload.name || '') + ' | Тел: ' + (payload.senderPhone || '') + ' | Driver UI');
+      'ПІБ: ' + (payload.name || '') + ' | Тел: ' + (payload.senderPhone || '') + ' | Driver UI', payload.user);
 
     return {
       success: true,
@@ -1826,7 +1832,7 @@ function updateDispatchStatus(data) {
     // Для відпр аркушів статус зберігається лише в логах
     // (відпр аркуші не мають колонки статусу)
     writeLog('updateDispatchStatus', sheetName, rowNum, status,
-      'Driver: ' + (data.driverId || '') + ' | Reason: ' + (data.cancelReason || ''));
+      'Driver: ' + (data.driverId || '') + ' | Reason: ' + (data.cancelReason || ''), data.user);
 
     return { success: true, rowNum: rowNum, status: status };
   } catch (err) {
@@ -1876,7 +1882,7 @@ function editDispatchItem(payload) {
       }
     }
 
-    writeLog('editDispatchItem', sheetName, rowNum, updated.join(', '), JSON.stringify(fields));
+    writeLog('editDispatchItem', sheetName, rowNum, updated.join(', '), JSON.stringify(fields), payload.user);
 
     return { success: true, rowNum: rowNum, updated: updated };
   } catch (err) {
@@ -1914,7 +1920,7 @@ function editRoutePackage(payload) {
       }
     }
 
-    writeLog('editRoutePackage', sheetName, rowNum, updated.join(', '), JSON.stringify(fields));
+    writeLog('editRoutePackage', sheetName, rowNum, updated.join(', '), JSON.stringify(fields), payload.user);
 
     return { success: true, rowNum: rowNum, updated: updated };
   } catch (err) {

@@ -58,6 +58,9 @@ var COL = {
 };
 var TOTAL_COLS = 23;
 
+// Джерело для логів
+var LOG_SOURCE = 'CRM-Посилки';
+
 // Статуси для архівації
 var ARCHIVE_STATUSES = ['archived', 'refused', 'deleted', 'transferred'];
 
@@ -942,7 +945,7 @@ function writeLog(action, sheetName, rowNum, detail, extra, user) {
 
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
+      logSheet.appendRow(['Дата/Час', 'Джерело', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі']);
       logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e')
         .setFontColor('#ffffff')
@@ -951,7 +954,9 @@ function writeLog(action, sheetName, rowNum, detail, extra, user) {
     }
 
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, user || '', action, sheetName, rowNum, detail, extra || '']);
+    var details = detail || '';
+    if (extra) details += ' | ' + extra;
+    logSheet.appendRow([timestamp, LOG_SOURCE, user || '', action, sheetName, rowNum, details]);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }

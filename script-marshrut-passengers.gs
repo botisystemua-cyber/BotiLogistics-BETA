@@ -31,6 +31,9 @@ var MAX_POINTS_PER_MAP = 25;
 var SHEET_LOGS = 'Логи';
 var SHEET_MAILING = 'Провірка розсилки';
 
+// Джерело для логів
+var LOG_SOURCE = 'Маршрути-Пасажири';
+
 // Кольори статусів для водіїв
 var STATUS_COLORS = {
   'pending':     { bg: '#fffbf0', border: '#ffc107', font: '#ffc107' },
@@ -159,8 +162,9 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
     var payload = data.payload || data;
-    // Прокидуємо companyId в payload (фронтенд шле його в data, не в payload)
+    // Прокидуємо companyId та user в payload (фронтенд шле їх в data, не в payload)
     payload.companyId = payload.companyId || data.companyId || '';
+    payload.user = payload.user || data.user || '';
 
     switch (action) {
       // --- ЧИТАННЯ ---
@@ -611,7 +615,7 @@ function copyToRoute(payload) {
     }
 
     writeLog('copyToRoute', 'bulk', 0, 'copied: ' + totalCopied,
-      'archived: ' + totalArchived + ' cleared: ' + totalCleared);
+      'archived: ' + totalArchived + ' cleared: ' + totalCleared, payload.user);
 
     return {
       success: true,
@@ -648,7 +652,7 @@ function createRouteSheet(payload) {
       .setFontWeight('bold');
     sheet.setFrozenRows(1);
 
-    writeLog('createRouteSheet', vehicleName, 0, 'created', '');
+    writeLog('createRouteSheet', vehicleName, 0, 'created', '', payload.user);
 
     return { success: true, sheetName: vehicleName, vehicleName: vehicleName };
   } catch (err) {
@@ -681,7 +685,7 @@ function deleteRouteSheet(payload) {
     }
 
     ss.deleteSheet(sheet);
-    writeLog('deleteRouteSheet', vehicleName, 0, 'deleted', '');
+    writeLog('deleteRouteSheet', vehicleName, 0, 'deleted', '', payload.user);
 
     return { success: true, sheetName: vehicleName, deleted: true };
   } catch (err) {
@@ -715,7 +719,7 @@ function deleteRoutePassenger(payload) {
     }
 
     sheet.deleteRow(rowNum);
-    writeLog('deleteRoutePassenger', sheetName, rowNum, 'deleted', '');
+    writeLog('deleteRoutePassenger', sheetName, rowNum, 'deleted', '', payload.user);
 
     return { success: true, deleted: true, rowNum: rowNum, sheetName: sheetName };
   } catch (err) {
@@ -752,7 +756,7 @@ function updateField(payload) {
   }
 
   sheet.getRange(rowNum, FIELD_MAP[field] + 1).setValue(value);
-  writeLog('updateField', sheetName, rowNum, field, String(value));
+  writeLog('updateField', sheetName, rowNum, field, String(value), payload.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, field: field };
 }
@@ -983,7 +987,7 @@ function changeStatus(payload, newStatus) {
       changed++;
     }
 
-    writeLog('changeStatus:' + newStatus, 'bulk', 0, changed + '/' + items.length, note);
+    writeLog('changeStatus:' + newStatus, 'bulk', 0, changed + '/' + items.length, note, payload.user);
 
     return {
       success: true,
@@ -1048,7 +1052,7 @@ function archiveToExternal(payload) {
     }
 
     writeLog('archivePassengers', 'bulk', 0, 'archived: ' + count,
-      count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
+      count + '/' + items.length + ' архівовано in-place | reason: ' + reason, user);
 
     return {
       success: true,
@@ -1112,7 +1116,7 @@ function deletePassengersPermanently(payload) {
       }
     }
 
-    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '', payload.user);
     return { success: true, deleted: deleted };
   } catch (err) {
     return { success: false, error: err.toString() };
@@ -1373,7 +1377,7 @@ function clearMailing(payload) {
     if (mode === 'all') {
       var total = sheet.getLastRow() - 1;
       sheet.deleteRows(2, total);
-      writeLog('clearMailing', SHEET_MAILING, 0, 'all', total + ' рядків');
+      writeLog('clearMailing', SHEET_MAILING, 0, 'all', total + ' рядків', payload.user);
       return { success: true, deleted: total, mode: 'all' };
     }
 
@@ -1389,7 +1393,7 @@ function clearMailing(payload) {
     }
 
     for (var d = 0; d < rowsToDelete.length; d++) sheet.deleteRow(rowsToDelete[d]);
-    writeLog('clearMailing', SHEET_MAILING, 0, 'archived', rowsToDelete.length + ' рядків');
+    writeLog('clearMailing', SHEET_MAILING, 0, 'archived', rowsToDelete.length + ' рядків', payload.user);
 
     return { success: true, deleted: rowsToDelete.length, remaining: (lastRow - 1) - rowsToDelete.length, mode: 'archived' };
   } catch (err) {
@@ -1419,7 +1423,7 @@ function clearOldMailing(payload) {
     }
 
     for (var d = 0; d < rowsToDelete.length; d++) sheet.deleteRow(rowsToDelete[d]);
-    writeLog('clearOldMailing', SHEET_MAILING, 0, '>' + days + 'д', rowsToDelete.length + ' рядків');
+    writeLog('clearOldMailing', SHEET_MAILING, 0, '>' + days + 'д', rowsToDelete.length + ' рядків', payload.user);
 
     return { success: true, deleted: rowsToDelete.length, remaining: (lastRow - 1) - rowsToDelete.length, days: days };
   } catch (err) {
@@ -1495,7 +1499,7 @@ function editPassenger(payload) {
     }
 
     writeLog('editPassenger', sheetName, row, 'edited',
-      'Водій змінив: ' + updated.join(', '));
+      'Водій змінив: ' + updated.join(', '), payload.user);
 
     return { success: true, updated: updated, rowNum: row };
   } catch (err) {
@@ -1547,7 +1551,7 @@ function addPassengerToRoute(payload) {
     var newRowNum = sheet.getLastRow();
 
     writeLog('addPassenger', sheetName, newRowNum, 'new',
-      'ПіБ: ' + (payload.name || '') + ' | Тел: ' + (payload.phone || '') + ' | Driver UI');
+      'ПіБ: ' + (payload.name || '') + ' | Тел: ' + (payload.phone || '') + ' | Driver UI', payload.user);
 
     return {
       success: true,
@@ -1565,19 +1569,21 @@ function addPassengerToRoute(payload) {
 // ============================================
 var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
 
-function writeLog(action, sheetName, rowNum, detail, extra) {
+function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {
     var archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
     var logSheet = archiveSS.getSheetByName('Логи');
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
-      logSheet.getRange(1, 1, 1, 6)
+      logSheet.appendRow(['Дата/Час', 'Джерело', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі']);
+      logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold');
       logSheet.setFrozenRows(1);
     }
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, action, sheetName, rowNum, detail, extra || '']);
+    var details = detail || '';
+    if (extra) details += ' | ' + extra;
+    logSheet.appendRow([timestamp, LOG_SOURCE, user || '', action, sheetName, rowNum, details]);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }
@@ -1870,7 +1876,7 @@ function fixMissingCompanyId(companyId) {
   }
 
   writeLog('fixMissingCompanyId', 'migration', 0,
-    'fixed: ' + totalFixed, sheetsFixed.join(', '));
+    'fixed: ' + totalFixed, sheetsFixed.join(', '), '');
 
   return {
     success: true,

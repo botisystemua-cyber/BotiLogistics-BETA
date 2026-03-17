@@ -39,6 +39,9 @@ var VEHICLE_TO_ROUTE = {
   'Авто 3': 'Пас. Маршрут 3'
 };
 
+// Джерело для логів
+var LOG_SOURCE = 'CRM-Пасажири';
+
 // Google Maps API ключ
 var API_KEY = 'AIzaSyCthPzhD6zDM9zR-re0R2ceohyhCRdawNc';
 
@@ -112,6 +115,8 @@ function doPost(e) {
     var action = data.action;
     var payload = data.payload || data;
     var companyId = payload.companyId || data.companyId || '';
+    // Прокидуємо user в payload (фронтенд шле його в data, не в payload)
+    payload.user = payload.user || data.user || '';
 
     switch (action) {
       // --- ЧИТАННЯ ---
@@ -1528,7 +1533,7 @@ function writeLog(action, sheetName, rowNum, detail, extra, user) {
 
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
+      logSheet.appendRow(['Дата/Час', 'Джерело', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі']);
       logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e')
         .setFontColor('#ffffff')
@@ -1537,7 +1542,9 @@ function writeLog(action, sheetName, rowNum, detail, extra, user) {
     }
 
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, user || '', action, sheetName, rowNum, detail, extra || '']);
+    var details = detail || '';
+    if (extra) details += ' | ' + extra;
+    logSheet.appendRow([timestamp, LOG_SOURCE, user || '', action, sheetName, rowNum, details]);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }

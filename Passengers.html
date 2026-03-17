@@ -4414,8 +4414,8 @@ function archivePassenger(id) {
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
         const action = isRoute ? 'archivePassengers' : 'archivePassenger';
         const body = isRoute
-            ? { action, companyId: getCompanyId(), passengers: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'archived' }
-            : { action, companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'archived' };
+            ? { action, companyId: getCompanyId(), passengers: [{ sheet: pSheet, rowNum: pRowNum }], reason: 'archived' }
+            : { action, companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, reason: 'archived' };
         fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).catch(() => {});
     }
     saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
@@ -5062,7 +5062,6 @@ function bulkArchive() {
                 action: 'bulkArchive',
                 companyId: getCompanyId(),
                 items: mainPassengers,
-                user: 'crm',
                 reason: 'bulk_archive'
             })
         }).catch(() => {});

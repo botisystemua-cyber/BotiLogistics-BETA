@@ -2364,6 +2364,46 @@ function checkSession() {
 function getCompanyId() {
     return botiSession ? botiSession.companyId : '';
 }
+function getCrmUser() {
+    return botiSession ? botiSession.name : '';
+}
+
+// Автоматично додаємо user до всіх API запитів
+(function() {
+    const _origFetch = window.fetch;
+    window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.includes('script.google.com') && options && options.body) {
+            try {
+                const body = JSON.parse(options.body);
+                if (body.action && !body.user) {
+                    body.user = getCrmUser();
+                    options = Object.assign({}, options, { body: JSON.stringify(body) });
+                }
+            } catch(e) {}
+        }
+        return _origFetch.call(this, url, options);
+    };
+})();
+
+// Логування фронтенд-дій (fire-and-forget)
+function logAction(action, detail, extra, sheet, rowNum) {
+    try {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'logAction',
+                logAction: action,
+                detail: detail || '',
+                extra: extra || '',
+                sheet: sheet || '',
+                rowNum: rowNum || 0,
+                user: getCrmUser(),
+                companyId: getCompanyId()
+            })
+        }).catch(() => {});
+    } catch(e) {}
+}
 
 // Синхронізація маршрутів з таблиці — підтягує реальні аркуші, видаляє зниклі
 async function loadVehiclesFromAPI() {
@@ -3607,6 +3647,7 @@ function handleDrop(e, targetId) {
     }
 
     saveSettings();
+    logAction('reorder', 'drag: ' + savedDraggedId + ' → ' + targetId);
     setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }

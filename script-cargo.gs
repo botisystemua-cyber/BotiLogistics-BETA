@@ -154,6 +154,10 @@ function doPost(e) {
       case 'checkDuplicates':
         return respond(checkDuplicates(data));
 
+      // --- ЛОГУВАННЯ З ФРОНТУ ---
+      case 'logAction':
+        return respond(logActionFromClient(data));
+
       default:
         return respond({ success: false, error: 'Невідома дія: ' + action });
     }
@@ -357,7 +361,7 @@ function addPackage(data) {
 
   if (duplicates.length > 0 && !data.force) {
     writeLog('addPackage:DUPLICATE', SHEET_NAME, 0, 'blocked',
-      'Знайдено ' + duplicates.length + ' дублікатів | ' + duplicates[0].reason);
+      'Знайдено ' + duplicates.length + ' дублікатів | ' + duplicates[0].reason, data.user);
 
     return {
       success: false,
@@ -400,7 +404,7 @@ function addPackage(data) {
 
   writeLog('addPackage', SHEET_NAME, newRowNum, 'new',
     'ПіБ: ' + (fields.name || '') + ' | ТТН: ' + (fields.ttn || '') + ' | Тел: ' + (fields.phone || '') +
-    (duplicates.length > 0 ? ' | FORCE (дублікат ігноровано)' : ''));
+    (duplicates.length > 0 ? ' | FORCE (дублікат ігноровано)' : ''), data.user);
 
   return {
     success: true,
@@ -441,7 +445,7 @@ function updatePackage(data) {
     var currentId = String(sheet.getRange(rowNum, COL.ID + 1).getValue() || '').trim();
     if (currentId !== String(data.expectedId).trim()) {
       writeLog('updatePackage:CONFLICT', sheetName, rowNum, 'blocked',
-        'Очікувався ІД: ' + data.expectedId + ', фактичний: ' + currentId);
+        'Очікувався ІД: ' + data.expectedId + ', фактичний: ' + currentId, data.user);
 
       return {
         success: false,
@@ -469,7 +473,7 @@ function updatePackage(data) {
     }
   }
 
-  writeLog('updatePackage', sheetName, rowNum, updated.join(', '), JSON.stringify(fields));
+  writeLog('updatePackage', sheetName, rowNum, updated.join(', '), JSON.stringify(fields), data.user);
 
   return { success: true, updated: updated, sheet: sheetName, rowNum: rowNum };
 }
@@ -503,7 +507,7 @@ function updateField(data) {
 
   sheet.getRange(rowNum, FIELD_MAP[field] + 1).setValue(value);
 
-  writeLog('updateField', sheetName, rowNum, field, String(value));
+  writeLog('updateField', sheetName, rowNum, field, String(value), data.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, field: field };
 }
@@ -543,7 +547,7 @@ function updateStatus(data) {
     );
   }
 
-  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '');
+  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '', data.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, status: newStatus, oldStatus: oldStatus };
 }
@@ -588,7 +592,7 @@ function bulkUpdateStatus(data) {
     count++;
   }
 
-  writeLog('bulkUpdateStatus', 'bulk', 0, newStatus, count + '/' + items.length + ' оновлено');
+  writeLog('bulkUpdateStatus', 'bulk', 0, newStatus, count + '/' + items.length + ' оновлено', data.user);
 
   return {
     success: true,
@@ -646,7 +650,7 @@ function deletePackagesPermanently(data) {
       }
     }
 
-    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '', data.user);
 
     return { success: true, deleted: deleted };
   } catch (err) {
@@ -665,7 +669,7 @@ function bulkAssignVehicle(data) {
     return { success: false, error: 'Відсутні items або vehicle' };
   }
 
-  writeLog('bulkAssignVehicle', 'bulk', 0, vehicle, items.length + ' items');
+  writeLog('bulkAssignVehicle', 'bulk', 0, vehicle, items.length + ' items', data.user);
 
   return { success: true, count: items.length, vehicle: vehicle };
 }
@@ -720,7 +724,7 @@ function archivePackage(data) {
 
   var recordId = String(rowData[COL.ID] || '');
   writeLog('archivePackage', sheetName, rowNum, 'archived',
-    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId + ' | by: ' + user + ' | reason: ' + reason);
+    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId + ' | reason: ' + reason, data.user || user);
 
   return {
     success: true,
@@ -779,7 +783,7 @@ function bulkArchive(data) {
   }
 
   writeLog('bulkArchive', 'bulk', 0, 'archived',
-    count + '/' + items.length + ' архівовано in-place | by: ' + user + ' | reason: ' + reason);
+    count + '/' + items.length + ' архівовано in-place | reason: ' + reason, data.user || user);
 
   return {
     success: true,
@@ -912,19 +916,34 @@ function getStructure() {
 
 
 // ============================================
+// logActionFromClient — Логування дій з фронтенду
+// ============================================
+function logActionFromClient(data) {
+  var action = data.logAction || 'unknown';
+  var detail = data.detail || '';
+  var extra = data.extra || '';
+  var user = data.user || '';
+  var sheetName = data.sheet || '';
+  var rowNum = data.rowNum || 0;
+
+  writeLog(action, sheetName, rowNum, detail, extra, user);
+  return { success: true };
+}
+
+// ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
 // ============================================
 var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
 
-function writeLog(action, sheetName, rowNum, detail, extra) {
+function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {
     var archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
     var logSheet = archiveSS.getSheetByName('Логи');
 
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
-      logSheet.getRange(1, 1, 1, 6)
+      logSheet.appendRow(['Дата/Час', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
+      logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e')
         .setFontColor('#ffffff')
         .setFontWeight('bold');
@@ -932,7 +951,7 @@ function writeLog(action, sheetName, rowNum, detail, extra) {
     }
 
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, action, sheetName, rowNum, detail, extra || '']);
+    logSheet.appendRow([timestamp, user || '', action, sheetName, rowNum, detail, extra || '']);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }

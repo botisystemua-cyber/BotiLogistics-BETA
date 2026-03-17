@@ -204,6 +204,10 @@ function doPost(e) {
       case 'addMailingRecord':
         return respond(addMailingRecord(payload));
 
+      // --- ЛОГУВАННЯ З ФРОНТУ ---
+      case 'logAction':
+        return respond(logActionFromClient(payload));
+
       default:
         return respond({ success: false, error: 'Невідома дія: ' + action });
     }
@@ -415,7 +419,7 @@ function addPassenger(payload) {
     // Блокуємо якщо є дублікати і не force
     if (duplicates.length > 0 && !payload.force) {
       writeLog('addPassenger:DUPLICATE', sheetName, 0, 'blocked',
-        'Знайдено ' + duplicates.length + ' дублікатів | ' + duplicates[0].reason);
+        'Знайдено ' + duplicates.length + ' дублікатів | ' + duplicates[0].reason, payload.user);
 
       return {
         success: false,
@@ -458,7 +462,7 @@ function addPassenger(payload) {
 
     writeLog('addPassenger', sheetName, newRowNum, 'new',
       'ПіБ: ' + (payload.name || '') + ' | Тел: ' + (payload.phone || '') +
-      (duplicates.length > 0 ? ' | FORCE (дублікат ігноровано)' : ''));
+      (duplicates.length > 0 ? ' | FORCE (дублікат ігноровано)' : ''), payload.user);
 
     return {
       success: true,
@@ -499,7 +503,7 @@ function updatePassenger(payload) {
       var currentId = String(sheet.getRange(rowNum, COL.ID + 1).getValue() || '').trim();
       if (currentId !== String(payload.expectedId).trim()) {
         writeLog('updatePassenger:CONFLICT', payload.sheet, rowNum, 'blocked',
-          'Очікувався ІД: ' + payload.expectedId + ', фактичний: ' + currentId);
+          'Очікувався ІД: ' + payload.expectedId + ', фактичний: ' + currentId, payload.user);
         return {
           success: false,
           error: 'conflict',
@@ -529,7 +533,7 @@ function updatePassenger(payload) {
       }
     }
 
-    writeLog('updatePassenger', payload.sheet, rowNum, updated.join(', '), '');
+    writeLog('updatePassenger', payload.sheet, rowNum, updated.join(', '), '', payload.user);
 
     return { success: true, updated: updated, sheet: payload.sheet, rowNum: rowNum };
   } catch (err) {
@@ -578,7 +582,7 @@ function updateField(payload) {
   if (rowNum > sheet.getLastRow()) return { success: false, error: 'Рядок не існує' };
 
   sheet.getRange(rowNum, FIELD_MAP[field] + 1).setValue(value);
-  writeLog('updateField', sheetName, rowNum, field, String(value));
+  writeLog('updateField', sheetName, rowNum, field, String(value), payload.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, field: field };
 }
@@ -609,7 +613,7 @@ function updateStatus(payload) {
     );
   }
 
-  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '');
+  writeLog('updateStatus', sheetName, rowNum, oldStatus + ' → ' + newStatus, '', payload.user);
 
   return { success: true, sheet: sheetName, rowNum: rowNum, status: newStatus, oldStatus: oldStatus };
 }
@@ -663,7 +667,7 @@ function changePassengersStatus(payload, newStatus) {
     }
 
     writeLog('changeStatus:' + newStatus, 'bulk', 0, changed + '/' + passengers.length,
-      note || '');
+      note || '', payload.user);
 
     return {
       success: true,
@@ -724,7 +728,7 @@ function deletePassengersPermanently(payload) {
       }
     }
 
-    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '');
+    writeLog('deletePermanently', 'bulk', 0, deleted + ' видалено', '', payload.user);
 
     return { success: true, deleted: deleted };
   } catch (err) {
@@ -792,16 +796,15 @@ function archivePassenger(payload) {
       archiveSheet.appendRow(archiveRow);
     } else {
       writeLog('archivePassenger:WARN', sheetName, rowNum, 'archive_sheet_missing',
-        'Архівний аркуш "Пасажири" не знайдено, статус оновлено без копії');
+        'Архівний аркуш "Пасажири" не знайдено, статус оновлено без копії', payload.user);
     }
   } catch (err) {
-    // Логуємо помилку але НЕ зупиняємо — статус вже оновлено
-    writeLog('archivePassenger:WARN', sheetName, rowNum, 'archive_write_failed', err.toString());
+    writeLog('archivePassenger:WARN', sheetName, rowNum, 'archive_write_failed', err.toString(), payload.user);
   }
 
   var recordId = String(rowData[COL.ID] || '');
   writeLog('archivePassenger', sheetName, rowNum, 'archived',
-    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId);
+    'ІД: ' + recordId + ' | ArchiveID: ' + archiveId, payload.user);
 
   return {
     success: true,
@@ -884,15 +887,14 @@ function bulkArchive(payload) {
       archiveSheet.getRange(startRow, 1, archiveRows.length, 23).setValues(archiveRows);
     } else {
       writeLog('bulkArchive:WARN', 'bulk', 0, 'archive_sheet_missing',
-        'Архівний аркуш не знайдено, статуси оновлено без копії');
+        'Архівний аркуш не знайдено, статуси оновлено без копії', payload.user);
     }
   } catch (err) {
-    // Логуємо помилку але НЕ зупиняємо — статуси вже оновлено
-    writeLog('bulkArchive:WARN', 'bulk', 0, 'archive_write_failed', err.toString());
+    writeLog('bulkArchive:WARN', 'bulk', 0, 'archive_write_failed', err.toString(), payload.user);
   }
 
   writeLog('bulkArchive', 'bulk', 0, 'archived',
-    successItems.length + '/' + items.length + ' записано в архів');
+    successItems.length + '/' + items.length + ' записано в архів', payload.user);
 
   return {
     success: true,
@@ -1153,7 +1155,7 @@ function createRouteSheet(payload) {
       created.setFrozenRows(1);
     }
 
-    writeLog('createRouteSheet', vehicleName, 0, 'created', '');
+    writeLog('createRouteSheet', vehicleName, 0, 'created', '', payload.user);
 
     return { success: true, sheetName: vehicleName, vehicleName: vehicleName };
   } catch (err) {
@@ -1239,7 +1241,7 @@ function copyToRouteSheet(payload) {
     }
 
     writeLog('copyToRoute', 'route', 0, 'copied: ' + totalCopied,
-      'archived: ' + totalArchived + ' cleared: ' + totalCleared);
+      'archived: ' + totalArchived + ' cleared: ' + totalCleared, payload.user);
 
     return {
       success: true,
@@ -1279,7 +1281,7 @@ function deleteRouteSheet(payload) {
     }
 
     routeSS.deleteSheet(sheet);
-    writeLog('deleteRouteSheet', sheetName, 0, 'deleted', '');
+    writeLog('deleteRouteSheet', sheetName, 0, 'deleted', '', payload.user);
 
     return { success: true, sheetName: sheetName, deleted: true };
   } catch (err) {
@@ -1500,19 +1502,34 @@ function getStructure() {
 
 
 // ============================================
+// logActionFromClient — Логування дій з фронтенду
+// ============================================
+function logActionFromClient(payload) {
+  var action = payload.logAction || 'unknown';
+  var detail = payload.detail || '';
+  var extra = payload.extra || '';
+  var user = payload.user || '';
+  var sheetName = payload.sheet || '';
+  var rowNum = payload.rowNum || 0;
+
+  writeLog(action, sheetName, rowNum, detail, extra, user);
+  return { success: true };
+}
+
+// ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
 // ============================================
 var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
 
-function writeLog(action, sheetName, rowNum, detail, extra) {
+function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {
     var archiveSS = SpreadsheetApp.openById(ARCHIVE_SS_ID_LOG);
     var logSheet = archiveSS.getSheetByName('Логи');
 
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
-      logSheet.getRange(1, 1, 1, 6)
+      logSheet.appendRow(['Дата/Час', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі', 'Дані']);
+      logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e')
         .setFontColor('#ffffff')
         .setFontWeight('bold');
@@ -1520,7 +1537,7 @@ function writeLog(action, sheetName, rowNum, detail, extra) {
     }
 
     var timestamp = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd HH:mm:ss');
-    logSheet.appendRow([timestamp, action, sheetName, rowNum, detail, extra || '']);
+    logSheet.appendRow([timestamp, user || '', action, sheetName, rowNum, detail, extra || '']);
   } catch (e) {
     Logger.log('Log error: ' + e.toString());
   }

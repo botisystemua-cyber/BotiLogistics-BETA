@@ -62,7 +62,7 @@ URL:    https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-
 
 ### CRM Посилки (Карго)
 ```
-URL:    https://script.google.com/macros/s/AKfycbw7htA6ypdRQuEXLEgQVN8cBrEbw9MCwXBZb0NEBCN5xJwLejpv2uNn2t_ohakcC6GplA/exec
+URL:    https://script.google.com/macros/s/AKfycbxMLcYT6-PDN04CsRdKg3H_W_6OjaVLL_qxb9Tz8Cqcv3xH0mPEo57dLkGK3zrtbE3vsQ/exec
 Скрипт: script-cargo.gs
 Де:     Cargo.html → API_URL
 ```

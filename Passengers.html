@@ -5188,37 +5188,38 @@ function bulkDeleteFromRoute() {
 
     showRouteProgress('Видаляю з маршруту...');
 
-    const deletePromises = selected.map(p => {
-        const sheetName = currentRouteVehicle?.routeSheet || p._vehicleName;
-        return fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'deleteRoutePassenger',
-                companyId: getCompanyId(),
-                payload: { sheetName: sheetName, rowNum: p.rowNum || p._rowNum }
-            })
-        }).then(r => r.text()).catch(err => {
-            console.warn('deleteFromRoute error:', err);
-            return '{}';
-        });
-    });
+    // Збираємо всі записи в один батч
+    const allPassengers = selected.map(p => ({
+        sheet: currentRouteVehicle?.routeSheet || p._vehicleName,
+        rowNum: p.rowNum || p._rowNum
+    }));
 
-    Promise.all(deletePromises).then(() => {
-        hideRouteProgress();
-        const deletedUids = new Set(selected.map(p => p._uid));
-        routePassengers = routePassengers.filter(p => !deletedUids.has(p._uid));
-        routeStats.total = routePassengers.length;
-        routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
-        routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
-        routeStats.completed = routePassengers.filter(p => p.driverStatus === 'completed').length;
-        routeStats.cancelled = routePassengers.filter(p => p.driverStatus === 'cancelled').length;
-        clearSelection();
-        renderRoutePassengers();
-        updateAllCounts();
-        updateRoutesList();
-        showToast(`🗑️ Видалено назавжди: ${selected.length}`);
-    });
+    // Видаляємо локально одразу
+    const deletedUids = new Set(selected.map(p => p._uid));
+    routePassengers = routePassengers.filter(p => !deletedUids.has(p._uid));
+    routeStats.total = routePassengers.length;
+    routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
+    routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
+    routeStats.completed = routePassengers.filter(p => p.driverStatus === 'completed').length;
+    routeStats.cancelled = routePassengers.filter(p => p.driverStatus === 'cancelled').length;
+
+    hideRouteProgress();
+    clearSelection();
+    renderRoutePassengers();
+    updateAllCounts();
+    updateRoutesList();
+    showToast(`🗑️ Видалено назавжди: ${selected.length}`);
+
+    // Fire-and-forget — один батч-запит
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'deletePassengersPermanently',
+            companyId: getCompanyId(),
+            payload: { passengers: allPassengers }
+        })
+    }).catch(err => console.error('Bulk delete from route error:', err));
 }
 
 // Масова зміна відмітки (driverStatus) для маршрутних пасажирів
@@ -5349,7 +5350,7 @@ function bulkDeleteForever() {
 
     showLoader('Видаляю назавжди...', '');
 
-    // Збираємо серверні та локальні записи
+    // Збираємо серверні записи
     const serverPassengers = [];
     const localUids = [];
 
@@ -5361,26 +5362,26 @@ function bulkDeleteForever() {
         localUids.push(uid);
     });
 
-    const removeLocally = () => {
-        localUids.forEach(uid => {
-            const idx = passengers.findIndex(p => {
-                const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${passengers.indexOf(p)}`;
-                return pUid === uid;
-            });
-            if (idx !== -1) passengers.splice(idx, 1);
+    // Видаляємо локально одразу
+    localUids.forEach(uid => {
+        const idx = passengers.findIndex(p => {
+            const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${passengers.indexOf(p)}`;
+            return pUid === uid;
         });
-        hideLoader();
-        clearSelection();
-        saveSettings();
-        render();
-        updateAllCounts();
-        renderCalendars();
-        showToast(`💀 Видалено назавжди: ${localUids.length}`);
-    };
+        if (idx !== -1) passengers.splice(idx, 1);
+    });
 
-    // Якщо є серверні записи — видаляємо через API
+    hideLoader();
+    clearSelection();
+    saveSettings();
+    render();
+    updateAllCounts();
+    renderCalendars();
+    showToast(`💀 Видалено назавжди: ${localUids.length}`);
+
+    // Fire-and-forget — один батч-запит
     if (serverPassengers.length > 0) {
-        fetch(ROUTE_API_URL, {
+        fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
@@ -5388,23 +5389,7 @@ function bulkDeleteForever() {
                 companyId: getCompanyId(),
                 payload: { passengers: serverPassengers }
             })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                removeLocally();
-            } else {
-                hideLoader();
-                showToast('❌ ' + (data.error || 'Помилка видалення'));
-            }
-        })
-        .catch(err => {
-            console.error('Delete forever error:', err);
-            // Все одно видаляємо локально
-            removeLocally();
-        });
-    } else {
-        removeLocally();
+        }).catch(err => console.error('Bulk delete forever error:', err));
     }
 }
 

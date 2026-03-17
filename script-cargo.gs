@@ -140,9 +140,6 @@ function doPost(e) {
         return respond(bulkAssignVehicle(data));
 
       // --- ВИДАЛЕННЯ ---
-      case 'deletePackage':
-        return respond(deletePackage(data));
-
       case 'deletePackagesPermanently':
         return respond(deletePackagesPermanently(data));
 
@@ -600,43 +597,6 @@ function bulkUpdateStatus(data) {
     status: newStatus,
     errors: errors.length > 0 ? errors : undefined
   };
-}
-
-// ============================================
-// deletePackage — Видалити (статус = deleted + дата)
-// ============================================
-function deletePackage(data) {
-  var sheetName = data.sheet;
-  var rowNum = data.rowNum;
-
-  if (!sheetName || !rowNum) {
-    return { success: false, error: 'Відсутні sheet або rowNum' };
-  }
-
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = findSheet(ss, sheetName);
-  if (!sheet) {
-    return { success: false, error: 'Аркуш не знайдено: ' + sheetName };
-  }
-
-  if (rowNum > sheet.getLastRow()) {
-    return { success: false, error: 'Рядок ' + rowNum + ' не існує' };
-  }
-
-  // Зберігаємо інфо для логу
-  var recordId = String(sheet.getRange(rowNum, COL.ID + 1).getValue() || '');
-  var recordName = String(sheet.getRange(rowNum, COL.NAME + 1).getValue() || '');
-
-  // Позначаємо як видалений
-  sheet.getRange(rowNum, COL.STATUS + 1).setValue('deleted');
-  sheet.getRange(rowNum, COL.DATE_ARCHIVE + 1).setValue(
-    Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd')
-  );
-
-  writeLog('deletePackage', sheetName, rowNum, 'deleted',
-    'ІД: ' + recordId + ' | ПіБ: ' + recordName);
-
-  return { success: true, sheet: sheetName, rowNum: rowNum, id: recordId };
 }
 
 // ============================================

@@ -4207,6 +4207,7 @@ function showRoute(sheetName) {
     filters.statusFilter = 'route';
     filters.routeVehicle = sheetName; // тепер зберігаємо sheetName замість vehicleId
     filters.showArchive = false;
+    filters.specialStatus = '';
     isDispatchView = false;
     dispatchData = [];
     dispatchLastUpdate = 0;
@@ -5323,7 +5324,7 @@ function resetVehicleFilter() {
     updateVehiclesList();
     updateMobileVehicles();
 }
-function filterByStatus(status) { clearSelection(); filters.statusFilter = filters.statusFilter === status ? '' : status; filters.showArchive = false; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateFilterButtons(); }
+function filterByStatus(status) { clearSelection(); filters.statusFilter = filters.statusFilter === status ? '' : status; filters.showArchive = false; filters.specialStatus = ''; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateFilterButtons(); }
 function toggleArchiveFilter() { clearSelection(); const entering = !filters.showArchive; filters.showArchive = entering; filters.statusFilter = ''; filters.routeVehicle = ''; filters.specialStatus = ''; if (entering) { filters.date = ''; filters.showNewOnly = false; filters.search = ''; filters.statusDateFrom = ''; filters.statusDateTo = ''; const si = document.getElementById('searchInput'); if (si) si.value = ''; } routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateAllCounts(); updateFilterButtons(); renderCalendars(); }
 
 // ═══ ROUTE PICKER ═══

@@ -6317,25 +6317,42 @@ function savePassenger() {
     }; 
     
     if (isEditing && existingP) {
-        // Знаходимо індекс в масиві
-        const i = passengers.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
-        if (i !== -1) {
-            const directionChanged = existingP.direction && d.direction !== existingP.direction;
+        // Перевіряємо чи це маршрутний пасажир
+        const isRoutePassenger = !!existingP._isRouteData;
 
-            if (directionChanged && existingP._sheet && existingP._rowNum) {
-                // Напрямок змінився — переміщуємо на інший аркуш
-                d.status = existingP.status || 'new';
-                d.order = existingP.order || passengers.length * 10;
-                passengers.splice(i, 1);
-                passengers.unshift(d);
-                movePassengerDirection(existingP, d);
-            } else {
-                // Напрямок той самий — оновлюємо на місці
-                d._sheet = passengers[i]._sheet;
-                d._rowNum = passengers[i]._rowNum;
-                passengers[i] = {...passengers[i], ...d};
+        if (isRoutePassenger) {
+            // Маршрутний пасажир — шукаємо в routePassengers
+            const ri = routePassengers.findIndex(p => p._uid === editingId);
+            if (ri !== -1) {
+                d._sheet = routePassengers[ri]._sheet;
+                d._rowNum = routePassengers[ri]._rowNum;
+                d._isRouteData = true;
+                d._uid = routePassengers[ri]._uid;
+                routePassengers[ri] = {...routePassengers[ri], ...d};
                 // Оновлюємо на сервері
-                updatePassengerOnServer(passengers[i]);
+                updatePassengerOnServer(routePassengers[ri]);
+            }
+        } else {
+            // Звичайний пасажир — шукаємо в passengers
+            const i = passengers.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
+            if (i !== -1) {
+                const directionChanged = existingP.direction && d.direction !== existingP.direction;
+
+                if (directionChanged && existingP._sheet && existingP._rowNum) {
+                    // Напрямок змінився — переміщуємо на інший аркуш
+                    d.status = existingP.status || 'new';
+                    d.order = existingP.order || passengers.length * 10;
+                    passengers.splice(i, 1);
+                    passengers.unshift(d);
+                    movePassengerDirection(existingP, d);
+                } else {
+                    // Напрямок той самий — оновлюємо на місці
+                    d._sheet = passengers[i]._sheet;
+                    d._rowNum = passengers[i]._rowNum;
+                    passengers[i] = {...passengers[i], ...d};
+                    // Оновлюємо на сервері
+                    updatePassengerOnServer(passengers[i]);
+                }
             }
         }
     } else {

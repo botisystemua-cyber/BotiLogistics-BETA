@@ -1095,8 +1095,19 @@ function deletePassengersPermanently(payload) {
       var rows = bySheet[sn].sort(function(a, b) { return b - a; });
       for (var d = 0; d < rows.length; d++) {
         if (rows[d] >= 2 && rows[d] <= sheet.getLastRow()) {
-          sheet.deleteRow(rows[d]);
-          deleted++;
+          try {
+            if (sheet.getLastRow() <= 1) {
+              sheet.getRange(rows[d], 1, 1, sheet.getLastColumn()).clearContent();
+            } else {
+              sheet.deleteRow(rows[d]);
+            }
+            deleted++;
+          } catch (e) {
+            try {
+              sheet.getRange(rows[d], 1, 1, sheet.getLastColumn()).clearContent();
+              deleted++;
+            } catch (ignore) {}
+          }
         }
       }
     }

@@ -47,7 +47,7 @@ URL:    https://script.google.com/macros/s/AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4k
 
 ### CRM Пасажири
 ```
-URL:    https://script.google.com/macros/s/AKfycbyraE4ijDkZPtKoKD_hV18RDjeugwyNw7AULO0dGOPiHOViEsnweYh0RutD8MwJ7Vzktw/exec
+URL:    https://script.google.com/macros/s/AKfycbzqxOYFeVq7aBPL48auCLDInBrwdqdELkVPdQzfwZIVtZ4NhOX21jHRrTJA-pj8SeFy_Q/exec
 Скрипт: script-passengers.gs
 Де:     Passengers.html → API_URL
 ```
@@ -62,7 +62,7 @@ URL:    https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-
 
 ### CRM Посилки (Карго)
 ```
-URL:    https://script.google.com/macros/s/AKfycbxwyRW63QEAw1bm-8zKAXnGyiZYC5pYdAJKZFwjNCvZjcS7BVH7yZnfILtaUwvRVSe0ng/exec
+URL:    https://script.google.com/macros/s/AKfycbxtifGpKxKX185uBoTM3h_KebaGppdV_n30PhGGkDGr1HgH6DYGaPN3-IGJoUp-f31tAA/exec
 Скрипт: script-cargo.gs
 Де:     Cargo.html → API_URL
 ```

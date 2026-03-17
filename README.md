@@ -47,14 +47,14 @@ URL:    https://script.google.com/macros/s/AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4k
 
 ### CRM Пасажири
 ```
-URL:    https://script.google.com/macros/s/AKfycbyqpnqCPxeLm8NJTxm1Pgyml4A1BmwiWsA-yvwBbgS7QAP8r9cHmuB3Yioup4Bi3aFteQ/exec
+URL:    https://script.google.com/macros/s/AKfycbxfQ98eznyFfVoicTI6jl4cGERksq8UTNPsoJyPYxwgAmM-x_qSkVaqq22y_LsetA_eMg/exec
 Скрипт: script-passengers.gs
 Де:     Passengers.html → API_URL
 ```
 
 ### Маршрути Пасажирів
 ```
-URL:    https://script.google.com/macros/s/AKfycbw08lN_3L-52v68_H-I27JtOptPYAnNI02hsrKgzlb0r6BUb4iZJ2IffrT2KYFfkb8n/exec
+URL:    https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-mdtcaXXeDcta6nuCILD5Nj7uaWCPCteQGGD/exec
 Скрипт: script-marshrut-passengers.gs
 Де:     Passengers.html → ROUTE_API_URL
         Drivers.html → CONFIG.PASSENGER_API_URL
@@ -78,7 +78,7 @@ URL:    https://script.google.com/macros/s/AKfycbx4JV7tK_GeQPCnHFpCxVXg6LccS4QHP
 ### Drivers.html (водій) — використовує 2 API
 ```
 DELIVERY_API_URL:  https://script.google.com/macros/s/AKfycbxIWqEOOWiHEec6-y-_JWNCYNKnAEtU1X0La_4kMZuk8fe_ueFq2vHub1K2Zm-qe7ho/exec  (маршрути карго)
-PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbwURZGmXohAcuqzdKgEZBaRCwLorswNA99vwAGbUGloLQ0Ivj10OJHeqbKcAKNmf3MT/exec  (маршрути пасажирів)
+PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-mdtcaXXeDcta6nuCILD5Nj7uaWCPCteQGGD/exec  (маршрути пасажирів)
 ```
 
 ---

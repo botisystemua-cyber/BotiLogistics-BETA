@@ -6239,9 +6239,9 @@ function showDeleteConfirmModal(uid, displayName, passengerId) {
                 <div style="font-size:14px;margin-bottom:8px;">Ви впевнені що хочете видалити:</div>
                 <div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;">${displayName}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">ID: ${passengerId}</div>
-                <div style="background:#fef3c7;padding:12px;border-radius:8px;font-size:12px;color:#92400e;">
-                    Лід буде переміщений в <strong>Архів</strong>.<br>
-                    Ви зможете відновити його пізніше.
+                <div style="background:#fee2e2;padding:12px;border-radius:8px;font-size:12px;color:#991b1b;">
+                    ⚠️ Запис буде <strong>видалений назавжди</strong>.<br>
+                    Цю дію НЕ МОЖНА скасувати!
                 </div>
             </div>
             <div class="modal-footer">
@@ -6259,78 +6259,45 @@ function confirmDeletePassenger(uid) {
     const p = findPassengerByUid(uid);
     if (!p) return;
 
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
+
     // Закриваємо дії картки
     openActionsId = null;
 
-    // Якщо є серверні дані - архівуємо на сервері
-    const pSheet = p._sheet;
-    const pRowNum = p._rowNum;
+    // Видаляємо з локального масиву
+    const idx = passengers.findIndex(pkg => {
+        const pkgUid = (pkg._sheet && pkg._rowNum) ? `${pkg._sheet}_${pkg._rowNum}` : `local_${passengers.indexOf(pkg)}`;
+        return pkgUid === uid;
+    });
+    if (idx !== -1) passengers.splice(idx, 1);
+
+    // Якщо маршрутний — видаляємо з routePassengers
+    if (p._isRouteData) {
+        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+        routeStats.total = routePassengers.length;
+    }
+
+    // Оновлюємо UI
+    saveSettings();
+    render();
+    updateAllCounts();
+    renderCalendars();
+    showToast('🗑️ Видалено назавжди');
+
+    // Фізично видаляємо рядок на сервері (fire-and-forget)
     if (pSheet && pRowNum) {
-        showLoader('Видалення...', '');
         const isRoute = !!p._isRouteData;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
-        const body = isRoute
-            ? { action: 'archivePassengers', companyId: getCompanyId(), payload: { passengers: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'deleted' } }
-            : { action: 'archivePassenger', payload: { sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'deleted' } };
-
-        // Fetch з ретраєм для мобільних
-        function doDelete(retries) {
-            fetch(apiUrl, {
-                method: 'POST',
-                redirect: 'follow',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(body)
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'deletePassengersPermanently',
+                companyId: getCompanyId(),
+                payload: { passengers: [{ sheet: pSheet, rowNum: pRowNum }] }
             })
-            .then(r => {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.text();
-            })
-            .then(t => {
-                try { return JSON.parse(t); }
-                catch(e) { throw new Error('Invalid server response'); }
-            })
-            .then(data => {
-                hideLoader();
-                if (data.success) {
-                    // Оновлюємо локально тільки після підтвердження сервера
-                    if (p.status !== 'archived') p.prevStatus = p.status || 'new';
-                    p.archiveType = 'deleted';
-                    p.status = 'archived';
-                    p.archiveDate = new Date().toISOString().split('T')[0];
-                    p.isNew = false;
-                    saveSettings();
-                    render();
-                    updateAllCounts();
-                    renderCalendars();
-                    showToast('🗑️ Переміщено в архів');
-                } else {
-                    showToast('❌ ' + (data.error || 'Помилка архівації'));
-                }
-            })
-            .catch(err => {
-                if (retries > 0) {
-                    console.warn('Delete retry (' + retries + ' left):', err.message);
-                    setTimeout(() => doDelete(retries - 1), 1500);
-                    return;
-                }
-                hideLoader();
-                console.error('Delete error:', err);
-                showToast('❌ Помилка: ' + (err.message || 'мережа'));
-            });
-        }
-        doDelete(2);
-    } else {
-        // Локальний лід - просто оновлюємо
-        if (p.status !== 'archived') p.prevStatus = p.status || 'new';
-        p.archiveType = 'deleted';
-        p.status = 'archived';
-        p.archiveDate = new Date().toISOString().split('T')[0];
-        p.isNew = false;
-        saveSettings();
-        render();
-        updateAllCounts();
-        renderCalendars();
-        showToast('🗑️ Переміщено в архів');
+        }).catch(err => console.error('Delete error:', err));
     }
 }
 

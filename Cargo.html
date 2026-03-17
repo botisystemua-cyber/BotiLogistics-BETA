@@ -1197,7 +1197,7 @@
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 6px 10px; z-index: 100; display: flex; justify-content: space-around; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 12px; border: none; background: none; font-family: inherit; font-size: 9px; color: var(--text-secondary); cursor: pointer; position: relative; }
-        .nav-item.active { color: var(--accent); }
+        .nav-item.active { color: var(--accent); background: #f0f0f0; border-radius: 10px; padding: 6px 14px; }
         .nav-item span:first-child { font-size: 18px; }
 
         /* DIRECTION POPUP */
@@ -3093,6 +3093,7 @@ function selectDate(dateStr) {
     updateFilterButtons();
     updateVehiclesList();
     document.getElementById('dateDropdown')?.classList.remove('show');
+    closeSideMenu();
 
     // Перевірка на перевищення місткості
     if (dateStr) {

@@ -260,6 +260,10 @@ function doPost(e) {
         if (!payload.companyId) return respond({ success: false, error: 'Не вказано companyId' });
         return respond(fixMissingCompanyId(payload.companyId));
 
+      // --- ЛОГУВАННЯ З ФРОНТУ ---
+      case 'logAction':
+        return respond(logActionFromClient(payload));
+
       // --- ДЕБАГ ---
       case 'getStructure':
         return respond(getStructure());
@@ -1565,9 +1569,24 @@ function addPassengerToRoute(payload) {
 }
 
 // ============================================
+// logActionFromClient — Логування дій з фронтенду
+// ============================================
+function logActionFromClient(payload) {
+  var action = payload.logAction || 'unknown';
+  var detail = payload.detail || '';
+  var extra = payload.extra || '';
+  var user = payload.user || '';
+  var sheetName = payload.sheet || '';
+  var rowNum = payload.rowNum || 0;
+
+  writeLog(action, sheetName, rowNum, detail, extra, user);
+  return { success: true };
+}
+
+// ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
 // ============================================
-var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
+var ARCHIVE_SS_ID_LOG = '1MxX6aA1kZYmBwgI2g2pylxSZz-Tzvi0v0YyJENWXBPw';
 
 function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {

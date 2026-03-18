@@ -835,6 +835,23 @@
         function getCompanyId() {
             return botiSession ? botiSession.companyId : '';
         }
+        function logAction(action, detail, extra) {
+            try {
+                fetch(CONFIG.DELIVERY_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'logAction',
+                        logAction: action,
+                        detail: detail || '',
+                        extra: extra || '',
+                        sheet: currentSheet || '',
+                        user: driverName || (botiSession && botiSession.email) || '',
+                        companyId: getCompanyId()
+                    })
+                }).catch(function() {});
+            } catch(e) {}
+        }
         document.addEventListener('DOMContentLoaded', function() {
             if (!checkSession()) return;
             // Використовуємо назву компанії з сесії
@@ -883,6 +900,7 @@
             }
         }
         function openRoute(route, routeType) {
+            logAction('openRoute', route, routeType);
             var list = document.getElementById('deliveriesList');
             list.innerHTML = '<div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>';
             deliveries = [];
@@ -1639,6 +1657,7 @@
             updateStats();
             var delivery = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!delivery) return;
+            logAction('driverSetStatus', status, (delivery.id || delivery.ttn || '') + ' | ' + (delivery.address || ''));
             var deliveryId = delivery.id || delivery.ttn || delivery.internalNumber || '';
             var logData = {
                 action: 'updateDriverStatus',
@@ -1689,6 +1708,7 @@
             if (!confirm('Ви точно хочете скасувати цю посилку?')) return;
             var delivery = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!delivery) return;
+            logAction('driverCancel', (delivery.id || delivery.ttn || ''), reason);
             var deliveryId = delivery.id || delivery.ttn || delivery.internalNumber || '';
             deliveryStatuses[statusKey] = 'cancelled';
             saveStatuses();
@@ -1729,6 +1749,7 @@
                 ? 'Змінити статус ГОТОВО на ОЧІКУЄ?'
                 : 'Змінити статус СКАСОВАНО на ОЧІКУЄ?';
             if (!confirm(confirmMsg)) return;
+            logAction('driverUndoStatus', currentStatus + ' → pending');
             deliveryStatuses[statusKey] = 'pending';
             saveStatuses();
             renderDeliveries();
@@ -1779,6 +1800,7 @@
             updateStats();
             var passenger = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!passenger) return;
+            logAction('driverSetPassengerStatus', status, (passenger.id || '') + ' | ' + (passenger.from || ''));
             // updateDriverStatus → пише mark + кольори в Sheet + логи
             fetch(CONFIG.PASSENGER_API_URL, {
                 method: 'POST',
@@ -2046,6 +2068,7 @@
         function openEditDelivery(index) {
             var d = deliveries[index];
             if (!d) return;
+            logAction('driverEditDelivery', d.id || d.ttn || '', d.name || '');
             editingItem = d;
             editingType = 'delivery';
             openEditOverlay('Редагувати посилку', [
@@ -2186,6 +2209,7 @@
             });
         }
         async function submitAddLead() {
+            logAction('driverAddLead', currentRouteType);
             var isDelivery = currentRouteType === 'delivery';
             var body;
             if (isDelivery) {

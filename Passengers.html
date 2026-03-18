@@ -3387,6 +3387,7 @@ function quickAssignVehicle(uid, vehicleId) {
     if (vehicleId) {
         const veh = vehicles.find(v => v.id === vehicleId);
         if (!veh) return showToast('❌ Авто не знайдено');
+        logAction('assignVehicle', p.id || uid, veh.name);
         p.vehicle = veh.name;
         if (p.status === 'new') p.status = 'work';
         showToast(`🚐 ${veh.name}`);
@@ -4273,6 +4274,7 @@ function deleteFromRouteOnly(uid) {
     document.getElementById('routeDeleteChoiceModal')?.remove();
     const p = routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
+    logAction('deleteFromRoute', p.id || uid, p.name || '');
 
     const sheetName = currentRouteVehicle?.routeSheet || p._vehicleName;
     if (!sheetName) return showToast('❌ Невідомий аркуш маршруту');
@@ -4399,6 +4401,7 @@ function moveOneToRoute(id) {
 function archivePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
+    logAction('archivePassenger', id, p.name || '');
     const today = new Date().toISOString().split('T')[0];
     if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
     p.archiveType = 'archived';
@@ -4424,6 +4427,7 @@ function archivePassenger(id) {
 function restorePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
+    logAction('restorePassenger', id, p.name || '');
     const newStatus = p.prevStatus || 'new';
     p.status = newStatus;
     delete p.prevStatus;
@@ -4458,6 +4462,7 @@ function restorePassenger(id) {
 
 function bulkRestore() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
+    logAction('bulkRestore', selectedIds.size + ' шт.');
 
     // Збираємо дані для API (розділяємо main і route)
     const mainPassengers = [];
@@ -4611,6 +4616,7 @@ function confirmBulkAssignVehicle() {
         bulkRemoveVehicle();
         return;
     }
+    logAction('bulkAssignVehicle', selectedBulkVehicleId, selectedIds.size + ' шт.');
     bulkAssignVehicle(selectedBulkVehicleId);
 }
 
@@ -4639,6 +4645,7 @@ function bulkAssignVehicle(vehicleId) {
 }
 
 function bulkRemoveVehicle() {
+    logAction('bulkRemoveVehicle', selectedIds.size + ' шт.');
     let count = 0;
     selectedIds.forEach(uid => {
         const p = findPassengerByUid(uid);
@@ -4921,6 +4928,7 @@ function handleRouteConflict(action) {
 }
 
 function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
+    logAction('copyToRoute', Object.keys(byVehicle).join(', '), conflictAction || '');
     showRouteProgress('Записую в маршрут...');
 
     const payload = {
@@ -4985,6 +4993,7 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
 
 function bulkArchive() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
+    logAction('bulkArchive', selectedIds.size + ' шт.');
 
     // Збираємо всіх знайдених та розділяємо серверних на основні/маршрутні
     const mainPassengers = [];
@@ -5148,12 +5157,13 @@ function showRefuseModal() {
 function confirmRefuse() {
     const selected = document.querySelector('input[name="refuseReason"]:checked');
     if (!selected) return showToast('⚠️ Оберіть причину');
-    
+
     let reason = selected.value;
     if (reason === 'Інше') {
         reason = document.getElementById('refuseOtherText')?.value || 'Інше';
     }
-    
+    logAction('bulkRefuse', selectedIds.size + ' шт.', reason);
+
     document.getElementById('refuseModal').remove();
     applyStatusToSelected('refused', `Відмова: ${reason}`);
 }
@@ -5195,7 +5205,8 @@ function showTransferModal() {
 function confirmTransfer() {
     const transferTo = document.getElementById('transferToText')?.value?.trim();
     if (!transferTo) return showToast('⚠️ Вкажіть кому пересадили');
-    
+    logAction('bulkTransfer', selectedIds.size + ' шт.', transferTo);
+
     document.getElementById('transferModal').remove();
     applyStatusToSelected('transferred', `Пересадка: ${transferTo}`);
 }
@@ -5260,6 +5271,7 @@ function bulkDeleteFromRoute() {
 // Масова зміна відмітки (driverStatus) для маршрутних пасажирів
 function bulkSetDriverStatus(newStatus) {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть пасажирів');
+    logAction('bulkSetDriverStatus', newStatus, selectedIds.size + ' шт.');
 
     const statusLabels = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };
     const label = statusLabels[newStatus] || newStatus;
@@ -5382,6 +5394,7 @@ function bulkDeleteForever() {
     if (!confirm(`💀 УВАГА!\n\nВи точно хочете НАЗАВЖДИ видалити ${selectedIds.size} заявок?\n\nЦю дію НЕ МОЖНА скасувати!`)) {
         return;
     }
+    logAction('bulkDeleteForever', selectedIds.size + ' шт.');
 
     showLoader('Видаляю назавжди...', '');
 
@@ -5430,6 +5443,7 @@ function bulkDeleteForever() {
 
 // Універсальна функція застосування статусу
 function applyStatusToSelected(status, note) {
+    logAction('applyStatus', status, (selectedIds.size || 0) + ' шт. | ' + (note || ''));
     showLoader('Обробка...', '');
 
     const today = new Date().toISOString().split('T')[0];
@@ -6278,6 +6292,7 @@ function confirmDeletePassenger(uid) {
 
     const p = findPassengerByUid(uid);
     if (!p) return;
+    logAction('deletePassenger', p.id || uid, p.name || '');
 
     const pSheet = p._sheet || p.sheet;
     const pRowNum = p._rowNum || p.rowNum;
@@ -6745,8 +6760,9 @@ function syncWithSheets() {
 
 // SAVE - Додати нового пасажира на сервер
 function savePassengerToServer(passenger) {
+    logAction('savePassenger', passenger.id || 'new', passenger.name || '');
     showLoader('Збереження...', '');
-    
+
     const payload = {
         action: 'addPassenger',
         companyId: getCompanyId(),
@@ -6821,6 +6837,7 @@ function savePassengerToServer(passenger) {
 // UPDATE - Оновити пасажира на сервері
 function updatePassengerOnServer(passenger, retries) {
     retries = retries !== undefined ? retries : 2;
+    logAction('updatePassenger', passenger.id || '', passenger.name || '');
     const pSheet = passenger._sheet || passenger.sheet;
     const pRowNum = passenger._rowNum || passenger.rowNum;
     if (!pSheet || !pRowNum) {
@@ -6908,6 +6925,7 @@ function updatePassengerOnServer(passenger, retries) {
 
 // MOVE DIRECTION — Переміщення ліда між аркушами при зміні напрямку
 function movePassengerDirection(oldPassenger, newData) {
+    logAction('moveDirection', oldPassenger.id || '', oldPassenger.direction + ' → ' + (newData.direction || ''));
     showLoader('Зміна напрямку...', '');
 
     const addPayload = {

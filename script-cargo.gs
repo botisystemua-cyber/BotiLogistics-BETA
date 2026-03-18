@@ -936,7 +936,7 @@ function logActionFromClient(data) {
 // ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
 // ============================================
-var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
+var ARCHIVE_SS_ID_LOG = '1MxX6aA1kZYmBwgI2g2pylxSZz-Tzvi0v0YyJENWXBPw';
 
 function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {

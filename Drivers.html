@@ -668,6 +668,27 @@
         /* PHOTO BUTTON */
         .btn-photo-link { display: inline-block; padding: 6px 12px; background: linear-gradient(135deg, #2196F3, #1565C0); color: white; border-radius: 6px; font-size: 11px; font-weight: 600; text-decoration: none; margin-top: 6px; }
         .btn-photo-link:hover { opacity: 0.9; }
+        /* BIG SUCCESS NOTIFICATION */
+        .big-notify-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; animation: fadeIn 0.3s ease-out;
+        }
+        .big-notify-box {
+            background: white; border-radius: 20px; padding: 30px 24px;
+            text-align: center; max-width: 320px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .big-notify-icon { font-size: 56px; margin-bottom: 12px; }
+        .big-notify-title {
+            font-size: 22px; font-weight: 800; color: #2E7D32;
+            margin-bottom: 6px; letter-spacing: 0.5px;
+        }
+        .big-notify-sub {
+            font-size: 14px; color: #555; font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -924,6 +945,9 @@
             document.getElementById('routeNameDisplay').textContent = route;
             showToast('Відкрито ' + route);
             loadDeliveries();
+            if (routeType === 'delivery') {
+                loadDispatchCount();
+            }
             startDriverSync();
         }
         function showPasswordModal(route, correctPassword, routeType) {
@@ -1251,6 +1275,35 @@
         // ============ ВІДПРАВКА (DISPATCH) ============
         function getDispatchSheetName() {
             return currentSheet + ' (відпр)';
+        }
+        async function loadDispatchCount() {
+            try {
+                var response = await fetch(CONFIG.DELIVERY_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'getDispatchItems',
+                        companyId: getCompanyId(),
+                        payload: { sheetName: getDispatchSheetName() }
+                    })
+                });
+                var data = await response.json();
+                if (data.success) {
+                    var items = data.items || [];
+                    document.getElementById('countDispatch').textContent = items.length;
+                    dispatchData = items;
+                    dispatchData.forEach(function(item) {
+                        item._statusKey = 'disp_' + (item.id || item.rowNum);
+                        if (item.driverStatus && item.driverStatus !== 'pending') {
+                            deliveryStatuses[item._statusKey] = item.driverStatus;
+                        }
+                    });
+                    saveStatuses();
+                    dispatchLastUpdate = Date.now();
+                }
+            } catch (e) {
+                console.log('loadDispatchCount failed:', e);
+            }
         }
         async function loadDispatchData() {
             var now = Date.now();
@@ -2197,7 +2250,8 @@
                     if (result.success) {
                         showToast('&#9989; Збережено!');
                         closeEdit();
-                        forceLoadDeliveries();
+                        dispatchLastUpdate = 0;
+                        await fetchDispatchData();
                     } else {
                         showToast('&#10060; ' + (result.error || 'Помилка'));
                     }
@@ -2205,7 +2259,8 @@
                     // Google Apps Script redirect causes fetch error but data is saved
                     showToast('&#9989; Збережено!');
                     closeEdit();
-                    forceLoadDeliveries();
+                    dispatchLastUpdate = 0;
+                    await fetchDispatchData();
                 }
             });
         }
@@ -2327,34 +2382,49 @@
                     return;
                 }
                 // success — закриваємо модалку і оновлюємо список
-                showToast('&#9989; Додано!');
                 closeAddLead();
                 if (isDelivery) {
+                    showBigNotify('ДОДАНО У ВІДПРАВКИ', currentSheet);
                     dispatchLastUpdate = 0;
                     currentFilter = 'dispatch';
                     document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
                     document.getElementById('filterDispatch').classList.add('active');
                     await fetchDispatchData();
                 } else {
+                    showBigNotify('ДОДАНО ПАСАЖИРА', currentSheet);
                     lastUpdateTime = 0;
                     await fetchDeliveries();
                 }
             } catch (err) {
                 // Google Apps Script redirect causes fetch error but data is saved
                 console.warn('addLead fetch error (data likely saved):', err);
-                showToast('&#9989; Додано!');
                 closeAddLead();
                 if (isDelivery) {
+                    showBigNotify('ДОДАНО У ВІДПРАВКИ', currentSheet);
                     dispatchLastUpdate = 0;
                     currentFilter = 'dispatch';
                     document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
                     document.getElementById('filterDispatch').classList.add('active');
                     await fetchDispatchData();
                 } else {
+                    showBigNotify('ДОДАНО ПАСАЖИРА', currentSheet);
                     lastUpdateTime = 0;
                     await fetchDeliveries();
                 }
             }
+        }
+        // ============ BIG SUCCESS NOTIFY ============
+        function showBigNotify(title, subtitle) {
+            var overlay = document.createElement('div');
+            overlay.className = 'big-notify-overlay';
+            overlay.onclick = function() { overlay.remove(); };
+            overlay.innerHTML = '<div class="big-notify-box">' +
+                '<div class="big-notify-icon">&#9989;</div>' +
+                '<div class="big-notify-title">' + title + '</div>' +
+                '<div class="big-notify-sub">' + (subtitle || '') + '</div>' +
+            '</div>';
+            document.body.appendChild(overlay);
+            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 3000);
         }
         // ============ BOTTOM NAV INIT ============
         function initBottomNav() {

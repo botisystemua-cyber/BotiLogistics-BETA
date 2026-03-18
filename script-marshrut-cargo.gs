@@ -1064,33 +1064,25 @@ function handleDriverStatusUpdate(data) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-    // 1. Логуємо в аркуш водіїв
+    // 1. Логуємо в аркуш водіїв (тільки якщо аркуш вже існує)
     var logSheet = ss.getSheetByName(SHEET_LOGS);
-    if (!logSheet) {
-      logSheet = ss.insertSheet(SHEET_LOGS);
-      logSheet.getRange(1, 1, 1, 10).setValues([[
-        'Дата', 'Час', 'Водій', 'Маршрут', 'Номер посилки',
-        'Адреса', 'Статус', 'Причина скасування', 'Телефон', 'Сума'
-      ]]);
-      logSheet.getRange(1, 1, 1, 10)
-        .setBackground('#1a1a2e')
-        .setFontColor('#ffffff')
-        .setFontWeight('bold');
+    if (logSheet) {
+      var now = new Date();
+      logSheet.appendRow([
+        Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
+        Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
+        data.driverId || '',
+        data.routeName || '',
+        data.deliveryNumber || '',
+        data.address || '',
+        data.status || '',
+        data.cancelReason || '',
+        data.phone || '',
+        data.price || ''
+      ]);
     }
 
-    var now = new Date();
-    logSheet.appendRow([
-      Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
-      Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
-      data.driverId || '',
-      data.routeName || '',
-      data.deliveryNumber || '',
-      data.address || '',
-      data.status || '',
-      data.cancelReason || '',
-      data.phone || '',
-      data.price || ''
-    ]);
+    var now = now || new Date();
 
     // 2. Оновлюємо статус у маршрутному аркуші
     var routeSheet = ss.getSheetByName(data.routeName);
@@ -1145,6 +1137,7 @@ function handleDriverStatusUpdate(data) {
         }
 
         rowsUpdated++;
+        break; // Одна посилка — один рядок, не оновлюємо дублікати
       }
     }
 

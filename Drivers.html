@@ -1121,6 +1121,7 @@
         }
         // ============ SMART AUTO-SYNC (кожні 30 сек) ============
         let _syncInterval = null;
+        let _statusChanging = false; // Блокуємо sync під час зміни статусу
         function startDriverSync() {
             if (_syncInterval) return;
             _syncInterval = setInterval(silentSyncDriver, 30000);
@@ -1129,6 +1130,8 @@
             if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
         }
         async function silentSyncDriver() {
+            // Не синхронізуємо під час зміни статусу
+            if (_statusChanging) return;
             // Тільки якщо водій на екрані списку
             var listScreen = document.getElementById('listScreen');
             if (!listScreen || !listScreen.classList.contains('active')) return;
@@ -1167,7 +1170,7 @@
                     }
                     dispatchData = items;
                     dispatchData.forEach(function(item, idx) {
-                        item._statusKey = 'disp_' + item.rowNum + '_' + idx;
+                        item._statusKey = 'disp_' + (item.id || item.rowNum);
                         if (item.driverStatus && item.driverStatus !== 'pending') {
                             deliveryStatuses[item._statusKey] = item.driverStatus;
                         }
@@ -1221,8 +1224,8 @@
                     deliveries = items;
                     deliveries.forEach(function(item, idx) {
                         item._statusKey = currentRouteType === 'delivery'
-                            ? 'del_' + (item.id || item.ttn || item.rowNum) + '_' + idx
-                            : 'pas_' + item.rowNum + '_' + idx;
+                            ? 'del_' + (item.id || item.ttn || item.rowNum)
+                            : 'pas_' + (item.id || item.rowNum);
                         var apiStatus;
                         if (currentRouteType === 'delivery') {
                             var ps = item.parcelStatus || '';
@@ -1283,7 +1286,7 @@
                 }
                 dispatchData = items;
                 dispatchData.forEach(function(item, idx) {
-                    item._statusKey = 'disp_' + item.rowNum + '_' + idx;
+                    item._statusKey = 'disp_' + (item.id || item.rowNum);
                     if (item.driverStatus && item.driverStatus !== 'pending') {
                         deliveryStatuses[item._statusKey] = item.driverStatus;
                     }
@@ -1651,6 +1654,7 @@
             }
         }
         function setDeliveryStatus(statusKey, status) {
+            var prevStatus = deliveryStatuses[statusKey] || 'pending';
             deliveryStatuses[statusKey] = status;
             saveStatuses();
             renderDeliveries();
@@ -1674,21 +1678,32 @@
                 phone: delivery.phone,
                 price: delivery.price || delivery.amount
             };
+            _statusChanging = true;
             fetch(CONFIG.DELIVERY_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(logData)
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) {
                     var txt = status === 'completed' ? 'Готово!' : status === 'in-progress' ? 'В процесі' : 'Очікує';
                     showToast(txt);
                 } else {
-                    showToast('Помилка збереження');
+                    showToast('Помилка збереження — відкат');
+                    deliveryStatuses[statusKey] = prevStatus;
+                    saveStatuses();
+                    renderDeliveries();
+                    updateStats();
                 }
             })
             .catch(function(err) {
-                showToast('Помилка: ' + err.message);
+                _statusChanging = false;
+                showToast('Помилка: ' + err.message + ' — відкат');
+                deliveryStatuses[statusKey] = prevStatus;
+                saveStatuses();
+                renderDeliveries();
+                updateStats();
             });
         }
         function submitCancellationByUid(uid, statusKey) {
@@ -1710,6 +1725,7 @@
             if (!delivery) return;
             logAction('driverCancel', delivery.ttn || delivery.name || delivery.id || '', 1, reason);
             var deliveryId = delivery.id || delivery.ttn || delivery.internalNumber || '';
+            var prevStatus = deliveryStatuses[statusKey] || 'pending';
             deliveryStatuses[statusKey] = 'cancelled';
             saveStatuses();
             renderDeliveries();
@@ -1729,17 +1745,26 @@
                 phone: delivery.phone,
                 price: delivery.price || delivery.amount
             };
+            _statusChanging = true;
             fetch(CONFIG.DELIVERY_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(logData)
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) showToast('Скасовано');
-                else showToast('Помилка');
+                else {
+                    showToast('Помилка — відкат');
+                    deliveryStatuses[statusKey] = prevStatus;
+                    saveStatuses(); renderDeliveries(); updateStats();
+                }
             })
             .catch(function(err) {
-                showToast('Помилка: ' + err.message);
+                _statusChanging = false;
+                showToast('Помилка: ' + err.message + ' — відкат');
+                deliveryStatuses[statusKey] = prevStatus;
+                saveStatuses(); renderDeliveries(); updateStats();
             });
         }
         function undoStatus(statusKey) {
@@ -1772,12 +1797,14 @@
                 phone: delivery.phone,
                 price: delivery.price || delivery.amount
             };
+            _statusChanging = true;
             fetch(CONFIG.DELIVERY_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(logData)
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) showToast('Статус відмінено');
                 else {
                     showToast('Помилка');
@@ -1787,6 +1814,7 @@
                 }
             })
             .catch(function(err) {
+                _statusChanging = false;
                 showToast('Помилка: ' + err.message);
                 deliveryStatuses[statusKey] = currentStatus;
                 saveStatuses();
@@ -1794,6 +1822,7 @@
             });
         }
         function setPassengerStatus(statusKey, status) {
+            var prevStatus = deliveryStatuses[statusKey] || 'pending';
             deliveryStatuses[statusKey] = status;
             saveStatuses();
             renderDeliveries();
@@ -1802,6 +1831,7 @@
             if (!passenger) return;
             logAction('driverSetPassengerStatus', passenger.name || passenger.id || '', 1, status + ' | ' + (passenger.from || ''));
             // updateDriverStatus → пише mark + кольори в Sheet + логи
+            _statusChanging = true;
             fetch(CONFIG.PASSENGER_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
@@ -1819,15 +1849,21 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) {
                     var txt = status === 'completed' ? 'Готово!' : status === 'in-progress' ? 'В процесі' : 'Очікує';
                     showToast(txt);
                 } else {
-                    showToast('Помилка: ' + (data.error || ''));
+                    showToast('Помилка — відкат');
+                    deliveryStatuses[statusKey] = prevStatus;
+                    saveStatuses(); renderDeliveries(); updateStats();
                 }
             })
             .catch(function(err) {
-                showToast('Помилка: ' + err.message);
+                _statusChanging = false;
+                showToast('Помилка: ' + err.message + ' — відкат');
+                deliveryStatuses[statusKey] = prevStatus;
+                saveStatuses(); renderDeliveries(); updateStats();
             });
         }
         function submitCancellationPassenger(statusKey, uid) {
@@ -1839,11 +1875,13 @@
             if (!confirm('Ви точно хочете скасувати цього пасажира?')) return;
             var passenger = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!passenger) return;
+            var prevStatus = deliveryStatuses[statusKey] || 'pending';
             deliveryStatuses[statusKey] = 'cancelled';
             saveStatuses();
             renderDeliveries();
             updateStats();
             // updateDriverStatus → пише mark + кольори + логи + причина
+            _statusChanging = true;
             fetch(CONFIG.PASSENGER_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
@@ -1861,11 +1899,19 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) showToast('Скасовано');
-                else showToast('Помилка: ' + (data.error || ''));
+                else {
+                    showToast('Помилка — відкат');
+                    deliveryStatuses[statusKey] = prevStatus;
+                    saveStatuses(); renderDeliveries(); updateStats();
+                }
             })
             .catch(function(err) {
-                showToast('Помилка: ' + err.message);
+                _statusChanging = false;
+                showToast('Помилка: ' + err.message + ' — відкат');
+                deliveryStatuses[statusKey] = prevStatus;
+                saveStatuses(); renderDeliveries(); updateStats();
             });
         }
         function undoStatusPassenger(statusKey) {
@@ -1881,6 +1927,7 @@
             renderDeliveries();
             updateStats();
             // updateDriverStatus → скидає mark + кольори на pending + логи
+            _statusChanging = true;
             fetch(CONFIG.PASSENGER_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
@@ -1898,6 +1945,7 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                _statusChanging = false;
                 if (data.success) {
                     showToast('Статус відмінено');
                 } else {
@@ -1908,6 +1956,7 @@
                 }
             })
             .catch(function(err) {
+                _statusChanging = false;
                 showToast('Помилка: ' + err.message);
                 deliveryStatuses[statusKey] = currentStatus;
                 saveStatuses();

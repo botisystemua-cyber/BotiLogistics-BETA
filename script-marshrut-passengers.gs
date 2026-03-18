@@ -854,28 +854,23 @@ function handleDriverStatusUpdate(data) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-    // Логуємо
+    // Логуємо (тільки якщо аркуш вже існує)
     var logSheet = ss.getSheetByName(SHEET_LOGS);
-    if (!logSheet) {
-      logSheet = ss.insertSheet(SHEET_LOGS);
-      logSheet.getRange(1, 1, 1, 8).setValues([[
-        'Дата', 'Час', 'Водій', 'Маршрут', 'ІД пасажира', 'Адреса', 'Статус', 'Причина'
-      ]]);
-      logSheet.getRange(1, 1, 1, 8)
-        .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold');
+    if (logSheet) {
+      var now = new Date();
+      logSheet.appendRow([
+        Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
+        Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
+        data.driverId || '',
+        data.routeName || '',
+        data.passengerId || data.deliveryNumber || '',
+        data.address || '',
+        data.status || '',
+        data.cancelReason || ''
+      ]);
     }
 
-    var now = new Date();
-    logSheet.appendRow([
-      Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
-      Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
-      data.driverId || '',
-      data.routeName || '',
-      data.passengerId || data.deliveryNumber || '',
-      data.address || '',
-      data.status || '',
-      data.cancelReason || ''
-    ]);
+    var now = now || new Date();
 
     // Оновлюємо в маршруті
     var routeSheet = ss.getSheetByName(data.routeName);
@@ -920,6 +915,7 @@ function handleDriverStatusUpdate(data) {
         }
 
         rowsUpdated++;
+        break; // Один пасажир — один рядок, не оновлюємо дублікати
       }
     }
 

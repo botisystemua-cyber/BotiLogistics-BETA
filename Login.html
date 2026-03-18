@@ -726,7 +726,7 @@
       window.location.href = REDIRECT['Власник'];
     }
     function doLogout() {
-      logAction('logout', currentUser.email, currentUser.role);
+      logAction('logout', currentUser.email, '', currentUser.role);
       currentUser = { email: '', name: '', password: '', role: '', companyName: '', companyId: '' };
       sessionStorage.removeItem('boti_auth');
       showRoles();
@@ -763,7 +763,7 @@
     }
     // ═══ ЛОГУВАННЯ (fire-and-forget через cargo API) ═══
     const LOG_API_URL = 'https://script.google.com/macros/s/AKfycbzANaAr1q5cwAwLfDg_9HaCTjJVkrEwR0wxPFrBWcMOnDdhSM1y6qBz9UGIS74IkN5NTA/exec';
-    function logAction(action, detail, extra) {
+    function logAction(action, object, count, detail) {
         try {
             fetch(LOG_API_URL, {
                 method: 'POST',
@@ -771,9 +771,9 @@
                 body: JSON.stringify({
                     action: 'logAction',
                     logAction: action,
+                    object: object || '',
+                    count: count || '',
                     detail: detail || '',
-                    extra: extra || '',
-                    sheet: 'Login',
                     user: currentUser.email || '',
                     companyId: currentUser.companyId || ''
                 })
@@ -828,7 +828,7 @@
             role: result.role, companyName: result.companyName || '',
             companyId: result.companyId || ''
           };
-          logAction('loginSuccess', email, result.role + ' | ' + getDeviceInfo());
+          logAction('loginSuccess', email, '', result.role + ' | ' + getDeviceInfo());
           if (result.role === 'Власник') {
             showAdminPanel(result.name || email);
           } else {
@@ -840,7 +840,7 @@
             window.location.href = REDIRECT[result.role] || 'manager/index_pass_19v.html';
           }
         } else {
-          logAction('loginFailed', email, expectedRole);
+          logAction('loginFailed', email, '', expectedRole);
           showError(errorId, result.error || 'Помилка входу');
           passField.value = '';
           passField.focus();
@@ -1123,7 +1123,7 @@
       document.getElementById('modalOverlay').classList.add('active');
     }
     async function doDeleteUser(targetName, needPass) {
-      logAction('deleteUser', targetName, currentUser.email);
+      logAction('deleteUser', targetName, 1, '');
       const params = {
         action: 'deleteUser',
         ownerEmail: currentUser.email,
@@ -1159,7 +1159,7 @@
       clearAllMessages();
       const role = document.getElementById('newUserRole').value;
       const email = document.getElementById('newUserEmail').value.trim();
-      logAction('addUser', email, role);
+      logAction('addUser', email, 1, role);
       const password = document.getElementById('newUserPass').value.trim();
       if (!email) { showError('addUserError', 'Введіть email'); return; }
       if (!password || password.length < 4) { showError('addUserError', 'Пароль мінімум 4 символи'); return; }
@@ -1185,7 +1185,7 @@
     }
     // ═══ ЗМІНИТИ ПАРОЛЬ ═══
     async function doChangePassword() {
-      logAction('changePassword', currentUser.email);
+      logAction('changePassword', currentUser.email, '', '');
       clearAllMessages();
       const oldPass = document.getElementById('oldPass').value.trim();
       const newPass = document.getElementById('newPass').value.trim();

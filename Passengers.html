@@ -1414,6 +1414,68 @@
         .big-notify-title { font-size: 20px; font-weight: 800; color: #2E7D32; margin-bottom: 8px; }
         .big-notify-sub { font-size: 13px; color: #555; font-weight: 500; line-height: 1.5; }
         .big-notify-hint { font-size: 11px; color: #888; margin-top: 12px; line-height: 1.4; }
+
+        /* ONBOARDING TOUR WITH SPOTLIGHT */
+        .onboarding-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10000; opacity: 0; transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .onboarding-overlay.show { opacity: 1; pointer-events: auto; }
+        .onboarding-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55);
+        }
+        .onboarding-spotlight {
+            position: absolute; border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+            transition: all 0.4s ease;
+            z-index: 10001;
+            pointer-events: none;
+        }
+        .onboarding-tooltip {
+            position: absolute; z-index: 10002;
+            background: white; border-radius: 14px; padding: 22px 20px;
+            max-width: 340px; width: max-content; min-width: 260px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            transition: all 0.35s ease;
+        }
+        .onboarding-tooltip::before {
+            content: ''; position: absolute;
+            width: 14px; height: 14px; background: white;
+            transform: rotate(45deg);
+        }
+        .onboarding-tooltip.arrow-top::before { top: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-bottom::before { bottom: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-left::before { left: -7px; top: 24px; }
+        .onboarding-tooltip.arrow-right::before { right: -7px; top: 24px; }
+        .onboarding-tooltip-icon { font-size: 32px; margin-bottom: 6px; }
+        .onboarding-tooltip-title { font-size: 15px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+        .onboarding-tooltip-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .onboarding-tooltip-text strong { color: var(--text-primary); }
+        .onboarding-dots { display: flex; gap: 6px; margin-bottom: 14px; }
+        .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
+        .onboarding-dot.active { background: var(--primary); transform: scale(1.3); }
+        .onboarding-btns { display: flex; gap: 8px; align-items: center; }
+        .onboarding-btn {
+            padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px;
+            font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .onboarding-btn.primary { background: var(--primary); color: white; }
+        .onboarding-btn.primary:hover { background: var(--primary-dark); }
+        .onboarding-btn.secondary { background: var(--bg-main); color: var(--text-secondary); }
+        .onboarding-btn.secondary:hover { background: var(--border); }
+        .onboarding-btn.skip { background: none; color: var(--text-secondary); font-size: 11px; margin-left: auto; text-decoration: underline; padding: 8px 4px; }
+        .onboarding-btn.skip:hover { color: var(--danger); }
+        .onboarding-step-num { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px; }
+        /* Welcome modal (step 0, no spotlight) */
+        .onboarding-welcome {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) translateY(20px);
+            z-index: 10002; background: white; border-radius: 16px; padding: 28px 24px;
+            max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center; transition: transform 0.3s ease;
+        }
+        .onboarding-overlay.show .onboarding-welcome { transform: translate(-50%, -50%) translateY(0); }
     </style>
 </head>
 <body>
@@ -7268,6 +7330,206 @@ document.addEventListener('click', e => {
     if (!e.target.closest('.card-vehicle-badge') && !e.target.closest('.vehicle-dropdown')) document.querySelectorAll('.vehicle-dropdown').forEach(d => d.classList.remove('show'));
     if (!e.target.closest('#navPassengers') && !e.target.closest('.direction-popup')) document.getElementById('directionPopup')?.classList.remove('show');
 });
+
+// ============================================
+// ONBOARDING TOUR WITH SPOTLIGHT
+// ============================================
+const PASSENGER_ONBOARDING = [
+    {
+        // Step 0: Welcome — no spotlight, centered modal
+        icon: '👋',
+        title: 'Ласкаво просимо до CRM Пасажири!',
+        text: 'Коротка екскурсія по основних функціях. Займе менше хвилини.',
+        target: null
+    },
+    {
+        icon: '➕',
+        title: 'Додавання пасажира',
+        text: 'Натисніть <strong>➕ Додати</strong> внизу, щоб створити нового пасажира. Вкажіть напрямок, дату, ім\'я та контакти.',
+        target: () => document.querySelectorAll('.bottom-nav .nav-item')[4],
+        arrow: 'bottom'
+    },
+    {
+        icon: '☑️',
+        title: 'Вибір та масові дії',
+        text: 'Натисніть <strong>галочку</strong> на картці пасажира — зліва з\'явиться панель дій: призначити авто, архівувати, видалити та інше.',
+        target: () => document.getElementById('selectAll')?.closest('.checkbox-wrapper') || document.getElementById('selectAll'),
+        arrow: 'top'
+    },
+    {
+        icon: '⚡',
+        title: 'Оптимізація',
+        text: 'Виберіть пасажирів і натисніть <strong>⚡ Оптимізація</strong> — адреси занесуться в Google Maps для побудови маршруту.',
+        target: () => document.querySelector('.wf-btn.optimize'),
+        arrow: 'top'
+    },
+    {
+        icon: '🚀',
+        title: 'Маршрути',
+        text: 'Після оптимізації натисніть <strong>✅ В маршрут</strong>, щоб зафіксувати маршрут. Перегляд маршрутів — кнопка <strong>🚀 Маршрути</strong>.',
+        target: () => document.getElementById('btnRoute'),
+        arrow: 'top'
+    },
+    {
+        icon: '📦',
+        title: 'Архів',
+        text: 'Завершені поїздки переносьте в <strong>архів</strong>. Архівовані пасажири не заважають в основному списку, але завжди доступні.',
+        target: () => document.getElementById('btnArchive'),
+        arrow: 'top'
+    },
+    {
+        icon: '🔍',
+        title: 'Пошук та фільтри',
+        text: 'Шукайте по імені, телефону чи адресі. Фільтруйте по <strong>даті, авто та напрямку</strong> через кнопки зверху.',
+        target: () => document.getElementById('searchInput'),
+        arrow: 'top'
+    }
+];
+
+let onbStep = 0;
+
+function initPassengerOnboarding() {
+    if (localStorage.getItem('passengers_onboarding_disabled') === 'true') return;
+    if (localStorage.getItem('passengers_onboarding_seen') === 'true') return;
+    setTimeout(() => showPassengerOnboarding(), 900);
+}
+
+function showPassengerOnboarding() {
+    onbStep = 0;
+    renderOnbStep();
+}
+
+function renderOnbStep() {
+    const hint = PASSENGER_ONBOARDING[onbStep];
+    const total = PASSENGER_ONBOARDING.length;
+    const isLast = onbStep === total - 1;
+    const isFirst = onbStep === 0;
+
+    let overlay = document.getElementById('onbOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'onboarding-overlay';
+        overlay.id = 'onbOverlay';
+        document.body.appendChild(overlay);
+        // close on backdrop click
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay || e.target.classList.contains('onboarding-backdrop')) {
+                finishOnb();
+            }
+        });
+        requestAnimationFrame(() => overlay.classList.add('show'));
+    }
+
+    const dots = PASSENGER_ONBOARDING.map((_, i) =>
+        `<div class="onboarding-dot ${i === onbStep ? 'active' : ''}"></div>`
+    ).join('');
+
+    const btns = `
+        <div class="onboarding-btns">
+            ${!isFirst ? '<button class="onboarding-btn secondary" onclick="prevOnbStep()">← Назад</button>' : ''}
+            ${isLast
+                ? '<button class="onboarding-btn primary" onclick="finishOnb()">Зрозуміло!</button>'
+                : '<button class="onboarding-btn primary" onclick="nextOnbStep()">Далі →</button>'
+            }
+            <button class="onboarding-btn skip" onclick="disableOnb()">Вимкнути підказки</button>
+        </div>
+    `;
+
+    // Step 0 — welcome modal, no spotlight
+    if (!hint.target) {
+        overlay.innerHTML = `
+            <div class="onboarding-backdrop"></div>
+            <div class="onboarding-welcome">
+                <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
+                <div class="onboarding-tooltip-icon">${hint.icon}</div>
+                <div class="onboarding-tooltip-title">${hint.title}</div>
+                <div class="onboarding-tooltip-text">${hint.text}</div>
+                <div class="onboarding-dots" style="justify-content:center;">${dots}</div>
+                ${btns}
+            </div>
+        `;
+        return;
+    }
+
+    // Steps with spotlight
+    const el = hint.target();
+    if (!el) {
+        // element not found — skip step
+        if (!isLast) { onbStep++; renderOnbStep(); }
+        else finishOnb();
+        return;
+    }
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => {
+        const rect = el.getBoundingClientRect();
+        const pad = 8;
+        const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
+
+        // Tooltip position
+        const arrowDir = hint.arrow || 'top';
+        let tooltipStyle = '';
+        if (arrowDir === 'top') {
+            tooltipStyle = `top:${rect.bottom + pad + 14}px;left:${Math.max(12, Math.min(rect.left - 10, window.innerWidth - 360))}px;`;
+        } else if (arrowDir === 'bottom') {
+            tooltipStyle = `top:${rect.top - pad - 14}px;left:${Math.max(12, Math.min(rect.left - 10, window.innerWidth - 360))}px;transform:translateY(-100%);`;
+        } else if (arrowDir === 'left') {
+            tooltipStyle = `top:${rect.top - 10}px;left:${rect.right + pad + 14}px;`;
+        } else {
+            tooltipStyle = `top:${rect.top - 10}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
+        }
+
+        overlay.innerHTML = `
+            <div class="onboarding-spotlight" style="${spotStyle}"></div>
+            <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
+                <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
+                <div class="onboarding-tooltip-icon">${hint.icon}</div>
+                <div class="onboarding-tooltip-title">${hint.title}</div>
+                <div class="onboarding-tooltip-text">${hint.text}</div>
+                <div class="onboarding-dots">${dots}</div>
+                ${btns}
+            </div>
+        `;
+    }, 350);
+}
+
+function nextOnbStep() {
+    if (onbStep < PASSENGER_ONBOARDING.length - 1) {
+        onbStep++;
+        renderOnbStep();
+    }
+}
+
+function prevOnbStep() {
+    if (onbStep > 0) {
+        onbStep--;
+        renderOnbStep();
+    }
+}
+
+function finishOnb() {
+    localStorage.setItem('passengers_onboarding_seen', 'true');
+    closeOnb();
+}
+
+function disableOnb() {
+    localStorage.setItem('passengers_onboarding_disabled', 'true');
+    localStorage.setItem('passengers_onboarding_seen', 'true');
+    closeOnb();
+    if (typeof showToast === 'function') showToast('Підказки вимкнено назавжди');
+}
+
+function closeOnb() {
+    const overlay = document.getElementById('onbOverlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+// Launch onboarding
+initPassengerOnboarding();
 </script>
 </body>
 </html>

@@ -9159,7 +9159,7 @@ const CARGO_ONBOARDING = [
         title: 'Додавання посилки',
         text: 'Натисніть <strong>➕ Додати</strong> внизу — оберіть <strong>вручну</strong> або <strong>сканер ТТН</strong>. Вкажіть напрямок, дату, отримувача та адресу.',
         target: () => document.querySelectorAll('.bottom-nav .nav-item')[4],
-        arrow: 'bottom',
+        arrow: () => onbIsMobile() ? 'top' : 'bottom',
         before: () => {
             const menu = document.getElementById('sideMenu');
             if (menu && menu.classList.contains('open')) closeSideMenu();
@@ -9242,25 +9242,57 @@ function showCargoOnboarding() {
     renderOnbStep();
 }
 
+function onbGetOrCreateLayer(id, zIndex) {
+    let el = document.getElementById(id);
+    if (!el) {
+        el = document.createElement('div');
+        el.id = id;
+        el.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;z-index:${zIndex};pointer-events:none;`;
+        document.body.appendChild(el);
+    }
+    return el;
+}
+
 function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
     const rect = el.getBoundingClientRect();
     const pad = 6;
     const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
     const isMobile = onbIsMobile();
-
     const arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
 
-    // Mobile: compact tooltip to the right of side menu
+    // Clear overlay content (keep just as dark backdrop)
+    overlay.innerHTML = '';
+
+    // Spotlight layer — above side menu (10003)
+    const spotLayer = onbGetOrCreateLayer('onbSpotLayer', 10004);
+    spotLayer.innerHTML = `<div class="onboarding-spotlight" style="${spotStyle}"></div>`;
+
+    // Tooltip layer — above spotlight
+    const tipLayer = onbGetOrCreateLayer('onbTipLayer', 10005);
+    tipLayer.style.pointerEvents = 'auto';
+
     if (isMobile) {
         const sideMenu = document.getElementById('sideMenu');
-        const menuRight = sideMenu ? sideMenu.getBoundingClientRect().right : 210;
-        const tLeft = menuRight + 8;
-        const tTop = Math.max(10, Math.min(rect.top, window.innerHeight - 200));
-        const tWidth = window.innerWidth - tLeft - 8;
+        const isInMenu = sideMenu && sideMenu.contains(el);
 
-        overlay.innerHTML = `
-            <div class="onboarding-spotlight" style="${spotStyle}"></div>
-            <div class="onboarding-tooltip onboarding-tooltip-mobile arrow-left" style="position:fixed;top:${tTop}px;left:${tLeft}px;width:${Math.min(tWidth, 200)}px;max-width:${tWidth}px;min-width:120px;">
+        let tStyle = '';
+        let arrowClass = '';
+        if (isInMenu) {
+            const menuRight = sideMenu.getBoundingClientRect().right;
+            const tLeft = menuRight + 8;
+            const tTop = Math.max(10, Math.min(rect.top, window.innerHeight - 200));
+            const tWidth = window.innerWidth - tLeft - 8;
+            tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:${Math.min(tWidth, 180)}px;max-width:${tWidth}px;min-width:100px;`;
+            arrowClass = 'arrow-left';
+        } else {
+            const tTop = Math.max(10, rect.top - 160);
+            const tLeft = Math.max(8, Math.min(rect.left - 40, window.innerWidth - 188));
+            tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:180px;`;
+            arrowClass = 'arrow-top';
+        }
+
+        tipLayer.innerHTML = `
+            <div class="onboarding-tooltip onboarding-tooltip-mobile ${arrowClass}" style="${tStyle}">
                 <div class="onboarding-step-num">${step + 1} / ${total}</div>
                 <div class="onboarding-tooltip-title">${hint.title}</div>
                 <div class="onboarding-tooltip-text">${hint.text}</div>
@@ -9298,8 +9330,7 @@ function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
         tooltipStyle = `top:${Math.max(10, rect.top - 10)}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
     }
 
-    overlay.innerHTML = `
-        <div class="onboarding-spotlight" style="${spotStyle}"></div>
+    tipLayer.innerHTML = `
         <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
             <div class="onboarding-step-num">${step + 1} / ${total}</div>
             <div class="onboarding-tooltip-icon">${hint.icon}</div>
@@ -9428,6 +9459,11 @@ function closeOnb() {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 300);
     }
+    // Remove spotlight & tooltip layers
+    const spotLayer = document.getElementById('onbSpotLayer');
+    const tipLayer = document.getElementById('onbTipLayer');
+    if (spotLayer) spotLayer.remove();
+    if (tipLayer) tipLayer.remove();
     // Restore side menu z-index
     const menu = document.getElementById('sideMenu');
     const menuOverlay = document.getElementById('sideMenuOverlay');

@@ -1457,11 +1457,11 @@
             position: absolute; border-radius: 12px;
             box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
             transition: all 0.4s ease;
-            z-index: 10001;
+            z-index: 10004;
             pointer-events: none;
         }
         .onboarding-tooltip {
-            position: absolute; z-index: 10002;
+            position: absolute; z-index: 10005;
             background: white; border-radius: 14px; padding: 22px 20px;
             max-width: 340px; width: max-content; min-width: 260px;
             box-shadow: 0 16px 48px rgba(0,0,0,0.25);
@@ -9226,32 +9226,6 @@ const CARGO_ONBOARDING = [
             return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
-    },
-    {
-        icon: '⚡',
-        title: 'Оптимізація маршруту',
-        text: 'Виберіть посилки → натисніть <strong>⚡ Оптимізація</strong> — адреси відкриються в <strong>Google Maps</strong>. Потім натисніть <strong>✅ В маршрут</strong>, щоб зафіксувати.',
-        target: () => {
-            if (onbIsMobile()) {
-                const menu = document.getElementById('sideMenu');
-                if (menu && menu.classList.contains('open')) closeSideMenu();
-            }
-            return document.querySelector('.wf-btn.optimize');
-        },
-        arrow: 'top',
-        before: () => {
-            if (onbIsMobile()) {
-                const menu = document.getElementById('sideMenu');
-                if (menu && menu.classList.contains('open')) closeSideMenu();
-            }
-        }
-    },
-    {
-        icon: '☑️',
-        title: 'Вибір та масові дії',
-        text: 'Натисніть <strong>галочку</strong> на картці — зліва з\'явиться панель: призначити авто, оптимізувати, в маршрут, архівувати, видалити.',
-        target: () => document.getElementById('selectAll')?.closest('.checkbox-wrapper') || document.getElementById('selectAll'),
-        arrow: 'top'
     }
 ];
 

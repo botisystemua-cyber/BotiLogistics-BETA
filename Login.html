@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>YuraTransportation — Панель управління</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>BOTI-Logistics — Панель управління</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,6 +24,7 @@
       --manager-glow: rgba(59, 130, 246, 0.15);
       --owner: #10b981;
       --owner-glow: rgba(16, 185, 129, 0.15);
+      --brand-green: #10b981;
       --brand-red: #d90d0d;
       --error: #ef4444;
       --success: #10b981;
@@ -70,8 +74,8 @@
     .brand-badge {
       display: inline-block; font-family: 'Manrope', sans-serif;
       font-size: 10px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--brand-red); background: rgba(217, 13, 13, 0.1);
-      border: 1px solid rgba(217, 13, 13, 0.2); padding: 6px 16px;
+      color: var(--brand-green); background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 16px;
       border-radius: 20px; margin-bottom: 20px;
     }
     .logo-text {
@@ -80,7 +84,7 @@
       color: var(--text-primary); margin-bottom: 12px;
     }
     .logo-text span {
-      background: linear-gradient(135deg, var(--brand-red), #ff4444);
+      background: linear-gradient(135deg, var(--brand-green), #34d399);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .subtitle {
@@ -176,9 +180,11 @@
       width: 48px; height: 48px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
+    .login-icon.driver-icon { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.2); }
     .login-icon.manager-icon { background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.2); }
     .login-icon.owner-icon { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.2); }
     .login-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; }
+    .login-title.driver-title { color: var(--driver); }
     .login-title.manager-title { color: var(--manager); }
     .login-title.owner-title { color: var(--owner); }
     .form-group { margin-bottom: 18px; }
@@ -195,6 +201,7 @@
     }
     .form-input:focus { border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.07); }
     .form-input::placeholder { color: rgba(255, 255, 255, 0.2); font-weight: 400; }
+    .form-input.driver-input:focus { border-color: rgba(245, 158, 11, 0.4); }
     .form-input.manager-input:focus { border-color: rgba(59, 130, 246, 0.4); }
     .form-input.owner-input:focus { border-color: rgba(16, 185, 129, 0.4); }
     .form-select {
@@ -215,6 +222,8 @@
     }
     .btn-login:active { transform: scale(0.98); }
     .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-login.driver-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .btn-login.driver-btn:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3); }
     .btn-login.manager-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
     .btn-login.manager-btn:hover:not(:disabled) { box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3); }
     .btn-login.owner-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; }
@@ -316,12 +325,12 @@
     }
     .user-role-badge.role-owner { background: rgba(16, 185, 129, 0.15); color: var(--owner); }
     .user-role-badge.role-manager { background: rgba(59, 130, 246, 0.15); color: var(--manager); }
+    .user-role-badge.role-driver { background: rgba(245, 158, 11, 0.15); color: var(--driver); }
     .user-name { font-weight: 700; font-size: 14px; flex: 1; }
     .user-status {
       font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
     }
     .user-status.status-active { background: rgba(16, 185, 129, 0.12); color: var(--success); }
-    .user-status.status-blocked { background: rgba(239, 68, 68, 0.12); color: var(--error); }
     .user-meta { font-size: 11px; color: var(--text-secondary); }
     .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .user-action-btn {
@@ -331,7 +340,6 @@
       justify-content: center; transition: all 0.2s ease;
     }
     .user-action-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
-    .user-action-btn.btn-block:hover { background: rgba(239, 68, 68, 0.1); color: var(--error); }
     .user-action-btn.btn-delete:hover { background: rgba(239, 68, 68, 0.15); color: var(--error); }
     .loading-users {
       text-align: center; padding: 24px; color: var(--text-secondary); font-size: 13px;
@@ -374,7 +382,7 @@
       opacity: 0; animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
     }
     .footer a { color: rgba(255, 255, 255, 0.3); text-decoration: none; transition: color 0.3s ease; }
-    .footer a:hover { color: var(--brand-red); }
+    .footer a:hover { color: var(--brand-green); }
     /* ═══ ANIMATIONS ═══ */
     @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -424,21 +432,21 @@
   <div class="noise"></div>
   <div class="container">
     <header class="header">
-      <div class="brand-badge">Transportation System</div>
-      <h1 class="logo-text">YURA<span>TRANSPORTATION</span></h1>
+      <div class="brand-badge">Logistics Platform</div>
+      <h1 class="logo-text">BOTI-<span>LOGISTICS</span></h1>
       <p class="subtitle" id="headerSubtitle">Оберіть вашу роль для входу в систему</p>
     </header>
     <!-- ═══ ЕКРАН 1: ВИБІР РОЛІ ═══ -->
     <div class="screen active" id="screenRoles">
       <div class="cards">
-        <a href="index_driver.html" class="card card--driver">
+        <div class="card card--driver" onclick="showLogin('driver')">
           <div class="card-icon">🚛</div>
           <div class="card-content">
             <h2 class="card-title">Водій</h2>
             <p class="card-desc">Маршрути, посилки, пасажири та навігація</p>
           </div>
           <div class="card-arrow">Увійти <span class="arrow-icon">→</span></div>
-        </a>
+        </div>
         <div class="card card--manager" onclick="showLogin('manager')">
           <div class="card-icon">📋</div>
           <div class="card-content">
@@ -457,6 +465,26 @@
         </div>
       </div>
     </div>
+    <!-- ═══ ЕКРАН: ЛОГІН ВОДІЯ ═══ -->
+    <div class="screen" id="screenDriverLogin">
+      <div class="login-box">
+        <div class="login-header">
+          <div class="login-icon driver-icon">🚛</div>
+          <h2 class="login-title driver-title">ВОДІЙ</h2>
+        </div>
+        <div class="error-msg" id="driverError"></div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input driver-input" id="driverEmail" placeholder="Введіть ваш email" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input type="password" class="form-input driver-input" id="driverPass" placeholder="Введіть пароль" autocomplete="off">
+        </div>
+        <button class="btn-login driver-btn" id="driverLoginBtn" onclick="doLogin('driver')">Увійти</button>
+        <button class="btn-back" onclick="showRoles()">← Назад до вибору ролі</button>
+      </div>
+    </div>
     <!-- ═══ ЕКРАН 2: ЛОГІН МЕНЕДЖЕРА ═══ -->
     <div class="screen" id="screenManagerLogin">
       <div class="login-box">
@@ -466,8 +494,8 @@
         </div>
         <div class="error-msg" id="managerError"></div>
         <div class="form-group">
-          <label class="form-label">Ім'я</label>
-          <input type="text" class="form-input manager-input" id="managerName" placeholder="Введіть ваше ім'я" autocomplete="off">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input manager-input" id="managerEmail" placeholder="Введіть ваш email" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
@@ -486,8 +514,8 @@
         </div>
         <div class="error-msg" id="ownerError"></div>
         <div class="form-group">
-          <label class="form-label">Ім'я</label>
-          <input type="text" class="form-input owner-input" id="ownerName" placeholder="Введіть ваше ім'я" autocomplete="off">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input owner-input" id="ownerEmail" placeholder="Введіть ваш email" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
@@ -518,6 +546,9 @@
           <button class="admin-action-btn" id="btnChangePass" onclick="toggleAdminSub('changePass')">
             <span class="action-icon">🔑</span> Змінити пароль
           </button>
+          <button class="admin-action-btn" id="btnCompanySettings" onclick="toggleAdminSub('companySettings')">
+            <span class="action-icon">⚙️</span> Налаштування
+          </button>
           <button class="admin-action-btn" onclick="doLogout()">
             <span class="action-icon">🚪</span> Вийти
           </button>
@@ -541,18 +572,57 @@
               <label class="form-label">Роль</label>
               <select class="form-select" id="newUserRole">
                 <option value="Менеджер">Менеджер</option>
-                <option value="Власник">Власник</option>
+                <option value="Водій">Водій</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Ім'я</label>
-              <input type="text" class="form-input owner-input" id="newUserName" placeholder="Ім'я нового користувача">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input owner-input" id="newUserEmail" placeholder="Email нового користувача">
             </div>
             <div class="form-group">
               <label class="form-label">Пароль</label>
               <input type="text" class="form-input owner-input" id="newUserPass" placeholder="Пароль (мін. 4 символи)">
             </div>
             <button class="btn-login owner-btn" onclick="doAddUser()">Додати</button>
+          </div>
+        </div>
+        <!-- Налаштування компанії -->
+        <div class="admin-sub" id="subCompanySettings">
+          <div class="sub-panel">
+            <div class="sub-title">⚙️ НАЛАШТУВАННЯ КОМПАНІЇ</div>
+            <div class="error-msg" id="companySettingsError"></div>
+            <div class="success-msg" id="companySettingsSuccess"></div>
+            <div class="form-group">
+              <label class="form-label">Лого компанії</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div id="companyLogoPreview" style="width:56px;height:56px;border-radius:12px;background:var(--card-bg);border:2px dashed var(--card-border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('companyLogoInput').click()">
+                  <span id="companyLogoPlaceholder" style="font-size:24px;">📷</span>
+                  <img id="companyLogoImg" style="width:100%;height:100%;object-fit:cover;display:none;">
+                </div>
+                <div style="flex:1;">
+                  <input type="file" id="companyLogoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(this)">
+                  <button class="btn-login owner-btn" style="padding:8px 16px;font-size:13px;margin:0;" onclick="document.getElementById('companyLogoInput').click()">Обрати фото</button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Назва компанії</label>
+              <input type="text" class="form-input owner-input" id="companyDisplayName" placeholder="Назва вашої компанії" oninput="updateCompanyPreview()">
+            </div>
+            <!-- Превʼю ярлика -->
+            <div style="margin-top:8px;padding:14px;border-radius:12px;background:var(--owner-glow);font-size:13px;color:var(--text-secondary);">
+              <div style="margin-bottom:8px;">📱 Ярлик на пристрої:</div>
+              <div style="display:flex;align-items:center;gap:10px;background:var(--card-bg);padding:10px 14px;border-radius:10px;">
+                <img id="companyPreviewLogo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;display:none;">
+                <span id="companyPreviewLogoPlaceholder" style="width:40px;height:40px;border-radius:10px;background:var(--owner);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700;">B</span>
+                <div style="font-size:14px;font-weight:600;color:var(--text-primary);" id="companyPreviewName">BOTI-Logistics</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn-login owner-btn" style="flex:1;" onclick="saveCompanySettings()">💾 Зберегти</button>
+              <button class="btn-login owner-btn" id="btnInstallApp" style="flex:1;background:var(--manager);" onclick="installApp()">📲 На пристрій</button>
+            </div>
+            <div id="installHint" style="display:none;margin-top:8px;padding:10px;border-radius:8px;background:var(--card-bg);font-size:12px;color:var(--text-secondary);line-height:1.5;"></div>
           </div>
         </div>
         <!-- Змінити пароль -->
@@ -579,7 +649,7 @@
       </div>
     </div>
     <footer class="footer">
-      © 2025 YuraTransportation · Розробка <a href="https://botisystem.com">BOTI System</a>
+      © 2025 BOTI-Logistics · Розробка <a href="https://botisystem.com">BOTI System</a>
     </footer>
   </div>
   <!-- ═══ МОДАЛЬНЕ ВІКНО ═══ -->
@@ -593,13 +663,14 @@
   </div>
   <script>
     // ═══════════════════════════════════════
-    const AUTH_API_URL = 'https://script.google.com/macros/s/AKfycbzZ6QAMEANL2DI5cbBgSpcg5KaW9xW8643u5SEkbQplljr4fh3BU_bek4WBQH6ikO34ww/exec';
+    const AUTH_API_URL = 'https://script.google.com/macros/s/AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4kkt4-pVqQmpE452vciAzD0tiF62AFbPJBYzkLw/exec';
     const REDIRECT = {
-      'Менеджер': 'manager/index_pass_19v.html',
-      'Власник': 'manager/index_pass_19v.html'
+      'Водій': 'Drivers.html',
+      'Менеджер': 'Passengers.html',
+      'Власник': 'Passengers.html'
     };
     // Дані поточного сеансу
-    let currentUser = { name: '', password: '', role: '' };
+    let currentUser = { email: '', name: '', password: '', role: '', companyName: '', companyId: '' };
     // ═══ НАВІГАЦІЯ ═══
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -612,40 +683,51 @@
     }
     function showLogin(role) {
       clearAllMessages();
-      if (role === 'manager') {
+      if (role === 'driver') {
+        showScreen('screenDriverLogin');
+        document.getElementById('headerSubtitle').textContent = 'Вхід для водія';
+        const saved = localStorage.getItem('boti_driver_email');
+        if (saved) document.getElementById('driverEmail').value = saved;
+        setTimeout(() => {
+          const ef = document.getElementById('driverEmail');
+          if (ef.value) document.getElementById('driverPass').focus(); else ef.focus();
+        }, 100);
+      } else if (role === 'manager') {
         showScreen('screenManagerLogin');
         document.getElementById('headerSubtitle').textContent = 'Вхід для менеджера';
-        const saved = localStorage.getItem('yura_manager_name');
-        if (saved) document.getElementById('managerName').value = saved;
+        const saved = localStorage.getItem('boti_manager_email');
+        if (saved) document.getElementById('managerEmail').value = saved;
         setTimeout(() => {
-          const nf = document.getElementById('managerName');
-          if (nf.value) document.getElementById('managerPass').focus(); else nf.focus();
+          const ef = document.getElementById('managerEmail');
+          if (ef.value) document.getElementById('managerPass').focus(); else ef.focus();
         }, 100);
       } else {
         showScreen('screenOwnerLogin');
         document.getElementById('headerSubtitle').textContent = 'Вхід для власника';
-        const saved = localStorage.getItem('yura_owner_name');
-        if (saved) document.getElementById('ownerName').value = saved;
+        const saved = localStorage.getItem('boti_owner_email');
+        if (saved) document.getElementById('ownerEmail').value = saved;
         setTimeout(() => {
-          const nf = document.getElementById('ownerName');
-          if (nf.value) document.getElementById('ownerPass').focus(); else nf.focus();
+          const ef = document.getElementById('ownerEmail');
+          if (ef.value) document.getElementById('ownerPass').focus(); else ef.focus();
         }, 100);
       }
     }
     function showAdminPanel(name) {
       showScreen('screenAdmin');
-      document.getElementById('headerSubtitle').textContent = 'Панель управління';
+      document.getElementById('headerSubtitle').textContent = currentUser.companyName || 'Панель управління';
       document.getElementById('adminWelcomeName').textContent = '👑 ' + name.toUpperCase();
     }
     function goToCRM() {
-      sessionStorage.setItem('yura_auth', JSON.stringify({
-        role: currentUser.role, name: currentUser.name, time: Date.now()
+      sessionStorage.setItem('boti_auth', JSON.stringify({
+        role: currentUser.role, name: currentUser.name, email: currentUser.email,
+        companyName: currentUser.companyName, companyId: currentUser.companyId,
+        time: Date.now()
       }));
       window.location.href = REDIRECT['Власник'];
     }
     function doLogout() {
-      currentUser = { name: '', password: '', role: '' };
-      sessionStorage.removeItem('yura_auth');
+      currentUser = { email: '', name: '', password: '', role: '', companyName: '', companyId: '' };
+      sessionStorage.removeItem('boti_auth');
       showRoles();
     }
     // ═══ MESSAGES ═══
@@ -689,37 +771,50 @@
     // ═══ ЛОГІН ═══
     async function doLogin(role) {
       clearAllMessages();
-      let nameField, passField, btn, errorId;
-      if (role === 'manager') {
-        nameField = document.getElementById('managerName');
+      let emailField, passField, btn, errorId;
+      if (role === 'driver') {
+        emailField = document.getElementById('driverEmail');
+        passField = document.getElementById('driverPass');
+        btn = document.getElementById('driverLoginBtn');
+        errorId = 'driverError';
+      } else if (role === 'manager') {
+        emailField = document.getElementById('managerEmail');
         passField = document.getElementById('managerPass');
         btn = document.getElementById('managerLoginBtn');
         errorId = 'managerError';
       } else {
-        nameField = document.getElementById('ownerName');
+        emailField = document.getElementById('ownerEmail');
         passField = document.getElementById('ownerPass');
         btn = document.getElementById('ownerLoginBtn');
         errorId = 'ownerError';
       }
-      const name = nameField.value.trim();
+      const email = emailField.value.trim();
       const password = passField.value.trim();
-      if (!name) { showError(errorId, 'Введіть ім\'я'); nameField.focus(); return; }
+      if (!email) { showError(errorId, 'Введіть email'); emailField.focus(); return; }
       if (!password) { showError(errorId, 'Введіть пароль'); passField.focus(); return; }
+      const roleMap = { driver: 'Водій', manager: 'Менеджер', owner: 'Власник' };
+      const expectedRole = roleMap[role];
       const originalText = btn.textContent;
       btn.innerHTML = '<span class="spinner-small"></span>';
       btn.disabled = true;
       try {
         const result = await apiCall({
-          action: 'login', name, password, device: getDeviceInfo()
+          action: 'login', email, password, role: expectedRole, device: getDeviceInfo()
         });
         if (result.success) {
-          localStorage.setItem('yura_' + role + '_name', name);
-          currentUser = { name: result.name, password, role: result.role };
+          localStorage.setItem('boti_' + role + '_email', email);
+          currentUser = {
+            email, name: result.name || email, password,
+            role: result.role, companyName: result.companyName || '',
+            companyId: result.companyId || ''
+          };
           if (result.role === 'Власник') {
-            showAdminPanel(result.name);
+            showAdminPanel(result.name || email);
           } else {
-            sessionStorage.setItem('yura_auth', JSON.stringify({
-              role: result.role, name: result.name, time: Date.now()
+            sessionStorage.setItem('boti_auth', JSON.stringify({
+              role: result.role, name: result.name || email, email,
+              companyName: result.companyName || '', companyId: result.companyId || '',
+              time: Date.now()
             }));
             window.location.href = REDIRECT[result.role] || 'manager/index_pass_19v.html';
           }
@@ -747,12 +842,199 @@
       if (!isActive) {
         panel.classList.add('active');
         // Підсвічуємо кнопку
-        const btnMap = { users: 'btnUsers', addUser: 'btnAddUser', changePass: 'btnChangePass' };
+        const btnMap = { users: 'btnUsers', addUser: 'btnAddUser', changePass: 'btnChangePass', companySettings: 'btnCompanySettings' };
         const btn = document.getElementById(btnMap[sub]);
         if (btn) btn.classList.add('active');
         if (sub === 'users') loadUsers();
+        if (sub === 'companySettings') loadCompanySettings();
       }
     }
+    // ═══ НАЛАШТУВАННЯ КОМПАНІЇ + PWA INSTALL ═══
+    let companyLogoData = null;
+    let deferredInstallPrompt = null;
+
+    // Перехоплюємо подію install для PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+
+    // Реєструємо service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    function loadCompanySettings() {
+      const saved = JSON.parse(localStorage.getItem('boti_company_settings') || '{}');
+      document.getElementById('companyDisplayName').value = saved.name || currentUser.companyName || '';
+      companyLogoData = saved.logo || null;
+      if (companyLogoData) {
+        const img = document.getElementById('companyLogoImg');
+        img.src = companyLogoData;
+        img.style.display = 'block';
+        document.getElementById('companyLogoPlaceholder').style.display = 'none';
+      } else {
+        document.getElementById('companyLogoImg').style.display = 'none';
+        document.getElementById('companyLogoPlaceholder').style.display = '';
+      }
+      updateCompanyPreview();
+      // Оновлюємо динамічний маніфест
+      applyDynamicManifest();
+    }
+
+    function handleLogoUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 500 * 1024) {
+        showError('companySettingsError', 'Файл завеликий (макс. 500 КБ)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        companyLogoData = e.target.result;
+        const img = document.getElementById('companyLogoImg');
+        img.src = companyLogoData;
+        img.style.display = 'block';
+        document.getElementById('companyLogoPlaceholder').style.display = 'none';
+        updateCompanyPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateCompanyPreview() {
+      const name = document.getElementById('companyDisplayName').value.trim();
+      document.getElementById('companyPreviewName').textContent = name || 'BOTI-Logistics';
+      const previewLogo = document.getElementById('companyPreviewLogo');
+      const placeholder = document.getElementById('companyPreviewLogoPlaceholder');
+      if (companyLogoData) {
+        previewLogo.src = companyLogoData;
+        previewLogo.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+      } else {
+        previewLogo.style.display = 'none';
+        if (placeholder) {
+          placeholder.style.display = 'flex';
+          placeholder.textContent = name ? name.charAt(0).toUpperCase() : 'B';
+        }
+      }
+    }
+
+    function saveCompanySettings() {
+      const name = document.getElementById('companyDisplayName').value.trim();
+      if (!name) {
+        showError('companySettingsError', 'Введіть назву компанії');
+        return;
+      }
+      const settings = { name, logo: companyLogoData, savedAt: Date.now() };
+      localStorage.setItem('boti_company_settings', JSON.stringify(settings));
+      currentUser.companyName = name;
+      document.getElementById('headerSubtitle').textContent = name;
+      const auth = JSON.parse(sessionStorage.getItem('boti_auth') || '{}');
+      if (auth.role) {
+        auth.companyName = name;
+        auth.companyLogo = companyLogoData;
+        sessionStorage.setItem('boti_auth', JSON.stringify(auth));
+      }
+      // Оновлюємо маніфест для PWA
+      applyDynamicManifest();
+      showSuccess('companySettingsSuccess', '✅ Збережено! Тепер натисніть "На пристрій"');
+    }
+
+    // Динамічний маніфест — назва та іконка компанії
+    function applyDynamicManifest() {
+      const saved = JSON.parse(localStorage.getItem('boti_company_settings') || '{}');
+      const name = saved.name || 'BOTI-Logistics';
+      const icon = saved.logo || '';
+
+      const icons = icon ? [{
+        src: icon,
+        sizes: '192x192',
+        type: 'image/png'
+      }, {
+        src: icon,
+        sizes: '512x512',
+        type: 'image/png'
+      }] : [];
+
+      const manifest = {
+        name: name,
+        short_name: name.length > 12 ? name.substring(0, 12) : name,
+        start_url: window.location.href.split('?')[0],
+        display: 'standalone',
+        background_color: '#0a0c10',
+        theme_color: '#10b981',
+        icons: icons
+      };
+
+      // Видаляємо старий маніфест
+      const old = document.querySelector('link[rel="manifest"]');
+      if (old) old.remove();
+
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = url;
+      document.head.appendChild(link);
+
+      // Apple touch icon
+      let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      if (icon) {
+        if (!appleIcon) {
+          appleIcon = document.createElement('link');
+          appleIcon.rel = 'apple-touch-icon';
+          document.head.appendChild(appleIcon);
+        }
+        appleIcon.href = icon;
+      }
+
+      // Оновлюємо title
+      document.title = name;
+    }
+
+    function installApp() {
+      // Спочатку зберігаємо налаштування
+      const name = document.getElementById('companyDisplayName').value.trim();
+      if (name) saveCompanySettings();
+
+      const hint = document.getElementById('installHint');
+
+      // Нативний PWA промпт (Chrome, Edge, Samsung Internet)
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(choice => {
+          if (choice.outcome === 'accepted') {
+            showSuccess('companySettingsSuccess', '✅ Додаток встановлено!');
+          }
+          deferredInstallPrompt = null;
+        });
+        return;
+      }
+
+      // iOS Safari
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (isIOS) {
+        hint.innerHTML = '🍎 <b>iOS:</b> натисніть <b>Поділитися</b> (□↑) внизу екрана → <b>"На Початковий екран"</b>';
+        hint.style.display = 'block';
+        return;
+      }
+
+      // Android (не Chrome PWA)
+      const isAndroid = /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        hint.innerHTML = '🤖 <b>Android:</b> натисніть <b>⋮</b> (меню браузера) → <b>"Додати на головний екран"</b> або <b>"Встановити додаток"</b>';
+        hint.style.display = 'block';
+        return;
+      }
+
+      // Desktop
+      hint.innerHTML = '💻 <b>ПК:</b> натисніть іконку <b>⊕</b> в адресному рядку браузера або <b>⋮ → "Встановити додаток"</b>';
+      hint.style.display = 'block';
+    }
+
+    // Застосовуємо маніфест при завантаженні сторінки
+    applyDynamicManifest();
     // ═══ ЗАВАНТАЖИТИ КОРИСТУВАЧІВ ═══
     async function loadUsers() {
       const list = document.getElementById('userList');
@@ -760,7 +1042,7 @@
       try {
         const result = await apiCall({
           action: 'getUsers',
-          ownerName: currentUser.name,
+          ownerEmail: currentUser.email,
           ownerPassword: currentUser.password
         });
         if (!result.success) {
@@ -773,19 +1055,13 @@
         }
         let html = '';
         result.users.forEach(u => {
-          const roleClass = u.role === 'Власник' ? 'role-owner' : 'role-manager';
-          const statusClass = u.status === 'Заблокований' ? 'status-blocked' : 'status-active';
-          const statusText = u.status === 'Заблокований' ? 'Заблоковано' : 'Активний';
+          const roleClass = u.role === 'Власник' ? 'role-owner' : (u.role === 'Водій' ? 'role-driver' : 'role-manager');
           const isSelf = u.name.toLowerCase() === currentUser.name.toLowerCase();
           html += '<div class="user-row">';
           html += '<span class="user-role-badge ' + roleClass + '">' + u.role + '</span>';
           html += '<span class="user-name">' + u.name + (isSelf ? ' (ви)' : '') + '</span>';
-          html += '<span class="user-status ' + statusClass + '">' + statusText + '</span>';
           if (!isSelf) {
             html += '<div class="user-actions">';
-            html += '<button class="user-action-btn btn-block" title="' + (u.status === 'Заблокований' ? 'Розблокувати' : 'Заблокувати') + '" onclick="doToggleStatus(\'' + u.name.replace(/'/g, "\\'") + '\')">';
-            html += u.status === 'Заблокований' ? '🔓' : '🔒';
-            html += '</button>';
             html += '<button class="user-action-btn btn-delete" title="Видалити" onclick="confirmDelete(\'' + u.name.replace(/'/g, "\\'") + '\', \'' + u.role + '\')">';
             html += '🗑';
             html += '</button>';
@@ -801,24 +1077,6 @@
         list.innerHTML = html;
       } catch (err) {
         list.innerHTML = '<div class="loading-users" style="color:var(--error);">Помилка зʼєднання</div>';
-      }
-    }
-    // ═══ БЛОКУВАННЯ ═══
-    async function doToggleStatus(targetName) {
-      try {
-        const result = await apiCall({
-          action: 'toggleStatus',
-          ownerName: currentUser.name,
-          ownerPassword: currentUser.password,
-          targetName
-        });
-        if (result.success) {
-          loadUsers();
-        } else {
-          alert(result.error);
-        }
-      } catch (err) {
-        alert('Помилка зʼєднання');
       }
     }
     // ═══ ВИДАЛЕННЯ ═══
@@ -845,9 +1103,9 @@
     async function doDeleteUser(targetName, needPass) {
       const params = {
         action: 'deleteUser',
-        ownerName: currentUser.name,
+        ownerEmail: currentUser.email,
         ownerPassword: currentUser.password,
-        targetName
+        targetEmail: targetName
       };
       if (needPass) {
         const passInput = document.getElementById('deleteTargetPass');
@@ -877,22 +1135,22 @@
     async function doAddUser() {
       clearAllMessages();
       const role = document.getElementById('newUserRole').value;
-      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
       const password = document.getElementById('newUserPass').value.trim();
-      if (!name) { showError('addUserError', 'Введіть ім\'я'); return; }
+      if (!email) { showError('addUserError', 'Введіть email'); return; }
       if (!password || password.length < 4) { showError('addUserError', 'Пароль мінімум 4 символи'); return; }
       try {
         const result = await apiCall({
           action: 'addUser',
-          ownerName: currentUser.name,
+          ownerEmail: currentUser.email,
           ownerPassword: currentUser.password,
           newRole: role,
-          newName: name,
+          newEmail: email,
           newPassword: password
         });
         if (result.success) {
           showSuccess('addUserSuccess', result.message);
-          document.getElementById('newUserName').value = '';
+          document.getElementById('newUserEmail').value = '';
           document.getElementById('newUserPass').value = '';
         } else {
           showError('addUserError', result.error);
@@ -913,7 +1171,7 @@
       try {
         const result = await apiCall({
           action: 'changePassword',
-          name: currentUser.name,
+          email: currentUser.email,
           oldPassword: oldPass,
           newPassword: newPass
         });
@@ -933,8 +1191,12 @@
     // ═══ ENTER KEY ═══
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
-        if (document.getElementById('screenManagerLogin').classList.contains('active')) doLogin('manager');
-        else if (document.getElementById('screenOwnerLogin').classList.contains('active')) doLogin('owner');
+        const drvScreen = document.getElementById('screenDriverLogin');
+        const manScreen = document.getElementById('screenManagerLogin');
+        const ownScreen = document.getElementById('screenOwnerLogin');
+        if (drvScreen && drvScreen.classList.contains('active')) doLogin('driver');
+        else if (manScreen && manScreen.classList.contains('active')) doLogin('manager');
+        else if (ownScreen && ownScreen.classList.contains('active')) doLogin('owner');
       }
     });
     // ═══ CLICK OUTSIDE MODAL ═══

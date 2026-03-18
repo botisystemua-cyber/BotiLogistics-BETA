@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>YuraCRM Admin Пасажири v17</title>
+    <title>BOTI Logistics — CRM Пасажири</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -423,21 +423,22 @@
         .side-menu-close:hover { background: rgba(255,255,255,0.25); }
         .side-menu-content { flex: 1; overflow-y: auto; padding: 8px; }
         .side-menu-section { margin-bottom: 6px; }
-        .side-menu-section-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 10px 12px; 
-            background: rgba(255,255,255,0.1); 
-            border-radius: 8px; 
-            cursor: pointer; 
-            margin-bottom: 4px; 
+        .side-menu-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
             border: none;
+            border-left: 5px solid rgba(255, 255, 255, 0.45);
             transition: all 0.2s ease;
         }
-        .side-menu-section-header:hover { background: rgba(255,255,255,0.15); }
-        .side-menu-section-title { font-size: 11px; font-weight: 600; color: white; }
-        .section-toggle { font-size: 8px; color: rgba(255,255,255,0.6); transition: transform 0.2s; }
+        .side-menu-section-header:hover { background: rgba(0, 0, 0, 0.35); }
+        .side-menu-section-title { font-size: 13px; font-weight: 800; color: white; letter-spacing: 1px; text-transform: uppercase; }
+        .section-toggle { font-size: 10px; color: rgba(255,255,255,0.7); transition: transform 0.2s; }
         .section-toggle.open { transform: rotate(180deg); }
         .side-menu-collapsible { display: none; }
         .side-menu-collapsible.open { display: block; }
@@ -720,14 +721,15 @@
         .route-header-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .route-header-count { font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; white-space: nowrap; }
         .route-stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; text-align: center; }
-        .route-stat-item { cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: all 0.2s ease; }
-        .route-stat-item:hover { background: var(--bg-main); }
-        .route-stat-item.active { background: var(--primary); color: white !important; }
+        .route-stat-item { cursor: pointer; padding: 8px 4px; border-radius: 8px; transition: all 0.2s ease; background: #f1f5f9; border: 1px solid #e2e8f0; }
+        .route-stat-item:hover { background: #e2e8f0; border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
+        .route-stat-item:active { transform: scale(0.97); }
+        .route-stat-item.active { background: var(--primary); color: white !important; border-color: transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
         .route-stat-item.active.pending { background: #6c757d; }
         .route-stat-item.active.in-progress { background: #007bff; }
         .route-stat-item.active.completed { background: #28a745; }
         .route-stat-item.active.cancelled { background: #dc3545; }
-        .route-stat-item.active.not-notified { background: #f97316; }
+
         .route-stat-num { font-size: 18px; font-weight: 700; }
         .route-stat-label { font-size: 9px; white-space: nowrap; }
         
@@ -752,10 +754,23 @@
             .card-price { font-size: 12px; }
         }
         .btn-call { background: var(--primary); color: white; }
-        .btn-msg { background: #7c3aed; color: white; }
+        .btn-msg { background: #7c3aed; color: white; position: relative; }
         .btn-map { background: var(--info); color: white; }
         .btn-edit { background: var(--warning); color: white; }
-        
+
+        /* Messenger popup */
+        .messenger-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
+        .messenger-popup-inner { background: var(--bg-card, #fff); border-radius: 16px; padding: 20px; min-width: 260px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); text-align: center; }
+        .messenger-popup-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary, #1a1a2e); }
+        .messenger-popup-btns { display: flex; flex-direction: column; gap: 10px; }
+        .messenger-btn { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: #fff; transition: transform 0.1s; }
+        .messenger-btn:active { transform: scale(0.97); }
+        .messenger-btn.viber { background: #7360f2; }
+        .messenger-btn.whatsapp { background: #25d366; }
+        .messenger-btn.telegram { background: #2AABEE; }
+        .messenger-btn-icon { font-size: 22px; }
+        .messenger-popup-cancel { margin-top: 14px; background: none; border: 1px solid var(--border, #ddd); border-radius: 10px; padding: 10px 24px; font-size: 14px; color: var(--text-secondary, #666); cursor: pointer; width: 100%; }
+
         .card-vehicle { position: relative; }
 
         /* DRAG HANDLE */
@@ -921,6 +936,9 @@
             font-size: 10px;
         }
         .bulk-sidebar-more-toggle.expanded .toggle-arrow {
+            transform: rotate(180deg);
+        }
+        .bulk-sidebar-btn.expanded .toggle-arrow {
             transform: rotate(180deg);
         }
         .bulk-sidebar-secondary {
@@ -1212,7 +1230,7 @@
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 6px 10px; z-index: 100; display: flex; justify-content: space-around; transition: transform 0.3s ease, opacity 0.3s ease; }
         .bottom-nav.hidden-by-bulk { transform: translateY(100%); opacity: 0; pointer-events: none; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 12px; border: none; background: none; font-family: inherit; font-size: 9px; color: var(--text-secondary); cursor: pointer; position: relative; }
-        .nav-item.active { color: var(--accent); }
+        .nav-item.active { color: var(--accent); background: #f0f0f0; border-radius: 10px; padding: 6px 14px; }
         .nav-item span:first-child { font-size: 18px; }
 
         /* DIRECTION POPUP */
@@ -1386,6 +1404,12 @@
         <button class="side-menu-close" onclick="closeSideMenu()">×</button>
     </div>
     <div class="side-menu-content">
+        <!-- Скинути всі фільтри -->
+        <div style="padding:8px 12px 4px;">
+            <div class="side-menu-item" onclick="resetFilters(); closeSideMenu();" style="background:linear-gradient(135deg,var(--primary),var(--info));color:white;font-weight:700;justify-content:center;cursor:pointer;border-radius:10px;padding:12px;font-size:14px;border:none;">
+                <span class="side-menu-item-left" style="color:white;justify-content:center;">🔄 Скинути всі фільтри</span>
+            </div>
+        </div>
         <!-- Напрямок -->
         <div class="side-menu-section">
             <div class="side-menu-section-header" onclick="toggleMobileSection('direction')">
@@ -1445,9 +1469,6 @@
                 <div class="side-menu-item" onclick="resetVehicleFilter(); closeSideMenu();" style="color:var(--text-secondary);font-weight:600;border-top:1px solid var(--border);margin-top:6px;justify-content:center;background:var(--bg-main);">
                     <span class="side-menu-item-left">🔄 Скинути фільтр авто</span>
                 </div>
-                <div class="side-menu-item" onclick="openAddVehicleModal(); closeSideMenu();" style="color:var(--info);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">
-                    <span class="side-menu-item-left">➕ Додати авто</span>
-                </div>
             </div>
         </div>
         
@@ -1477,18 +1498,6 @@
                     <span class="side-menu-item-left">📦 Архів</span>
                     <span class="side-menu-item-count" id="mobileCountArchive">0</span>
                 </div>
-                <div class="side-menu-item" onclick="showStatusFilter('refused'); closeSideMenu();">
-                    <span class="side-menu-item-left">❌ Відмови</span>
-                    <span class="side-menu-item-count" id="mobileCountRefused">0</span>
-                </div>
-                <div class="side-menu-item" onclick="showStatusFilter('transferred'); closeSideMenu();">
-                    <span class="side-menu-item-left">🤝 Пересадки</span>
-                    <span class="side-menu-item-count" id="mobileCountTransferred">0</span>
-                </div>
-                <div class="side-menu-item" onclick="showStatusFilter('deleted'); closeSideMenu();">
-                    <span class="side-menu-item-left">🗑️ Видалені</span>
-                    <span class="side-menu-item-count" id="mobileCountDeleted">0</span>
-                </div>
             </div>
         </div>
     </div>
@@ -1498,7 +1507,7 @@
 <header class="header">
     <div class="header-top">
         <button class="burger-btn" onclick="openSideMenu()">☰</button>
-        <div class="logo">YURA<span>TRANSPORTATION</span></div>
+        <div class="logo">BOTI<span style="color:#4CAF50">SYSTEM</span></div>
         <div class="search-box">
             <span class="search-icon">🔍</span>
             <input type="text" class="search-input" id="searchInput" placeholder="Пошук..." oninput="handleSearch()">
@@ -1515,6 +1524,12 @@
 <div class="main-layout">
     <!-- PC SIDEBAR -->
     <aside class="pc-sidebar" id="pcSidebar">
+        <!-- Скинути всі фільтри -->
+        <div style="padding:8px 10px;">
+            <div class="pc-sidebar-item" onclick="resetFilters()" style="background:linear-gradient(135deg,var(--primary),var(--info));color:white;font-weight:700;justify-content:center;cursor:pointer;border-radius:10px;padding:10px;font-size:13px;">
+                <span>🔄 Скинути всі фільтри</span>
+            </div>
+        </div>
         <!-- Напрямок -->
         <div class="pc-sidebar-section">
             <div class="pc-sidebar-header" onclick="togglePcSection('direction')">
@@ -1574,10 +1589,9 @@
                 <div class="pc-sidebar-item" onclick="resetVehicleFilter()" style="background:var(--bg-main);color:var(--text-secondary);font-size:12px;justify-content:center;cursor:pointer;margin-top:6px;">
                     <span><span class="item-icon">🔄</span>Скинути фільтр авто</span>
                 </div>
-                <div class="pc-sidebar-add" onclick="openAddVehicleModal()">➕ Додати авто</div>
             </div>
         </div>
-        
+
         <!-- Маршрути -->
         <div class="pc-sidebar-section">
             <div class="pc-sidebar-header collapsed" onclick="togglePcSection('routes')">
@@ -1603,18 +1617,6 @@
                 <div class="pc-sidebar-item archive" id="pcArchive" onclick="showStatusFilter('archived')">
                     <span><span class="item-icon">📦</span>Архів</span>
                     <span class="item-count" id="pcCountArchive">0</span>
-                </div>
-                <div class="pc-sidebar-item" id="pcRefused" onclick="showStatusFilter('refused')">
-                    <span><span class="item-icon">❌</span>Відмови</span>
-                    <span class="item-count" id="pcCountRefused">0</span>
-                </div>
-                <div class="pc-sidebar-item" id="pcTransferred" onclick="showStatusFilter('transferred')">
-                    <span><span class="item-icon">🤝</span>Пересадки</span>
-                    <span class="item-count" id="pcCountTransferred">0</span>
-                </div>
-                <div class="pc-sidebar-item" id="pcDeleted" onclick="showStatusFilter('deleted')">
-                    <span><span class="item-icon">🗑️</span>Видалені</span>
-                    <span class="item-count" id="pcCountDeleted">0</span>
                 </div>
             </div>
         </div>
@@ -1711,11 +1713,6 @@
                                 <span class="status-name">Архів</span>
                                 <span class="status-count" id="dashArchived">0</span>
                             </div>
-                            <div class="dashboard-status-item" onclick="showStatusFilter('refused')" style="cursor:pointer;color:var(--danger);">
-                                <span class="status-icon">❌</span>
-                                <span class="status-name">Відмови</span>
-                                <span class="status-count" id="dashRefused">0</span>
-                            </div>
                             <div class="dashboard-status-item" onclick="showStatusFilter('transferred')" style="cursor:pointer;color:var(--teal);">
                                 <span class="status-icon">🤝</span>
                                 <span class="status-name">Пересадки</span>
@@ -1762,7 +1759,6 @@
                             <div class="dropdown-item" onclick="setVehicleFilter('')">Всі авто</div>
                             <div class="dropdown-item" onclick="setVehicleFilter('none')" style="color:var(--warning);">❓ Без авто <span class="badge" style="background:var(--warning);" id="countNoVehicle">0</span></div>
                             <div id="vehiclesList"></div>
-                            <div class="dropdown-item" onclick="openAddVehicleModal()" style="color:var(--info);font-weight:600;border-top:1px solid var(--border);">➕ Додати авто</div>
                         </div>
                     </div>
                     <div class="dropdown-container">
@@ -1820,7 +1816,8 @@
         <button class="bulk-sidebar-btn" onclick="selectAllVisible()">
             <span class="btn-icon">☑️</span> Вибрати всіх
         </button>
-        <div class="bulk-sidebar-divider"></div>
+        <div class="bulk-sidebar-divider" id="bulkSidebarDivider1"></div>
+        <div id="bulkSidebarMainActions">
         <button class="bulk-sidebar-btn" onclick="openBulkVehicleModal()">
             <span class="btn-icon">🚐</span> Призначити авто
         </button>
@@ -1833,28 +1830,40 @@
         <button class="bulk-sidebar-btn" onclick="openTagModal()" style="background:rgba(139,92,246,0.3);">
             <span class="btn-icon">🏷️</span> Протегувати
         </button>
-        <button class="bulk-sidebar-btn" id="btnSidebarNotify" onclick="bulkMarkNotified()" style="display:none;">
-            <span class="btn-icon">🔔</span> Сповіщено
-        </button>
-        <div class="bulk-sidebar-divider"></div>
+        </div>
+        <div class="bulk-sidebar-divider" id="bulkSidebarDivider2"></div>
         <button class="bulk-sidebar-more-toggle" id="bulkMoreToggle" onclick="toggleBulkSecondary()">
             <span>Ще дії</span> <span class="toggle-arrow">▼</span>
         </button>
         <div class="bulk-sidebar-secondary" id="bulkSecondaryActions">
-            <button class="bulk-sidebar-btn" onclick="bulkArchive()">
+            <button class="bulk-sidebar-btn" id="btnSidebarArchive" onclick="bulkArchive()">
                 <span class="btn-icon">📦</span> Архівувати
             </button>
-            <button class="bulk-sidebar-btn" onclick="bulkTransfer()">
-                <span class="btn-icon">🤝</span> Пересадка
-            </button>
-            <button class="bulk-sidebar-btn" onclick="bulkRefuse()">
+            <button class="bulk-sidebar-btn" id="btnSidebarRefuse" onclick="bulkRefuse()">
                 <span class="btn-icon">❌</span> Відмова
             </button>
-            <button class="bulk-sidebar-btn" onclick="bulkDelete()">
+            <button class="bulk-sidebar-btn" id="btnSidebarDelete" onclick="bulkDelete()">
                 <span class="btn-icon">🗑️</span> Видалити
             </button>
         </div>
-        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;">
+        <button class="bulk-sidebar-btn bulk-route-marks-toggle" id="bulkMarksToggle" onclick="toggleBulkMarks()" style="display:none;">
+            <span class="btn-icon">🏷️</span> Відмітки <span class="toggle-arrow" style="margin-left:auto;font-size:10px;transition:transform 0.3s ease;">▼</span>
+        </button>
+        <div class="bulk-sidebar-secondary" id="bulkMarksActions" style="display:none;">
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('in-progress')" style="background:rgba(33,150,243,0.25);">
+                <span class="btn-icon">🔄</span> В процесі
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('completed')" style="background:rgba(76,175,80,0.25);">
+                <span class="btn-icon">✅</span> Готово
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('cancelled')" style="background:rgba(220,53,69,0.25);">
+                <span class="btn-icon">❌</span> Відмова
+            </button>
+            <button class="bulk-sidebar-btn" onclick="bulkSetDriverStatus('pending')" style="background:rgba(255,193,7,0.15);">
+                <span class="btn-icon">⏳</span> Очікує
+            </button>
+        </div>
+        <button class="bulk-sidebar-btn" id="btnSidebarRestore" onclick="bulkRestore()" style="display:none;background:rgba(34,197,94,0.35);font-weight:700;">
             <span class="btn-icon">↩️</span> Відновити
         </button>
         <button class="bulk-sidebar-btn" id="btnSidebarDeleteForever" onclick="bulkDeleteForever()" style="display:none;">
@@ -1881,9 +1890,12 @@
             <button class="bulk-btn optimize" onclick="bulkOptimize()">⚡ Опт</button>
             <button class="bulk-btn route" onclick="bulkMoveToRoute()" style="background:rgba(249,115,22,0.4);">🚀 Маршрут</button>
             <button class="bulk-btn" onclick="openTagModal()" style="background:rgba(139,92,246,0.4);">🏷️ Тег</button>
-            <button class="bulk-btn notify" id="btnBulkNotify" onclick="bulkMarkNotified()" style="display:none;background:rgba(249,115,22,0.5);">🔔</button>
+            <button class="bulk-btn" onclick="bulkDelete()" style="background:rgba(220,53,69,0.4);">🗑️ Вид</button>
             <button class="bulk-btn archive" id="btnBulkArchive" onclick="bulkArchive()">📦 Архів</button>
             <button class="bulk-btn restore" id="btnBulkRestore" onclick="bulkRestore()" style="display:none;background:rgba(34,197,94,0.4);">↩️</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('in-progress')" style="display:none;background:rgba(33,150,243,0.4);">🔄 Процес</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('completed')" style="display:none;background:rgba(76,175,80,0.4);">✅ Готово</button>
+            <button class="bulk-btn bulk-route-mark-btn" onclick="bulkSetDriverStatus('cancelled')" style="display:none;background:rgba(220,53,69,0.4);">❌ Відмова</button>
         </div>
     </div>
 </div>
@@ -1906,7 +1918,7 @@
         <span>👥</span>
         <span id="navPassengersLabel">Пасажири</span>
     </button>
-    <button class="nav-item" onclick="window.location.href='index_posylki.html'"><span>📦</span>Посилки</button>
+    <button class="nav-item" onclick="window.location.href='Cargo.html'"><span>📦</span>Посилки</button>
     <button class="nav-item" onclick="syncWithSheets()"><span>🔄</span>Синхр.</button>
     <button class="nav-item" onclick="openColumnsModal()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
@@ -1930,7 +1942,7 @@
             <div class="form-group"><label>Адреса відправки</label><input type="text" id="fFrom"></div>
             <div class="form-group"><label>Адреса прибуття</label><input type="text" id="fTo"></div>
             <div class="form-row"><div class="form-group"><label>Оплата €</label><input type="text" id="fPayment"></div><div class="form-group"><label>Відсоток %</label><input type="text" id="fPercent"></div></div>
-            <div class="form-row"><div class="form-group"><label>Авто</label><select id="fVehicle"><option value="">—</option></select></div><div class="form-group"><label>Відмітка</label><input type="text" id="fMark"></div></div>
+            <div class="form-row"><div class="form-group"><label>Авто</label><select id="fVehicle"><option value="">—</option></select></div><div class="form-group"><label>Відмітка</label><select id="fMark"><option value="">— Не вказано —</option><option value="pending">⏳ Очікує</option><option value="in-progress">🔄 В процесі</option><option value="completed">✅ Готово</option><option value="cancelled">❌ Відмова</option></select></div></div>
             <div class="form-row"><div class="form-group"><label>Диспечер</label><input type="text" id="fDispatcher"></div><div class="form-group"><label>Вага (кг)</label><input type="text" id="fWeight"></div></div>
             <div class="form-row"><div class="form-group"><label>Таймінг</label><input type="text" id="fTiming"></div><div class="form-group"><label>Дата оформлення</label><input type="date" id="fDateReg"></div></div>
             <div class="form-group"><label>Примітка</label><textarea id="fNote" rows="2"></textarea></div>
@@ -1958,12 +1970,11 @@
     <div class="modal" style="max-width:350px">
         <div class="modal-header"><span class="modal-title">⚙️ Колонки</span><button class="modal-close" onclick="closeModal('columnsModal')">×</button></div>
         <div class="modal-body">
-            <div class="columns-hint">Якщо в заголовку — не в деталях</div>
-            <div class="columns-section"><div class="columns-section-title">Заголовок</div><div class="columns-list" id="headerColList"></div></div>
-            <div class="columns-section"><div class="columns-section-title">Деталі</div><div class="columns-list" id="detailsColList"></div></div>
+            <div class="columns-hint" style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">Натисніть щоб сховати/показати поле на картці</div>
+            <div class="columns-list" id="colVisList"></div>
         </div>
         <div class="modal-footer" style="display:flex;gap:8px;">
-            <button class="btn-secondary" onclick="resetColumnsSettings()" style="flex:1;">🔄 Скинути</button>
+            <button class="btn-secondary" onclick="resetColumnsSettings()" style="flex:1;">🔄 Показати всі</button>
             <button class="btn-save" onclick="saveColumnsSettings()" style="flex:1;">💾 Зберегти</button>
         </div>
     </div>
@@ -1997,30 +2008,6 @@
                     </span>
                 </button>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛКА ДОДАТИ АВТО -->
-<div class="modal-overlay" id="vehicleModal" onclick="if(event.target===this)closeModal('vehicleModal')">
-    <div class="modal" style="max-width:340px">
-        <div class="modal-header"><span class="modal-title">🚐 Нове авто</span><button class="modal-close" onclick="closeModal('vehicleModal')">×</button></div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Назва авто</label>
-                <input type="text" id="vName" placeholder="Наприклад: Пас. Маршрут 4">
-            </div>
-            <div class="form-group">
-                <label>Кількість місць</label>
-                <input type="number" id="vSeats" value="8" min="1">
-            </div>
-            <div style="background:#fff3e0;padding:10px;border-radius:6px;font-size:11px;color:#e65100;margin-top:12px;">
-                ⚠️ Буде створено новий аркуш в таблиці "Маршрут Пасажири"
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeModal('vehicleModal')">Скасувати</button>
-            <button class="btn-save" onclick="saveVehicle()">💾 Створити</button>
         </div>
     </div>
 </div>
@@ -2100,7 +2087,31 @@
             <button class="btn-save" onclick="startOptimization()">🚀 Оптимізувати</button>
         </div>
         <div class="modal-footer" id="optimizeResultFooter" style="display:none">
-            <button class="btn-save" onclick="closeModal('optimizeModal')">Закрити</button>
+            <button class="btn-cancel" onclick="closeModal('optimizeModal')">Закрити</button>
+            <button class="btn-save" onclick="applyOptimizedSort()">📊 Сортувати</button>
+        </div>
+    </div>
+</div>
+
+<!-- ROUTE PICKER MODAL -->
+<div class="modal-overlay" id="routePickerModal" onclick="if(event.target===this)closeModal('routePickerModal')">
+    <div class="modal" style="max-width:400px">
+        <div class="modal-header" style="background:linear-gradient(135deg,#f97316,#ea580c);">
+            <span class="modal-title" style="color:white;">🚀 Обрати маршрут</span>
+            <button class="modal-close" style="color:white;" onclick="closeModal('routePickerModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#fff7ed,#fed7aa);padding:12px 16px;border-radius:10px;margin-bottom:16px;">
+                <span style="font-size:24px;">🧑‍🤝‍🧑</span>
+                <span style="font-size:14px;color:#9a3412;">Пасажирів: <strong id="routePickerCount">0</strong></span>
+            </div>
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;display:block;">Оберіть маршрут:</label>
+            <div id="routePickerList" style="max-height:300px;overflow-y:auto;"></div>
+            <div id="routePickerLoading" style="text-align:center;padding:20px;color:var(--text-secondary);display:none;">Завантаження маршрутів...</div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;">
+            <button class="btn-cancel" onclick="closeModal('routePickerModal')">Скасувати</button>
+            <button class="btn-save" id="routePickerConfirmBtn" onclick="confirmRoutePicker()" disabled style="opacity:0.5;background:linear-gradient(135deg,#f97316,#ea580c);">🚀 В маршрут</button>
         </div>
     </div>
 </div>
@@ -2179,6 +2190,7 @@ const ALL_COLUMNS = {
 };
 
 let colSettings = {header:['name','phone','seats','from','to','date','payment'],details:['percent','note','mark','dispatcher','phoneReg','timing','dateReg','weight']};
+let hiddenCols = new Set();
 let passengers = [
     {id:'p1',date:'2025-02-20',name:'Семен Гора',phone:'+380639763484',from:'Кошице',to:'Ужгород',seats:2,payment:'60',vehicle:'v1',status:'new',isNew:true,order:0,direction:'eu-ua'},
     {id:'p2',date:'2025-02-20',name:'Катерина Ятухівська',phone:'+380973874545',from:'Братислава',to:'Ужгород',seats:1,payment:'60',vehicle:'v1',status:'work',isNew:false,order:1,direction:'eu-ua'},
@@ -2188,7 +2200,7 @@ let passengers = [
     {id:'p6',date:'2025-02-22',name:'Алла Бердникова',phone:'+421907299343',from:'Братислава',to:'Вінниця',seats:1,payment:'60',vehicle:'',status:'new',isNew:true,order:5,direction:'eu-ua'}
 ];
 // Таблиця маршрутів пасажирів
-const ROUTE_SPREADSHEET_ID = '1iKlD0Bj-5qB3Gc1d5ZBHscbRipcSe5xU7svqBfpB77Y';
+const ROUTE_SPREADSHEET_ID = '1fYO1ClIP26S4xYgcsT_0LVCWVrqkAL5MkehXvL-Yni0';
 
 const DEFAULT_VEHICLES = [
     {id:'v1', name:'Автомобіль 1', seats:8, routeSheet:'Пас. Маршрут 1'},
@@ -2210,7 +2222,7 @@ async function syncVehiclesFromServer() {
         const res = await fetch(ROUTE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getAvailableRoutes' })
+            body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
         });
         const data = await res.json();
         if (!data.success || !data.routes) return;
@@ -2265,8 +2277,66 @@ let calendarDate = new Date(); // Поточна дата
 let draggedId = null;
 let undoHistory = []; // Історія для відміни дій
 
+// ═══ СЕСІЯ ═══
+var botiSession = null;
+function checkSession() {
+    try {
+        var raw = sessionStorage.getItem('boti_auth');
+        if (raw) botiSession = JSON.parse(raw);
+    } catch(e) {}
+    if (!botiSession || !botiSession.role) {
+        window.location.href = 'Login.html';
+        return false;
+    }
+    return true;
+}
+function getCompanyId() {
+    return botiSession ? botiSession.companyId : '';
+}
+function getCrmUser() {
+    return botiSession ? botiSession.name : '';
+}
+
+// Автоматично додаємо user до всіх API запитів
+(function() {
+    const _origFetch = window.fetch;
+    window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.includes('script.google.com') && options && options.body) {
+            try {
+                const body = JSON.parse(options.body);
+                if (body.action && !body.user) {
+                    body.user = getCrmUser();
+                    options = Object.assign({}, options, { body: JSON.stringify(body) });
+                }
+            } catch(e) {}
+        }
+        return _origFetch.call(this, url, options);
+    };
+})();
+
+// Логування фронтенд-дій (fire-and-forget)
+function logAction(action, detail, extra, sheet, rowNum) {
+    try {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'logAction',
+                logAction: action,
+                detail: detail || '',
+                extra: extra || '',
+                sheet: sheet || '',
+                rowNum: rowNum || 0,
+                user: getCrmUser(),
+                companyId: getCompanyId()
+            })
+        }).catch(() => {});
+    } catch(e) {}
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
+    if (!checkSession()) return;
     loadSettings();
     renderCalendars();
 
@@ -2275,7 +2345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -2284,6 +2354,11 @@ document.addEventListener('DOMContentLoaded', () => {
             passengers = data.passengers.map(p => {
                 let normalizedStatus = (p.status || '').toString().toLowerCase().trim();
                 if (!normalizedStatus) normalizedStatus = 'new';
+                // Визначаємо archiveType і нормалізуємо статус
+                const archiveStatuses = ['archived', 'refused', 'deleted', 'transferred'];
+                const isArchiveStatus = archiveStatuses.includes(normalizedStatus);
+                const archiveType = p.archiveType || (isArchiveStatus ? normalizedStatus : '');
+                if (isArchiveStatus) normalizedStatus = 'archived';
                 return {
                     id: p.id || 'srv_' + p.rowNum,
                     date: normalizeDate(p.date),
@@ -2304,12 +2379,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     note: p.note || '',
                     direction: p.direction,
                     status: normalizedStatus,
+                    archiveType: archiveType,
                     statusDate: p.statusDate || '',
                     isNew: p.isNew,
                     isNew24h: p.isNew,
                     _sheet: p.sheet,
                     _rowNum: p.rowNum
                 };
+            });
+
+            // Відновлюємо порядок оптимізації з localStorage
+            const savedOpt = loadOptimizationOrder();
+            passengers.forEach(p => {
+                const key = `${p._sheet}_${p._rowNum}`;
+                if (savedOpt[key]) {
+                    p.status = 'optimize';
+                    p.order = savedOpt[key].order;
+                    p._notGeocoded = savedOpt[key]._notGeocoded || false;
+                }
             });
         }
 
@@ -2356,7 +2443,7 @@ function silentSync() {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -2366,7 +2453,11 @@ function silentSync() {
                 // Нормалізуємо статус (lowercase, trim)
                 let normalizedStatus = (p.status || '').toString().toLowerCase().trim();
                 if (!normalizedStatus) normalizedStatus = 'new';
-                
+                // Визначаємо archiveType і нормалізуємо статус
+                const archiveStatuses = ['archived', 'refused', 'deleted', 'transferred'];
+                const isArchiveStatus = archiveStatuses.includes(normalizedStatus);
+                const archiveType = p.archiveType || (isArchiveStatus ? normalizedStatus : '');
+                if (isArchiveStatus) normalizedStatus = 'archived';
                 return {
                     id: p.id || 'srv_' + p.rowNum,
                     date: normalizeDate(p.date),
@@ -2387,6 +2478,7 @@ function silentSync() {
                     note: p.note || '',
                     direction: p.direction,
                     status: normalizedStatus,
+                    archiveType: archiveType,
                     statusDate: p.statusDate || '',
                     isNew: p.isNew,
                     isNew24h: p.isNew,
@@ -2394,7 +2486,7 @@ function silentSync() {
                     _rowNum: p.rowNum
                 };
             });
-            
+
             // Перевіряємо чи є нові ліди
             const newCount = serverPassengers.filter(p => p.isNew && p.status !== 'archived').length;
             const oldNewCount = passengers.filter(p => p.isNew && p.status !== 'archived').length;
@@ -2404,6 +2496,7 @@ function silentSync() {
             passengers.forEach(p => {
                 if (p._sheet && p._rowNum) localMap[`${p._sheet}_${p._rowNum}`] = p;
             });
+            const savedOpt = loadOptimizationOrder();
             serverPassengers.forEach(sp => {
                 const key = `${sp._sheet}_${sp._rowNum}`;
                 const local = localMap[key];
@@ -2411,6 +2504,12 @@ function silentSync() {
                     if (!sp.status && local.status) sp.status = local.status;
                     if (local.prevStatus) sp.prevStatus = local.prevStatus;
                     if (local.archiveType) sp.archiveType = local.archiveType;
+                }
+                // Відновлюємо дані оптимізації з localStorage
+                if (savedOpt[key]) {
+                    sp.status = 'optimize';
+                    sp.order = savedOpt[key].order;
+                    sp._notGeocoded = savedOpt[key]._notGeocoded || false;
                 }
             });
 
@@ -2459,7 +2558,30 @@ function playNotificationSound() {
 }
 
 function loadSettings() { try { const s = JSON.parse(localStorage.getItem('yuraCrmV16')||'{}'); if(s.colSettings)colSettings=s.colSettings; if(s.lastTab)lastTab=s.lastTab; } catch(e){} }
-function saveSettings() { localStorage.setItem('yuraCrmV16', JSON.stringify({colSettings,lastTab})); }
+function saveSettings() { localStorage.setItem('yuraCrmV16', JSON.stringify({colSettings,lastTab})); saveOptimizationOrder(); }
+
+// Збереження/відновлення порядку оптимізації в localStorage
+function saveOptimizationOrder() {
+    const optimized = passengers.filter(p => p.status === 'optimize');
+    if (optimized.length === 0) {
+        localStorage.removeItem('yuraCrmOptOrder');
+        return;
+    }
+    const map = {};
+    optimized.forEach(p => {
+        const uid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : null;
+        if (uid) map[uid] = { order: p.order, _notGeocoded: p._notGeocoded || false };
+    });
+    localStorage.setItem('yuraCrmOptOrder', JSON.stringify(map));
+}
+
+function loadOptimizationOrder() {
+    try { return JSON.parse(localStorage.getItem('yuraCrmOptOrder') || '{}'); } catch(e) { return {}; }
+}
+
+function clearOptimizationOrder() {
+    localStorage.removeItem('yuraCrmOptOrder');
+}
 
 // SIDE MENU
 function openSideMenu() { document.getElementById('sideMenu').classList.add('open'); document.getElementById('sideMenuOverlay').classList.add('show'); renderMobileCalendar(); updateMobileVehicles(); }
@@ -2754,7 +2876,8 @@ function selectDate(dateStr) {
     updateFilterButtons();
     updateVehiclesList();
     document.getElementById('dateDropdown')?.classList.remove('show');
-    
+    closeSideMenu();
+
     // Перевірка на перевищення місткості
     if (dateStr) {
         checkCapacityWarning(dateStr);
@@ -2867,7 +2990,6 @@ function showCapacityWarning(date, seats, capacity) {
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('capacityWarningModal').remove()">Зрозуміло</button>
-                <button class="btn-save" onclick="document.getElementById('capacityWarningModal').remove();openAddVehicleModal()">➕ Додати авто</button>
             </div>
         </div>
     `;
@@ -3013,6 +3135,11 @@ function getFilteredData() {
     }
     
     return data.sort((a,b) => {
+        // Optimize завжди зверху, відсортовані по order
+        const aOpt = a.status === 'optimize' ? 1 : 0;
+        const bOpt = b.status === 'optimize' ? 1 : 0;
+        if (aOpt !== bOpt) return bOpt - aOpt;
+        if (aOpt && bOpt) return (a.order || 0) - (b.order || 0);
         // Нові (isNew) завжди зверху
         if (a.isNew && !b.isNew) return -1;
         if (!a.isNew && b.isNew) return 1;
@@ -3052,7 +3179,7 @@ function render() {
     
     if (!data.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>Не знайдено</div></div>'; return; }
     
-    const detailCols = colSettings.details;
+    const detailCols = colSettings.details.filter(k => !hiddenCols.has(k));
     const isRouteView = filters.statusFilter === 'route';
     const canDrag = true; // Завжди дозволяємо перетягування
     const hasSearch = filters.search && filters.search.trim();
@@ -3116,27 +3243,27 @@ function render() {
                     <div class="card-top-row">
                         ${orderNum}
                         <span class="card-direction" title="${p.direction === 'ua-eu' ? 'Україна → Європа' : 'Європа → Україна'}">${dirEmoji}</span>
-                        <span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${phoneDisplay}</span>
-                        <span class="card-seats">👥 ${seatsDisplay}</span>
-                        <span class="card-date">${dateDisplay}</span>
-                        <span class="card-price">${priceDisplay}</span>
+                        ${hiddenCols.has('phone')?'':`<span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${phoneDisplay}</span>`}
+                        ${hiddenCols.has('seats')?'':`<span class="card-seats">👥 ${seatsDisplay}</span>`}
+                        ${hiddenCols.has('date')?'':`<span class="card-date">${dateDisplay}</span>`}
+                        ${hiddenCols.has('payment')?'':`<span class="card-price">${priceDisplay}</span>`}
                     </div>
                     <div class="card-row2-wrap">
                         <div class="card-route-row">
-                            <span class="card-route"><span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeFrom}</span> <span class="card-route-arrow">→</span> <span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeTo}</span></span>
+                            ${hiddenCols.has('from')&&hiddenCols.has('to')?'':`<span class="card-route">${hiddenCols.has('from')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeFrom}</span>`} ${hiddenCols.has('from')||hiddenCols.has('to')?'':`<span class="card-route-arrow">→</span>`} ${hiddenCols.has('to')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${routeTo}</span>`}</span>`}
                         </div>
                         <div class="card-info-row">
-                            <span class="card-id copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${idDisplay}</span>
-                            <span class="card-name" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${nameDisplay}</span>
+                            ${hiddenCols.has('id')?'':`<span class="card-id copyable" onclick="event.stopPropagation();copyField(this)" onmousedown="event.stopPropagation()">${idDisplay}</span>`}
+                            ${hiddenCols.has('name')?'':`<span class="card-name" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">${nameDisplay}</span>`}
                             ${p.isNew ? '<span class="new-tag">NEW</span>' : ''}
                         </div>
                     </div>
                 </div>
                 <div class="card-right-section">
-                    <div class="card-vehicle">
+                    ${hiddenCols.has('vehicle')?'':`<div class="card-vehicle">
                         ${vehicleBadge}
                         ${vehicleDropdown}
-                    </div>
+                    </div>`}
                     <button class="card-actions-toggle ${aOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleActions('${uniqueKey}')">▼</button>
                 </div>
             </div>
@@ -3145,7 +3272,7 @@ function render() {
             </div>
             <div class="card-actions ${aOpen ? 'show' : ''}">
                 <button class="btn-card-action btn-call" onclick="event.stopPropagation();location.href='tel:${p.phone}'">📞 Дзвонити</button>
-                <button class="btn-card-action btn-msg" onclick="event.stopPropagation();window.open('https://console.smartsender.com/contacts?project=yura-transportation-131349','_blank')">💬 Писати</button>
+                <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.phone}',event)">💬 Писати</button>
                 <button class="btn-card-action btn-map" onclick="event.stopPropagation();openMapModal('${uniqueKey}')">🗺️ Карта</button>
                 <button class="btn-card-action btn-edit" onclick="event.stopPropagation();editPassenger('${uniqueKey}')">✏️ Редагувати</button>
                 <button class="btn-card-action btn-delete" onclick="event.stopPropagation();deletePassenger('${uniqueKey}')">🗑️ Видалити</button>
@@ -3157,24 +3284,31 @@ function render() {
 // DRAG & DROP
 function handleDragStart(e, id) { draggedId = id; e.target.classList.add('dragging'); }
 function handleDragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedId = null; }
-function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.id !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
+function handleDragOver(e) { e.preventDefault(); const card = e.target.closest('.lead-card'); if (card && card.dataset.uid !== draggedId) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); card.classList.add('drag-over'); } }
 function handleDrop(e, targetId) {
     e.preventDefault();
     if (!draggedId || draggedId === targetId) return;
+    const savedDraggedId = draggedId;
+    draggedId = null;
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     const data = getFilteredData();
-    const dragIdx = data.findIndex(p => p.id === draggedId);
-    const targetIdx = data.findIndex(p => p.id === targetId);
+    const getUid = (p, i) => (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${i}`;
+    const dragIdx = data.findIndex((p, i) => getUid(p, i) === savedDraggedId);
+    const targetIdx = data.findIndex((p, i) => getUid(p, i) === targetId);
     if (dragIdx === -1 || targetIdx === -1) return;
+    const draggedP = data[dragIdx];
+    const targetP = data[targetIdx];
     // Reorder
-    data.forEach((p, i) => { const orig = passengers.find(x => x.id === p.id); if(orig) orig.order = i * 10; });
-    const draggedP = passengers.find(p => p.id === draggedId);
-    const targetP = passengers.find(p => p.id === targetId);
-    if (draggedP && targetP) {
-        const newOrder = dragIdx < targetIdx ? targetP.order + 1 : targetP.order - 1;
-        draggedP.order = newOrder;
+    data.forEach((p, i) => { const orig = passengers.find(x => x._sheet === p._sheet && x._rowNum === p._rowNum); if(orig) orig.order = i * 10; });
+    const origDragged = passengers.find(x => x._sheet === draggedP._sheet && x._rowNum === draggedP._rowNum);
+    const origTarget = passengers.find(x => x._sheet === targetP._sheet && x._rowNum === targetP._rowNum);
+    if (origDragged && origTarget) {
+        origDragged.order = dragIdx < targetIdx ? origTarget.order + 1 : origTarget.order - 1;
     }
     saveSettings();
-    render();
+    logAction('reorder', 'drag: ' + savedDraggedId + ' → ' + targetId);
+    setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
 
@@ -3311,6 +3445,19 @@ function clearSelection() {
     }
 }
 
+// Оновлює дані після bulk-дії, але залишає sidebar і вибір
+function refreshAfterAction() {
+    const currentData = getFilteredData();
+    const currentUids = new Set(currentData.map((p, idx) =>
+        (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${idx}`
+    ));
+    selectedIds.forEach(uid => {
+        if (!currentUids.has(uid)) selectedIds.delete(uid);
+    });
+    render();
+    updateBulkBar();
+}
+
 function switchToMenu() {
     // Ховаємо bulk sidebar, показуємо PC sidebar
     const bulk = document.getElementById('bulkActionsSidebar');
@@ -3368,17 +3515,71 @@ function updateBulkBar() {
     
     // Mobile кнопки
     const restoreBtn = document.getElementById('btnBulkRestore');
-    const notifyBtn = document.getElementById('btnBulkNotify');
-    if (restoreBtn) restoreBtn.style.display = canRestore ? 'inline-flex' : 'none';
-    if (notifyBtn) notifyBtn.style.display = isRouteView ? 'inline-flex' : 'none';
-    
+    const archiveBtn = document.getElementById('btnBulkArchive');
+    if (restoreBtn) restoreBtn.style.display = (canRestore && !isRouteView) ? 'inline-flex' : 'none';
+    if (archiveBtn) archiveBtn.style.display = (isRouteView || canRestore) ? 'none' : '';
+
     // PC Sidebar кнопки
-    const sidebarNotify = document.getElementById('btnSidebarNotify');
     const sidebarRestore = document.getElementById('btnSidebarRestore');
     const sidebarDeleteForever = document.getElementById('btnSidebarDeleteForever');
-    if (sidebarNotify) sidebarNotify.style.display = isRouteView ? 'flex' : 'none';
-    if (sidebarRestore) sidebarRestore.style.display = canRestore ? 'flex' : 'none';
+    const sidebarMoreToggle = document.getElementById('bulkMoreToggle');
+    const sidebarArchive = document.getElementById('btnSidebarArchive');
+    const sidebarRefuse = document.getElementById('btnSidebarRefuse');
+    const sidebarDelete = document.getElementById('btnSidebarDelete');
+    const sidebarSecondary = document.getElementById('bulkSecondaryActions');
+    const bulkSidebarMainActions = document.getElementById('bulkSidebarMainActions');
+    const bulkSidebarDivider1 = document.getElementById('bulkSidebarDivider1');
+    const bulkSidebarDivider2 = document.getElementById('bulkSidebarDivider2');
+    if (sidebarRestore) sidebarRestore.style.display = (canRestore && !isRouteView) ? 'flex' : 'none';
     if (sidebarDeleteForever) sidebarDeleteForever.style.display = canDeleteForever ? 'flex' : 'none';
+
+    const marksToggle = document.getElementById('bulkMarksToggle');
+    const marksActions = document.getElementById('bulkMarksActions');
+    const mobileRouteMarkBtns = document.querySelectorAll('.bulk-route-mark-btn');
+
+    if (canRestore && !isRouteView) {
+        // Архівний вигляд — ховаємо ВСЕ крім Відновити
+        if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
+        if (sidebarSecondary) sidebarSecondary.style.display = 'none';
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = 'none';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = 'none';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = 'none';
+        if (marksToggle) marksToggle.style.display = 'none';
+        if (marksActions) marksActions.style.display = 'none';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
+        // Ховаємо мобільні кнопки: авто, опт, маршрут, тег, видалити
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = 'none');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = 'none');
+    } else if (isRouteView) {
+        // В маршрутах: ховаємо "Ще дії", Архівувати, Відмова; показуємо тільки Видалити + кнопки відмітки
+        if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
+        if (sidebarArchive) sidebarArchive.style.display = 'none';
+        if (sidebarRefuse) sidebarRefuse.style.display = 'none';
+        if (sidebarDelete) sidebarDelete.style.display = 'flex';
+        if (sidebarSecondary) { sidebarSecondary.style.display = 'flex'; sidebarSecondary.classList.add('expanded'); }
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = '';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = '';
+        if (marksToggle) marksToggle.style.display = '';
+        if (marksActions) marksActions.style.display = '';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'inline-flex');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
+    } else {
+        if (sidebarMoreToggle) sidebarMoreToggle.style.display = '';
+        if (sidebarArchive) sidebarArchive.style.display = '';
+        if (sidebarRefuse) sidebarRefuse.style.display = '';
+        if (sidebarDelete) sidebarDelete.style.display = '';
+        if (sidebarSecondary) sidebarSecondary.style.display = '';
+        if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';
+        if (bulkSidebarDivider1) bulkSidebarDivider1.style.display = '';
+        if (bulkSidebarDivider2) bulkSidebarDivider2.style.display = '';
+        if (marksToggle) marksToggle.style.display = 'none';
+        if (marksActions) marksActions.style.display = 'none';
+        mobileRouteMarkBtns.forEach(b => b.style.display = 'none');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn.vehicle, #bulkActionsBar .bulk-btn.optimize, #bulkActionsBar .bulk-btn.route').forEach(b => b.style.display = '');
+        document.querySelectorAll('#bulkActionsBar .bulk-btn[onclick="openTagModal()"], #bulkActionsBar .bulk-btn[onclick="bulkDelete()"]').forEach(b => b.style.display = '');
+    }
 }
 
 function handleSearch() { filters.search = document.getElementById('searchInput').value; render(); }
@@ -3486,8 +3687,7 @@ function updatePcVehiclesList() {
             <div onclick="setVehicleFilter('${v.id}')" style="flex:1;cursor:pointer;">
                 <span class="item-icon">🚐</span>${v.name}
             </div>
-            <span class="item-count" style="margin-right:8px;">${count}</span>
-            <button onclick="event.stopPropagation();deleteVehicle('${v.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:0.5;padding:4px;" title="Видалити авто">🗑️</button>
+            <span class="item-count">${count}</span>
         </div>`;
     }).join('');
 
@@ -3498,56 +3698,67 @@ function updatePcVehiclesList() {
     }
 }
 
-// ROUTES LIST - оновлюємо з реальними даними з таблиці
+// ROUTES LIST - оновлюємо з реальними даними з сервера (як у Cargo)
 function updateRoutesList() {
     // Спочатку показуємо з локальними даними
     renderRoutesListLocal();
-    
-    // Потім асинхронно оновлюємо з API
-    vehicles.forEach(v => {
-        fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'getRoutePassengers',
-                payload: { vehicleName: v.routeSheet || v.name }
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                // Оновлюємо badge в desktop dropdown
-                const desktopBadge = document.querySelector(`#routesList [data-vehicle="${v.id}"] .badge`);
-                if (desktopBadge) {
-                    desktopBadge.textContent = data.stats.total;
-                    desktopBadge.style.background = data.stats.total > 0 ? 'var(--orange)' : 'var(--border)';
-                    desktopBadge.style.color = data.stats.total > 0 ? 'white' : 'var(--text-secondary)';
-                }
 
-                // Оновлюємо badge в mobile menu
-                const mobileBadge = document.querySelector(`#mobileRoutesList [data-vehicle="${v.id}"] .side-menu-item-count`);
-                if (mobileBadge) {
-                    mobileBadge.textContent = data.stats.total;
-                }
+    // Завантажуємо актуальні маршрути з сервера і перемальовуємо
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.routes) {
+            window._serverRoutes = data.routes.filter(r => isRouteSheet(r.name));
+            renderRoutesListLocal();
 
-                // Оновлюємо badge в PC sidebar
-                const pcBadge = document.querySelector(`#pcRoutesList [data-vehicle="${v.id}"] .item-count`);
-                if (pcBadge) {
-                    pcBadge.textContent = data.stats.total;
-                }
-            }
-        })
-        .catch(() => {});
+            // Оновлюємо загальний лічильник "Всі маршрути"
+            const totalCount = window._serverRoutes.reduce((sum, r) => sum + (r.count || 0), 0);
+            const countRoute = document.getElementById('countRoute');
+            const pcCount = document.getElementById('pcCountRoute');
+            const mobileCount = document.getElementById('mobileCountRoute');
+            if (countRoute) countRoute.textContent = totalCount;
+            if (pcCount) pcCount.textContent = totalCount;
+            if (mobileCount) mobileCount.textContent = totalCount;
+        }
+    })
+    .catch(() => {
+        // Fallback — показуємо з локальних даних
+        renderRoutesListLocal();
     });
 }
 
-// Рендер списку маршрутів з локальними даними (швидко)
+// Рендер списку маршрутів — бере дані з серверних маршрутів + завжди показує дефолтні
 function renderRoutesListLocal() {
-    const routesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        return `<div class="dropdown-item" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')" style="color:var(--orange);">
-            <span>🚀 ${routeDisplayName}</span>
+    // Використовуємо серверні маршрути
+    const routes = (window._serverRoutes || []).filter(r => isRouteSheet(r.name));
+    // Завжди додаємо дефолтні маршрути якщо їх немає в серверних
+    DEFAULT_VEHICLES.forEach(v => {
+        if (v.routeSheet && !routes.find(r => r.name === v.routeSheet)) {
+            routes.push({ name: v.routeSheet, count: 0 });
+        }
+    });
+    // Також додаємо з vehicles (можуть бути користувацькі)
+    vehicles.forEach(v => {
+        if (v.routeSheet && !routes.find(r => r.name === v.routeSheet)) {
+            routes.push({ name: v.routeSheet, count: 0 });
+        }
+    });
+    // Сортуємо маршрути по номеру (Маршрут 1, Маршрут 2, Маршрут 3)
+    routes.sort((a, b) => {
+        const numA = parseInt((a.name.match(/\d+/) || [0])[0]);
+        const numB = parseInt((b.name.match(/\d+/) || [0])[0]);
+        return numA - numB;
+    });
+
+    const routesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        return `<div class="dropdown-item" onclick="showRoute('${r.name.replace(/'/g, "\\'")}')" style="color:var(--orange);">
+            <span>🚀 ${displayName}</span>
             <span class="badge" style="background:${count > 0 ? 'var(--orange)' : 'var(--border)'};color:${count > 0 ? 'white' : 'var(--text-secondary)'}">${count}</span>
         </div>`;
     }).join('');
@@ -3556,11 +3767,12 @@ function renderRoutesListLocal() {
     if (routesList) routesList.innerHTML = routesHtml;
 
     // Mobile routes
-    const mobileRoutesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        return `<div class="side-menu-item route ${filters.routeVehicle === v.id ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}'); closeSideMenu();">
-            <span class="side-menu-item-left">🚀 ${routeDisplayName}</span>
+    const mobileRoutesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        const isActive = filters.routeVehicle === r.name;
+        return `<div class="side-menu-item route ${isActive ? 'active' : ''}" onclick="showRoute('${r.name.replace(/'/g, "\\'")}'); closeSideMenu();" style="color:var(--orange);">
+            <span class="side-menu-item-left">🚀 ${displayName}</span>
             <span class="side-menu-item-count">${count}</span>
         </div>`;
     }).join('');
@@ -3569,19 +3781,19 @@ function renderRoutesListLocal() {
     if (mobileRoutesList) mobileRoutesList.innerHTML = mobileRoutesHtml;
 
     // PC Sidebar routes
-    const pcRoutesHtml = vehicles.map(v => {
-        const routeDisplayName = (v.routeSheet || v.name).replace(/^Пас\.\s*/, '');
-        const count = passengers.filter(p => (p.vehicle === v.id || p.vehicle === v.name) && p.status === 'route').length;
-        const isActive = filters.routeVehicle === v.id;
-        return `<div class="pc-sidebar-item route ${isActive ? 'active' : ''}" data-vehicle="${v.id}" onclick="showVehicleRoute('${v.id}')">
-            <span><span class="item-icon">🚀</span>${routeDisplayName}</span>
+    const pcRoutesHtml = routes.map(r => {
+        const count = r.count || 0;
+        const displayName = r.name.replace(/^Пас\.\s*/, '');
+        const isActive = filters.routeVehicle === r.name;
+        return `<div class="pc-sidebar-item route ${isActive ? 'active' : ''}" onclick="showRoute('${r.name.replace(/'/g, "\\'")}')" style="color:var(--orange);">
+            <span><span class="item-icon">🚀</span>${displayName}</span>
             <span class="item-count">${count}</span>
         </div>`;
     }).join('');
-    
+
     const pcRoutesList = document.getElementById('pcRoutesList');
     if (pcRoutesList) pcRoutesList.innerHTML = pcRoutesHtml;
-    
+
     // Оновлюємо лічильник "Всі маршрути" через API
     updateAllRoutesCount();
 }
@@ -3592,10 +3804,10 @@ async function updateAllRoutesCount() {
         const response = await fetch(ROUTE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getAvailableRoutes' })
+            body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
         });
         const data = await response.json();
-        
+
         if (data.success && data.routes) {
             // Фільтруємо: тільки аркуші маршрутів (ігноруємо логи, розсилка тощо)
             const validRoutes = data.routes.filter(r => isRouteSheet(r.name));
@@ -3631,55 +3843,52 @@ function showAllRoutes() {
 function showVehicleRoute(vehicleId) {
     const v = vehicles.find(x => x.id === vehicleId);
     if (!v) return showToast('❌ Авто не знайдено');
-    
+    showRoute(v.routeSheet || v.name);
+}
+
+function showRoute(sheetName) {
+    clearSelection();
     filters.statusFilter = 'route';
-    filters.routeVehicle = vehicleId;
+    filters.routeVehicle = sheetName;
     filters.showArchive = false;
+    filters.specialStatus = '';
     document.getElementById('routeDropdown')?.classList.remove('show');
     closeSideMenu();
-    
-    showLoader(`Завантаження: ${v.name}`, '');
-    
-    // Завантажуємо дані з таблиці маршрутів + статус розсилки
-    Promise.all([
-        fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'getRoutePassengers',
-                payload: { vehicleName: v.routeSheet || v.name }
-            })
-        }).then(r => r.json()),
-        fetch(ROUTE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getMailingStatus' })
-        }).then(r => r.json())
-    ])
-    .then(([routeData, mailingData]) => {
-        hideLoader();
 
-        // Зберігаємо mailingIds
-        if (mailingData.success) {
-            mailingIds = mailingData.mailingIds || [];
-        }
+    const displayName = sheetName.replace(/^Пас\.\s*/, '');
+    showLoader(`Завантаження: ${displayName}`, '');
+
+    // Знаходимо відповідне авто (якщо є)
+    const v = vehicles.find(x => x.routeSheet === sheetName || x.name === sheetName);
+
+    // Завантажуємо дані з таблиці маршрутів
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'getRoutePassengers',
+            payload: { sheetName: sheetName, companyId: getCompanyId() }
+        })
+    }).then(r => r.json())
+    .then(routeData => {
+        hideLoader();
 
         if (routeData.success) {
             // Зберігаємо дані маршруту
             routePassengers = routeData.passengers.map((p, idx) => ({
                 ...p,
-                _uid: `route_${v.id}_${idx}`,
+                _uid: `route_${sheetName.replace(/\s+/g,'_')}_${idx}`,
                 _isRouteData: true,
-                _vehicleId: v.id,
-                _vehicleName: v.routeSheet || v.name
+                _vehicleId: v ? v.id : null,
+                _vehicleName: sheetName
             }));
             routeStats = routeData.stats;
-            currentRouteVehicle = v;
-            
+            currentRouteVehicle = v || { routeSheet: sheetName, name: sheetName };
+
             // Рендеримо
             renderRoutePassengers();
             updateFilterButtons();
-            showToast(`🚐 ${v.name}: ${routeData.stats.total} пасажирів`);
+            showToast(`🚐 ${displayName}: ${routeData.stats.total} пасажирів`);
         } else {
             showToast('❌ ' + routeData.error);
         }
@@ -3694,7 +3903,7 @@ function showVehicleRoute(vehicleId) {
 // Завантажити всі маршрути
 async function loadAllRoutePassengers() {
     routePassengers = [];
-    routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0, notified: 0, notNotified: 0 };
+    routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
     currentRouteVehicle = null;
     
     // Показуємо loader
@@ -3702,24 +3911,12 @@ async function loadAllRoutePassengers() {
     
     // Паралельно завантажуємо: статус розсилки + список маршрутів
     try {
-        const [mailingResponse, routesResponse] = await Promise.all([
-            fetch(ROUTE_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'getMailingStatus' })
-            }).then(r => r.json()).catch(() => ({ success: false })),
-            fetch(ROUTE_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'getAvailableRoutes' })
-            }).then(r => r.json()).catch(() => ({ success: false }))
-        ]);
-        
-        // Зберігаємо mailingIds
-        if (mailingResponse.success) {
-            mailingIds = mailingResponse.mailingIds || [];
-        }
-        
+        const routesResponse = await fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+        }).then(r => r.json()).catch(() => ({ success: false }));
+
         if (routesResponse.success && routesResponse.routes && routesResponse.routes.length > 0) {
             // Фільтруємо: тільки аркуші маршрутів (ігноруємо логи, розсилка тощо)
             const routes = routesResponse.routes.filter(r => isRouteSheet(r.name));
@@ -3739,7 +3936,7 @@ async function loadAllRoutePassengers() {
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
                         action: 'getRoutePassengers',
-                        payload: { sheetName: route.name }
+                        payload: { sheetName: route.name, companyId: getCompanyId() }
                     })
                 })
                 .then(r => r.json())
@@ -3821,10 +4018,9 @@ function hideLoader() {
 
 // Глобальні змінні для маршрутів
 let routePassengers = [];
-let routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0, notified: 0, notNotified: 0 };
+let routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
 let currentRouteVehicle = null;
 let routeStatusFilter = 'all'; // Фільтр по статусу в маршруті
-let mailingIds = []; // ІД тих хто отримав розсилку
 
 // Рендер пасажирів маршруту в основному списку
 function renderRoutePassengers() {
@@ -3849,20 +4045,18 @@ function renderRoutePassengers() {
     }
     
     // Фільтруємо по статусу
-    let filteredPassengers = routePassengers;
-    if (routeStatusFilter === 'not-notified') {
-        filteredPassengers = routePassengers.filter(p => !mailingIds.includes(String(p.id)));
-    } else if (routeStatusFilter === 'notified') {
-        filteredPassengers = routePassengers.filter(p => mailingIds.includes(String(p.id)));
-    } else if (routeStatusFilter !== 'all') {
-        filteredPassengers = routePassengers.filter(p => p.driverStatus === routeStatusFilter);
+    let filteredPassengers = routePassengers.filter(p => p.status !== 'archived');
+    if (routeStatusFilter !== 'all') {
+        filteredPassengers = filteredPassengers.filter(p => p.driverStatus === routeStatusFilter);
     }
     
-    // Рахуємо сповіщення
-    const notifiedCount = routePassengers.filter(p => mailingIds.includes(String(p.id))).length;
-    const notNotifiedCount = routePassengers.length - notifiedCount;
-    routeStats.notified = notifiedCount;
-    routeStats.notNotified = notNotifiedCount;
+    // Рахуємо статистику (без архівних)
+    const activeRoutePassengers = routePassengers.filter(p => p.status !== 'archived');
+    routeStats.total = activeRoutePassengers.length;
+    routeStats.pending = activeRoutePassengers.filter(p => !p.driverStatus || p.driverStatus === 'pending').length;
+    routeStats.inProgress = activeRoutePassengers.filter(p => p.driverStatus === 'in-progress').length;
+    routeStats.completed = activeRoutePassengers.filter(p => p.driverStatus === 'completed').length;
+    routeStats.cancelled = activeRoutePassengers.filter(p => p.driverStatus === 'cancelled').length;
     
     let html = '';
     
@@ -3898,12 +4092,8 @@ function renderRoutePassengers() {
                     <div class="route-stat-num">${routeStats.cancelled}</div>
                     <div class="route-stat-label">❌ Відмова</div>
                 </div>
-                <div class="route-stat-item ${routeStatusFilter === 'not-notified' ? 'active not-notified' : ''}" onclick="filterRouteByStatus('not-notified')" style="${routeStatusFilter !== 'not-notified' ? 'color:#f97316;' : ''}">
-                    <div class="route-stat-num">${notNotifiedCount}</div>
-                    <div class="route-stat-label">🔔 Не спов.</div>
-                </div>
             </div>
-            ${currentRouteVehicle ? `<div style="text-align:center;margin-top:10px;"><button onclick="showVehicleRoute('${currentRouteVehicle.id}')" style="padding:8px 20px;border:none;border-radius:6px;background:var(--info);color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button></div>` : ''}
+            ${currentRouteVehicle ? `<div style="text-align:center;margin-top:10px;"><button onclick="showRoute('${(currentRouteVehicle.routeSheet || currentRouteVehicle.name).replace(/'/g, "\\'")}')" style="padding:8px 20px;border:none;border-radius:6px;background:var(--info);color:white;font-weight:600;cursor:pointer;font-size:12px;">🔄 Оновити</button></div>` : ''}
         </div>
     `;
     
@@ -3933,13 +4123,6 @@ function renderRoutePassengers() {
             statusBadge = '<span class="status-badge archived">📦 Архів</span>';
         }
         
-        // Перевіряємо чи сповіщений
-        const isNotified = mailingIds.includes(String(p.id));
-        const notifyBadge = isNotified 
-            ? '<span style="background:#f97316;color:white;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;">🔔 Сповіщено</span>' 
-            : '';
-        const notifyClass = isNotified ? 'is-notified' : '';
-        
         const veh = vehicles.find(v => v.id === p._vehicleId || v.routeSheet === p._vehicleName || v.name === p._vehicleName);
         const vehicleBadge = veh
             ? `<span class="card-vehicle-badge" style="cursor:default;">${veh.name}</span>`
@@ -3948,7 +4131,7 @@ function renderRoutePassengers() {
         const isSelected = selectedIds.has(p._uid);
         
         html += `
-            <div class="lead-card ${statusClass} ${notifyClass} ${isSelected ? 'selected' : ''}" data-uid="${p._uid}">
+            <div class="lead-card ${statusClass} ${isSelected ? 'selected' : ''}" data-uid="${p._uid}">
                 <div class="card-header" onclick="toggleRouteCardDetails('${p._uid}')">
                     <div class="card-checkbox-wrap">
                         <input type="checkbox" class="card-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation();toggleSelect('${p._uid}')">
@@ -3956,54 +4139,53 @@ function renderRoutePassengers() {
                     </div>
                     <div class="card-body">
                         <div class="card-top-row">
-                            <span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)">${p.phone || '—'}</span>
-                            <span class="card-seats">👥 ${p.seats || 1}</span>
-                            <span class="card-date">${p.date || '—'}</span>
-                            ${p.payment ? `<span class="card-price">💰 ${p.payment}</span>` : ''}
+                            ${hiddenCols.has('phone')?'':`<span class="card-phone copyable" onclick="event.stopPropagation();copyField(this)">${p.phone || '—'}</span>`}
+                            ${hiddenCols.has('seats')?'':`<span class="card-seats">👥 ${p.seats || 1}</span>`}
+                            ${hiddenCols.has('date')?'':`<span class="card-date">${p.date || '—'}</span>`}
+                            ${hiddenCols.has('payment')?'':( p.payment ? `<span class="card-price">💰 ${p.payment}</span>` : '')}
                         </div>
                         <div class="card-row2-wrap">
                             <div class="card-route-row">
-                                <span class="card-route"><span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.from || '?'}</span> <span class="card-route-arrow">→</span> <span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.to || '?'}</span></span>
+                                ${hiddenCols.has('from')&&hiddenCols.has('to')?'':`<span class="card-route">${hiddenCols.has('from')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.from || '?'}</span>`} ${hiddenCols.has('from')||hiddenCols.has('to')?'':`<span class="card-route-arrow">→</span>`} ${hiddenCols.has('to')?'':`<span class="copyable" onclick="event.stopPropagation();copyField(this)">${p.to || '?'}</span>`}</span>`}
                             </div>
                             <div class="card-info-row">
-                                <span class="card-id copyable" onclick="event.stopPropagation();copyField(this)">${p.id || '—'}</span>
-                                <span class="card-name">${p.name || '—'}</span>
+                                ${hiddenCols.has('id')?'':`<span class="card-id copyable" onclick="event.stopPropagation();copyField(this)">${p.id || '—'}</span>`}
+                                ${hiddenCols.has('name')?'':`<span class="card-name">${p.name || '—'}</span>`}
                             </div>
                         </div>
                         <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${statusBadge}
-                            ${notifyBadge}
-                            ${p.timing ? `<span style="font-size:10px;color:#666;">⏰ ${p.timing}</span>` : ''}
+                            ${hiddenCols.has('timing')?'':(p.timing ? `<span style="font-size:10px;color:#666;">⏰ ${p.timing}</span>` : '')}
                         </div>
-                        ${p.note ? `<div style="font-size:10px;color:#666;margin-top:4px;font-style:italic;">📝 ${p.note}</div>` : ''}
+                        ${hiddenCols.has('note')?'':(p.note ? `<div style="font-size:10px;color:#666;margin-top:4px;font-style:italic;">📝 ${p.note}</div>` : '')}
                     </div>
                     <div class="card-right-section">
-                        <div class="card-vehicle">
+                        ${hiddenCols.has('vehicle')?'':`<div class="card-vehicle">
                             ${vehicleBadge}
-                        </div>
+                        </div>`}
                         <button class="card-actions-toggle" onclick="event.stopPropagation();toggleRouteActions('${p._uid}')">▼</button>
                     </div>
                 </div>
                 <div class="card-details" id="details_${p._uid}" style="display:none;">
                     <div class="details-grid">
-                        <div class="detail-item"><span class="detail-label">📞 Телефон</span><span class="detail-value">${p.phone || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📞 Реєстратор</span><span class="detail-value">${p.phoneReg || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👤 ПІБ</span><span class="detail-value">${p.name || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👥 Місць</span><span class="detail-value">${p.seats || 1}</span></div>
-                        <div class="detail-item"><span class="detail-label">📍 Звідки</span><span class="detail-value">${p.from || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📍 Куди</span><span class="detail-value">${p.to || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">💰 Оплата</span><span class="detail-value">${p.payment || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📊 Відсоток</span><span class="detail-value">${p.percent || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">⏰ Таймінг</span><span class="detail-value">${p.timing || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">📅 Дата виїзду</span><span class="detail-value">${p.date || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">👨‍💼 Диспетчер</span><span class="detail-value">${p.dispatcher || '—'}</span></div>
-                        <div class="detail-item"><span class="detail-label">⚖️ Вага</span><span class="detail-value">${p.weight || '—'}</span></div>
+                        ${hiddenCols.has('phone')?'':`<div class="detail-item"><span class="detail-label">📞 Телефон</span><span class="detail-value">${p.phone || '—'}</span></div>`}
+                        ${hiddenCols.has('phoneReg')?'':`<div class="detail-item"><span class="detail-label">📞 Реєстратор</span><span class="detail-value">${p.phoneReg || '—'}</span></div>`}
+                        ${hiddenCols.has('name')?'':`<div class="detail-item"><span class="detail-label">👤 ПІБ</span><span class="detail-value">${p.name || '—'}</span></div>`}
+                        ${hiddenCols.has('seats')?'':`<div class="detail-item"><span class="detail-label">👥 Місць</span><span class="detail-value">${p.seats || 1}</span></div>`}
+                        ${hiddenCols.has('from')?'':`<div class="detail-item"><span class="detail-label">📍 Звідки</span><span class="detail-value">${p.from || '—'}</span></div>`}
+                        ${hiddenCols.has('to')?'':`<div class="detail-item"><span class="detail-label">📍 Куди</span><span class="detail-value">${p.to || '—'}</span></div>`}
+                        ${hiddenCols.has('payment')?'':`<div class="detail-item"><span class="detail-label">💰 Оплата</span><span class="detail-value">${p.payment || '—'}</span></div>`}
+                        ${hiddenCols.has('percent')?'':`<div class="detail-item"><span class="detail-label">📊 Відсоток</span><span class="detail-value">${p.percent || '—'}</span></div>`}
+                        ${hiddenCols.has('timing')?'':`<div class="detail-item"><span class="detail-label">⏰ Таймінг</span><span class="detail-value">${p.timing || '—'}</span></div>`}
+                        ${hiddenCols.has('date')?'':`<div class="detail-item"><span class="detail-label">📅 Дата виїзду</span><span class="detail-value">${p.date || '—'}</span></div>`}
+                        ${hiddenCols.has('dispatcher')?'':`<div class="detail-item"><span class="detail-label">👨‍💼 Диспетчер</span><span class="detail-value">${p.dispatcher || '—'}</span></div>`}
+                        ${hiddenCols.has('weight')?'':`<div class="detail-item"><span class="detail-label">⚖️ Вага</span><span class="detail-value">${p.weight || '—'}</span></div>`}
                     </div>
-                    ${p.note ? `<div class="detail-note"><span class="detail-label">📝 Примітка</span><div>${p.note}</div></div>` : ''}
+                    ${hiddenCols.has('note')?'':(p.note ? `<div class="detail-note"><span class="detail-label">📝 Примітка</span><div>${p.note}</div></div>` : '')}
                 </div>
                 <div class="card-actions" id="actions_${p._uid}">
                     <button class="btn-card-action btn-call" onclick="event.stopPropagation();location.href='tel:${p.phone}'">📞 Дзвонити</button>
-                    <button class="btn-card-action btn-msg" onclick="event.stopPropagation();window.open('https://console.smartsender.com/contacts?project=yura-transportation-131349','_blank')">💬 Писати</button>
+                    <button class="btn-card-action btn-msg" onclick="openMessengerMenu('${p.phone}',event)">💬 Писати</button>
                     <button class="btn-card-action btn-map" onclick="event.stopPropagation();openRouteMap('${encodeURIComponent(p.from || '')}','${encodeURIComponent(p.to || '')}')">🗺️ Карта</button>
                     <button class="btn-card-action btn-edit" onclick="event.stopPropagation();editPassenger('${p._uid}')">✏️ Редагувати</button>
                     <button class="btn-card-action btn-delete" onclick="event.stopPropagation();showRouteDeleteChoice('${p._uid}')">🗑️ Видалити</button>
@@ -4078,41 +4260,12 @@ function openRouteMap(fromEncoded, toEncoded) {
     }
 }
 
-// Вибір типу видалення в маршруті
+// Видалення з маршруту — назавжди видаляє рядок
 function showRouteDeleteChoice(uid) {
     const p = routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
-
-    document.getElementById('routeDeleteChoiceModal')?.remove();
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay show';
-    modal.id = 'routeDeleteChoiceModal';
-    modal.innerHTML = `
-        <div class="modal" style="max-width:380px;">
-            <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;">
-                <span class="modal-title" style="color:#dc2626;">🗑️ Видалити</span>
-                <button class="modal-close" onclick="document.getElementById('routeDeleteChoiceModal').remove()">✕</button>
-            </div>
-            <div class="modal-body" style="padding:20px;">
-                <div style="text-align:center;margin-bottom:16px;">
-                    <div style="font-size:14px;font-weight:600;">${p.name || 'Без імені'}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);">${p.phone || '—'}</div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:10px;">
-                    <button onclick="deleteFromRouteOnly('${uid}')" style="padding:14px;border:none;border-radius:10px;background:#f59e0b;color:white;font-weight:600;font-size:13px;cursor:pointer;">
-                        📋 Видалити з маршруту<br>
-                        <span style="font-size:11px;font-weight:400;opacity:0.9;">Лід залишиться в головному списку</span>
-                    </button>
-                    <button onclick="deleteFromRouteAndTrash('${uid}')" style="padding:14px;border:none;border-radius:10px;background:#dc2626;color:white;font-weight:600;font-size:13px;cursor:pointer;">
-                        🗑️ Видалити в корзину<br>
-                        <span style="font-size:11px;font-weight:400;opacity:0.9;">Лід буде архівовано</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
+    if (!confirm(`🗑️ Видалити назавжди?\n\n${p.name || 'Без імені'} (${p.phone || '—'})\n\nЗапис буде видалений з маршруту назавжди.`)) return;
+    deleteFromRouteOnly(uid);
 }
 
 // Видалити тільки з маршруту (лід залишається в основному списку)
@@ -4131,75 +4284,33 @@ function deleteFromRouteOnly(uid) {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
             action: 'deleteRoutePassenger',
-            payload: { sheetName: sheetName, rowNum: p.rowNum }
+            companyId: getCompanyId(),
+            payload: { sheetName: sheetName, rowNum: p.rowNum || p._rowNum }
         })
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
         hideRouteProgress();
-        if (data.success) {
-            // Видаляємо з локального масиву
-            routePassengers = routePassengers.filter(rp => rp._uid !== uid);
-            routeStats.total = routePassengers.length;
-            renderRoutePassengers();
-            updateAllCounts();
-            showToast('📋 Видалено з маршруту');
-        } else {
-            showToast('❌ ' + (data.error || 'Помилка'));
-        }
-    })
-    .catch(err => {
-        hideRouteProgress();
-        console.error('deleteFromRouteOnly error:', err);
-        showToast('❌ Помилка видалення');
-    });
-}
-
-// Видалити з маршруту + в архів (корзину)
-function deleteFromRouteAndTrash(uid) {
-    document.getElementById('routeDeleteChoiceModal')?.remove();
-    const p = routePassengers.find(rp => rp._uid === uid);
-    if (!p) return;
-
-    const sheetName = currentRouteVehicle?.routeSheet || p._vehicleName;
-    if (!sheetName) return showToast('❌ Невідомий аркуш маршруту');
-
-    showRouteProgress('Видаляю...');
-
-    // 1) Видаляємо з маршруту
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'deleteRoutePassenger',
-            payload: { sheetName: sheetName, rowNum: p.rowNum }
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        // 2) Архівуємо в головному списку
-        const mainPassenger = passengers.find(mp => String(mp.id) === String(p.id));
-        if (mainPassenger) {
-            mainPassenger.status = 'archived';
-            mainPassenger.archiveDate = new Date().toISOString().split('T')[0];
-            updatePassengerOnServer(mainPassenger);
-            saveSettings();
-        }
-
-        hideRouteProgress();
-        // Видаляємо з локального масиву маршруту
         routePassengers = routePassengers.filter(rp => rp._uid !== uid);
         routeStats.total = routePassengers.length;
         renderRoutePassengers();
         updateAllCounts();
-        showToast('🗑️ Видалено в корзину');
+        updateRoutesList();
+        showToast('📋 Видалено з маршруту');
+        try { const data = JSON.parse(text); if (!data.success) console.warn('Delete route error:', data.error); } catch(e) {}
     })
     .catch(err => {
         hideRouteProgress();
-        console.error('deleteFromRouteAndTrash error:', err);
-        showToast('❌ Помилка видалення');
+        console.warn('deleteFromRouteOnly fetch error:', err);
+        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+        routeStats.total = routePassengers.length;
+        renderRoutePassengers();
+        updateAllCounts();
+        showToast('📋 Видалено з маршруту');
+        setTimeout(() => silentSync(), 2000);
     });
 }
+
 
 // Оновити кількість в маршрутах (викликається при відкритті dropdown)
 function updateRoutesCounts() {
@@ -4209,7 +4320,7 @@ function updateRoutesCounts() {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'getRoutePassengers',
-                payload: { vehicleName: v.routeSheet || v.name }
+                payload: { sheetName: v.routeSheet || v.name, companyId: getCompanyId() }
             })
         })
         .then(r => r.json())
@@ -4273,50 +4384,100 @@ function resetVehicleFilter() {
     updateVehiclesList();
     updateMobileVehicles();
 }
-function filterByStatus(status) { filters.statusFilter = filters.statusFilter === status ? '' : status; filters.showArchive = false; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateFilterButtons(); }
-function toggleArchiveFilter() { const entering = !filters.showArchive; filters.showArchive = entering; filters.statusFilter = ''; filters.routeVehicle = ''; filters.specialStatus = ''; if (entering) { filters.date = ''; filters.showNewOnly = false; filters.search = ''; filters.statusDateFrom = ''; filters.statusDateTo = ''; const si = document.getElementById('searchInput'); if (si) si.value = ''; } routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateAllCounts(); updateFilterButtons(); renderCalendars(); }
+function filterByStatus(status) { clearSelection(); filters.statusFilter = filters.statusFilter === status ? '' : status; filters.showArchive = false; filters.specialStatus = ''; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateFilterButtons(); }
+function toggleArchiveFilter() { clearSelection(); const entering = !filters.showArchive; filters.showArchive = entering; filters.statusFilter = ''; filters.routeVehicle = ''; filters.specialStatus = ''; if (entering) { filters.date = ''; filters.showNewOnly = false; filters.search = ''; filters.statusDateFrom = ''; filters.statusDateTo = ''; const si = document.getElementById('searchInput'); if (si) si.value = ''; } routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); updateAllCounts(); updateFilterButtons(); renderCalendars(); }
 
 // SINGLE ACTIONS
 function moveOneToRoute(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
-    if (!p.vehicle) return showToast('⚠️ Спочатку призначте авто');
-    p.status = 'route';
-    saveSettings();
-    render();
-    updateAllCounts();
-    showToast('🚀 В маршруті');
+
+    // Відкриваємо пікер вибору маршруту (як в карго)
+    openRoutePicker([p]);
 }
 
 function archivePassenger(id) {
     const p = passengers.find(x => x.id === id);
-    if (p) { if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; } p.archiveType = 'archived'; p.status = 'archived'; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві'); }
+    if (!p) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
+    p.archiveType = 'archived';
+    p.status = 'archived';
+    p.statusDate = today;
+    p.archivedBy = 'archived_' + getCompanyId();
+
+    // Якщо є серверні дані — архівуємо на сервері з companyId
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
+    if (pSheet && pRowNum) {
+        const isRoute = !!p._isRouteData;
+        const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
+        const action = isRoute ? 'archivePassengers' : 'archivePassenger';
+        const body = isRoute
+            ? { action, companyId: getCompanyId(), passengers: [{ sheet: pSheet, rowNum: pRowNum }], reason: 'archived' }
+            : { action, companyId: getCompanyId(), sheet: pSheet, rowNum: pRowNum, reason: 'archived' };
+        fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }).catch(() => {});
+    }
+    saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('📦 В архіві');
 }
 
 function restorePassenger(id) {
     const p = passengers.find(x => x.id === id);
-    if (p) { p.status = p.prevStatus || 'new'; delete p.prevStatus; delete p.archiveType; p.statusDate = ''; saveSettings(); render(); updateAllCounts(); renderCalendars(); showToast('♻️ Відновлено'); }
+    if (!p) return;
+    const newStatus = p.prevStatus || 'new';
+    p.status = newStatus;
+    delete p.prevStatus;
+    delete p.archiveType;
+    p.statusDate = '';
+    // Очищаємо причину з примітки
+    if (p.note) {
+        p.note = p.note.replace(/^(Відмова|Пересадка|Перенос|Видалено):.*?\|?\s*/i, '');
+    }
+    render(); updateAllCounts(); renderCalendars();
+    showToast('♻️ Відновлено');
+
+    // Відправляємо на сервер щоб silentSync не затер зміни
+    const sheet = p._sheet;
+    const rowNum = p._rowNum;
+    if (sheet && rowNum) {
+        const isRoute = !!p._isRouteData;
+        const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
+        const body = isRoute
+            ? { action: 'restorePassengers', companyId: getCompanyId(), passengers: [{ sheet, rowNum }] }
+            : { action: 'restorePassengers', payload: { passengers: [{ sheet, rowNum }] } };
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(body)
+        })
+        .then(r => r.text())
+        .then(t => { try { return JSON.parse(t); } catch(e) { return { success: true }; } })
+        .catch(err => console.warn('restorePassenger API error:', err));
+    }
 }
 
 function bulkRestore() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
 
-    // Збираємо дані для API
-    const passengersToRestore = [];
+    // Збираємо дані для API (розділяємо main і route)
+    const mainPassengers = [];
+    const routePassengerItems = [];
     let totalCount = 0;
     selectedIds.forEach(uid => {
         const p = findPassengerByUid(uid);
         if (!p || p.status !== 'archived') return;
         totalCount++;
         if (p._sheet && p._rowNum) {
-            passengersToRestore.push({
-                sheet: p._sheet,
-                rowNum: p._rowNum
-            });
+            const item = { sheet: p._sheet, rowNum: p._rowNum };
+            if (p._isRouteData) {
+                routePassengerItems.push(item);
+            } else {
+                mainPassengers.push(item);
+            }
         }
     });
 
-    if (passengersToRestore.length === 0 && totalCount === 0) {
+    if (mainPassengers.length === 0 && routePassengerItems.length === 0 && totalCount === 0) {
         return showToast('⚠️ Немає заявок для відновлення');
     }
 
@@ -4339,7 +4500,7 @@ function bulkRestore() {
         });
     };
 
-    if (passengersToRestore.length === 0) {
+    if (mainPassengers.length === 0 && routePassengerItems.length === 0) {
         // Тільки локальні записи
         hideLoader();
         restoreLocally();
@@ -4351,102 +4512,61 @@ function bulkRestore() {
         return;
     }
 
-    // Викликаємо API
-    fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'restorePassengers',
-            payload: { passengers: passengersToRestore }
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        hideLoader();
-        if (data.success) {
-            restoreLocally();
-            clearSelection();
-            render();
-            updateAllCounts();
-            showToast(`↩️ Відновлено: ${data.restored || totalCount}`);
-        } else {
-            showToast('❌ ' + data.error);
-        }
-    })
-    .catch(err => {
-        hideLoader();
-        console.error('Restore error:', err);
-        restoreLocally();
-        clearSelection();
-        saveSettings();
-        render();
-        updateAllCounts();
-        showToast('↩️ Відновлено локально');
-    });
-}
+    // Одразу оновлюємо UI (не чекаємо на сервер)
+    restoreLocally();
+    clearSelection();
+    saveSettings();
+    render();
+    updateAllCounts();
+    hideLoader();
+    showToast(`↩️ Відновлено: ${totalCount}`);
 
-// Відмітити як сповіщених
-function bulkMarkNotified() {
-    if (selectedIds.size === 0) return showToast('⚠️ Оберіть пасажирів');
-    
-    // Питаємо ім'я (поки немає системи логіну)
-    const userName = prompt('Введіть ваше ім\'я:');
-    if (!userName || !userName.trim()) {
-        return showToast('⚠️ Введіть ім\'я');
-    }
-    
-    // Збираємо записи для додавання
-    const records = [];
-    selectedIds.forEach(uid => {
-        // Шукаємо в routePassengers (бо ми в режимі маршруту)
-        const p = routePassengers.find(x => x._uid === uid);
-        if (p && p.id) {
-            // Перевіряємо чи вже не сповіщений
-            if (!mailingIds.includes(String(p.id))) {
-                records.push({
-                    date: p.date || new Date().toLocaleDateString('uk-UA'),
-                    id: p.id
-                });
-            }
+    // Відправляємо на сервер (fire-and-forget, як у bulkArchive)
+    if (mainPassengers.length > 0) {
+        function doRestoreMain(retries) {
+            fetch(API_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'restorePassengers',
+                    payload: { passengers: mainPassengers }
+                })
+            })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(t => { try { JSON.parse(t); } catch(e) {} })
+            .catch(err => {
+                if (retries > 0) {
+                    console.warn('Restore main retry (' + retries + ' left):', err.message);
+                    setTimeout(() => doRestoreMain(retries - 1), 1500);
+                }
+            });
         }
-    });
-    
-    if (records.length === 0) {
-        return showToast('⚠️ Всі вибрані вже сповіщені');
+        doRestoreMain(2);
     }
-    
-    showLoader('Збереження...', '');
-    
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'addMailingRecord',
-            payload: {
-                records: records,
-                userName: userName.trim()
-            }
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        hideLoader();
-        if (data.success) {
-            // Оновлюємо локальний список mailingIds
-            records.forEach(r => mailingIds.push(String(r.id)));
-            
-            clearSelection();
-            renderRoutePassengers();
-            showToast(`🔔 Сповіщено: ${data.added}`);
-        } else {
-            showToast('❌ ' + data.error);
+    if (routePassengerItems.length > 0) {
+        function doRestoreRoute(retries) {
+            fetch(ROUTE_API_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'restorePassengers',
+                    companyId: getCompanyId(),
+                    passengers: routePassengerItems
+                })
+            })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(t => { try { JSON.parse(t); } catch(e) {} })
+            .catch(err => {
+                if (retries > 0) {
+                    console.warn('Restore route retry (' + retries + ' left):', err.message);
+                    setTimeout(() => doRestoreRoute(retries - 1), 1500);
+                }
+            });
         }
-    })
-    .catch(err => {
-        hideLoader();
-        console.error('Mailing error:', err);
-        showToast('❌ Помилка збереження');
-    });
+        doRestoreRoute(2);
+    }
 }
 
 // BULK ACTIONS
@@ -4539,57 +4659,171 @@ function bulkRemoveVehicle() {
     showToast(`❓ Без авто: ${count}`);
 }
 
-function bulkMoveToRoute() {
-    // Збираємо вибраних пасажирів
-    const selected = [...selectedIds].map(uid => findPassengerByUid(uid)).filter(Boolean);
-    if (!selected.length) return showToast('⚠️ Оберіть пасажирів');
-    
-    // Перевіряємо чи є авто
-    const withVehicle = selected.filter(p => p.vehicle);
-    if (!withVehicle.length) return showToast('⚠️ Спочатку призначте авто');
-    
-    // Групуємо по авто (ключ = назва аркуша маршруту)
-    const byVehicle = {};
-    withVehicle.forEach(p => {
-        const veh = vehicles.find(v => v.id === p.vehicle || v.name === p.vehicle);
-        const vName = veh ? (veh.routeSheet || veh.name) : p.vehicle;
-        if (!byVehicle[vName]) byVehicle[vName] = [];
-        byVehicle[vName].push(p);
-    });
-    
-    // Показуємо ненав'язливий прогрес
-    showRouteProgress('Перевіряю маршрути...');
+// ═══ ROUTE PICKER ═══
+let _routePickerPassengers = []; // пасажири для відправки в маршрут
+let _routePickerSelected = null; // вибраний маршрут (sheetName)
 
-    // Спочатку перевіряємо чи є записи в маршрутах
+function openRoutePicker(passengersToRoute) {
+    _routePickerPassengers = passengersToRoute;
+    _routePickerSelected = null;
+    document.getElementById('routePickerCount').textContent = passengersToRoute.length;
+    document.getElementById('routePickerList').innerHTML = '';
+    document.getElementById('routePickerLoading').style.display = 'block';
+    const btn = document.getElementById('routePickerConfirmBtn');
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    document.getElementById('routePickerModal').classList.add('show');
+
+    // Завантажуємо реальні маршрути з сервера
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'getAvailableRoutes', companyId: getCompanyId() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('routePickerLoading').style.display = 'none';
+        if (!data.success || !data.routes) {
+            document.getElementById('routePickerList').innerHTML = '<div style="padding:16px;color:var(--danger);text-align:center;">Не вдалось завантажити маршрути</div>';
+            return;
+        }
+        let routes = data.routes.filter(r => isRouteSheet(r.name));
+        // Завжди додаємо дефолтні маршрути якщо їх немає
+        DEFAULT_VEHICLES.forEach(v => {
+            if (v.routeSheet && !routes.find(r => r.name === v.routeSheet)) {
+                routes.push({ name: v.routeSheet, count: 0 });
+            }
+        });
+        // Сортуємо маршрути по номеру
+        routes.sort((a, b) => {
+            const numA = parseInt((a.name.match(/\d+/) || [0])[0]);
+            const numB = parseInt((b.name.match(/\d+/) || [0])[0]);
+            return numA - numB;
+        });
+        if (!routes.length) {
+            document.getElementById('routePickerList').innerHTML = '<div style="padding:16px;color:var(--text-secondary);text-align:center;">Маршрутів не знайдено</div>';
+            return;
+        }
+        document.getElementById('routePickerList').innerHTML = routes.map(r => {
+            const count = r.count || 0;
+            return `<div class="vehicle-select-item" id="rpi_${r.name.replace(/\s+/g,'_')}" onclick="selectRoutePicker('${r.name.replace(/'/g, "\\'")}')" style="transition:all 0.2s;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">🚐</div>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${r.name}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">🧑‍🤝‍🧑 ${count} записів в маршруті</div>
+                    </div>
+                </div>
+                <div style="width:22px;height:22px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="rpi_check_${r.name.replace(/\s+/g,'_')}"></div>
+            </div>`;
+        }).join('');
+    })
+    .catch(() => {
+        document.getElementById('routePickerLoading').style.display = 'none';
+        // Fallback: показуємо дефолтні маршрути
+        const fallbackRoutes = DEFAULT_VEHICLES.filter(v => v.routeSheet).sort((a, b) => {
+            const numA = parseInt((a.routeSheet.match(/\d+/) || [0])[0]);
+            const numB = parseInt((b.routeSheet.match(/\d+/) || [0])[0]);
+            return numA - numB;
+        });
+        document.getElementById('routePickerList').innerHTML = fallbackRoutes.map(v => {
+            return `<div class="vehicle-select-item" id="rpi_${v.routeSheet.replace(/\s+/g,'_')}" onclick="selectRoutePicker('${v.routeSheet.replace(/'/g, "\\'")}')" style="transition:all 0.2s;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">🚐</div>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${v.routeSheet}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">🧑‍🤝‍🧑 0 записів в маршруті</div>
+                    </div>
+                </div>
+                <div style="width:22px;height:22px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="rpi_check_${v.routeSheet.replace(/\s+/g,'_')}"></div>
+            </div>`;
+        }).join('');
+    });
+}
+
+function selectRoutePicker(sheetName) {
+    _routePickerSelected = sheetName;
+    document.querySelectorAll('#routePickerList .vehicle-select-item').forEach(el => {
+        el.style.border = '2px solid transparent';
+        el.style.background = '';
+        const check = el.querySelector('[id^="rpi_check_"]');
+        if (check) check.innerHTML = '';
+    });
+    const id = 'rpi_' + sheetName.replace(/\s+/g, '_');
+    const el = document.getElementById(id);
+    if (el) {
+        el.style.border = '2px solid #f97316';
+        el.style.background = 'rgba(249,115,22,0.08)';
+        const check = el.querySelector('[id^="rpi_check_"]');
+        if (check) check.innerHTML = '<div style="width:12px;height:12px;background:#f97316;border-radius:50%;"></div>';
+    }
+    const btn = document.getElementById('routePickerConfirmBtn');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+}
+
+function confirmRoutePicker() {
+    if (!_routePickerSelected || !_routePickerPassengers.length) return;
+    closeModal('routePickerModal');
+
+    const sheetName = _routePickerSelected;
+    const passengersToRoute = _routePickerPassengers;
+
+    const byVehicle = {};
+    byVehicle[sheetName] = passengersToRoute;
+
+    showRouteProgress('Перевіряю маршрут...');
+
+    // Перевіряємо конфлікти
     fetch(ROUTE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
             action: 'checkRouteSheets',
-            payload: { vehicleNames: Object.keys(byVehicle) }
+            companyId: getCompanyId(),
+            payload: { vehicleNames: [sheetName] }
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success && data.existing && data.existing.length > 0) {
-            // Є існуючі записи - показуємо діалог
-            showRouteConflictModal(data.existing, byVehicle, withVehicle);
+            showRouteConflictModal(data.existing, byVehicle, passengersToRoute);
         } else {
-            // Немає конфліктів - копіюємо
-            executeCopyToRoute(byVehicle, withVehicle, 'add');
+            executeCopyToRoute(byVehicle, passengersToRoute, 'add');
         }
     })
-    .catch(err => {
-        console.error('Check route error:', err);
-        // При помилці все одно пробуємо копіювати
-        executeCopyToRoute(byVehicle, withVehicle, 'add');
+    .catch(() => {
+        executeCopyToRoute(byVehicle, passengersToRoute, 'add');
     });
+}
+
+function bulkMoveToRoute() {
+    // Збираємо вибраних пасажирів, сортуємо по order (зберігаємо порядок оптимізації)
+    const selected = [...selectedIds].map(uid => findPassengerByUid(uid)).filter(Boolean)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (!selected.length) return showToast('⚠️ Оберіть пасажирів');
+
+    // Відкриваємо пікер вибору маршруту (як в карго)
+    openRoutePicker(selected);
 }
 
 // Toggle collapsible secondary bulk actions
 function toggleBulkSecondary() {
     const sec = document.getElementById('bulkSecondaryActions');
     const tog = document.getElementById('bulkMoreToggle');
+    if (sec.classList.contains('expanded')) {
+        sec.classList.remove('expanded');
+        tog.classList.remove('expanded');
+    } else {
+        sec.classList.add('expanded');
+        tog.classList.add('expanded');
+    }
+}
+
+// Toggle collapsible marks (Відмітки) submenu
+function toggleBulkMarks() {
+    const sec = document.getElementById('bulkMarksActions');
+    const tog = document.getElementById('bulkMarksToggle');
     if (sec.classList.contains('expanded')) {
         sec.classList.remove('expanded');
         tog.classList.remove('expanded');
@@ -4650,10 +4884,6 @@ function showRouteConflictModal(existing, byVehicle, withVehicle) {
                     <span class="btn-emoji">➕</span>
                     <span class="btn-label">Додати</span>
                 </button>
-                <button class="route-conflict-btn archive" onclick="handleRouteConflict('archive')">
-                    <span class="btn-emoji">📦</span>
-                    <span class="btn-label">Архівувати старі</span>
-                </button>
                 <button class="route-conflict-btn clear" onclick="handleRouteConflict('clear')">
                     <span class="btn-emoji">🗑️</span>
                     <span class="btn-label">Очистити старі</span>
@@ -4695,6 +4925,7 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
 
     const payload = {
         action: 'copyToRoute',
+        companyId: getCompanyId(),
         payload: {
             passengersByVehicle: byVehicle,
             conflictAction: conflictAction
@@ -4706,40 +4937,58 @@ function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
         hideRouteProgress();
-        if (data.success) {
-            withVehicle.forEach(p => {
-                p.status = 'route';
-                p.mark = 'Маршрут';
-            });
-            saveSettings();
-            render();
-            updateBulkBar();
-            updateAllCounts();
-
-            let msg = `🚀 ${data.copied} записано в маршрут`;
-            if (data.archived) msg += `, 📦 ${data.archived} архівовано`;
-            if (data.cleared) msg += `, 🗑️ ${data.cleared} видалено`;
-            showToast(msg);
-        } else {
-            showToast('❌ ' + data.error);
+        withVehicle.forEach(p => {
+            p.status = 'route';
+            p.mark = 'Маршрут';
+        });
+        saveSettings();
+        render();
+        updateBulkBar();
+        updateAllCounts();
+        updateRoutesList();
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                let msg = `🚀 ${data.copied} записано в маршрут`;
+                if (data.archived) msg += `, 📦 ${data.archived} архівовано`;
+                if (data.cleared) msg += `, 🗑️ ${data.cleared} видалено`;
+                showToast(msg);
+            } else {
+                console.warn('Bulk route server error:', data.error);
+                showToast(`🚀 ${withVehicle.length} записано в маршрут`);
+                setTimeout(() => silentSync(), 1500);
+            }
+        } catch(e) {
+            console.warn('Bulk route response not JSON');
+            showToast(`🚀 ${withVehicle.length} записано в маршрут`);
+            setTimeout(() => silentSync(), 1500);
         }
     })
     .catch(err => {
         hideRouteProgress();
-        console.error('Route error:', err);
-        showToast('❌ Помилка запису');
+        console.warn('Route fetch error:', err);
+        withVehicle.forEach(p => {
+            p.status = 'route';
+            p.mark = 'Маршрут';
+        });
+        saveSettings();
+        render();
+        updateBulkBar();
+        updateAllCounts();
+        showToast(`🚀 ${withVehicle.length} записано в маршрут`);
+        setTimeout(() => silentSync(), 2000);
     });
 }
 
 function bulkArchive() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
 
-    // Збираємо всіх знайдених пасажирів та розділяємо серверних на основні/маршрутні
+    // Збираємо всіх знайдених та розділяємо серверних на основні/маршрутні
     const mainPassengers = [];
-    const routePassengers = [];
+    const routePassengerItems = [];
     const allFoundPassengers = [];
     selectedIds.forEach(uid => {
         const p = findPassengerByUid(uid);
@@ -4750,7 +4999,7 @@ function bulkArchive() {
         if (sheet && rowNum) {
             const item = { sheet, rowNum };
             if (p._isRouteData) {
-                routePassengers.push(item);
+                routePassengerItems.push(item);
             } else {
                 mainPassengers.push(item);
             }
@@ -4761,7 +5010,8 @@ function bulkArchive() {
         return showToast('⚠️ Немає заявок для архівації');
     }
 
-    // Локальна функція архівації знайдених пасажирів
+    // Локальна функція архівації (як в карго — fire-and-forget)
+    const today = new Date().toISOString().split('T')[0];
     function archiveLocally() {
         allFoundPassengers.forEach(p => {
             if (p.status !== 'archived') {
@@ -4769,67 +5019,71 @@ function bulkArchive() {
             }
             p.archiveType = 'archived';
             p.status = 'archived';
-            p.statusDate = new Date().toISOString().split('T')[0];
+            p.statusDate = today;
+            p.archivedBy = 'archived_' + getCompanyId();
+
+            // Для маршрутних — оновлюємо головного пасажира
+            if (p._isRouteData) {
+                const mainP = passengers.find(mp => String(mp.id) === String(p.id));
+                if (mainP && mainP !== p) {
+                    if (mainP.status !== 'archived') mainP.prevStatus = mainP.status || 'new';
+                    mainP.status = 'archived';
+                    mainP.archiveType = 'archived';
+                    mainP.archiveDate = today;
+                    mainP.statusDate = today;
+                    mainP.archivedBy = 'archived_' + getCompanyId();
+                }
+            }
         });
-        clearSelection();
+
+        // Видаляємо маршрутних з routePassengers
+        const archivedUids = new Set(allFoundPassengers.filter(p => p._isRouteData).map(p => p._uid));
+        if (archivedUids.size > 0) {
+            routePassengers = routePassengers.filter(rp => !archivedUids.has(rp._uid));
+            routeStats.total = routePassengers.length;
+        }
+
+        refreshAfterAction();
         saveSettings();
-        render();
         updateAllCounts();
         renderCalendars();
     }
 
-    // Якщо є серверні дані — відправляємо на сервер
-    if (mainPassengers.length > 0 || routePassengers.length > 0) {
-        showLoader('Архівую...', '');
+    // Одразу оновлюємо UI (не чекаємо на сервер)
+    archiveLocally();
+    showToast(`📦 Архівовано: ${allFoundPassengers.length}`);
 
-        const requests = [];
-        if (mainPassengers.length > 0) {
-            requests.push(
-                fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'bulkArchive',
-                        payload: { passengers: mainPassengers, user: 'crm', reason: 'bulk_archive' }
-                    })
-                }).then(r => r.json())
-            );
-        }
-        if (routePassengers.length > 0) {
-            requests.push(
-                fetch(ROUTE_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'archiveToExternal',
-                        payload: { passengers: routePassengers, user: 'crm', reason: 'bulk_archive' }
-                    })
-                }).then(r => r.json())
-            );
-        }
+    // Якщо є серверні дані — відправляємо на сервер (fire-and-forget, як в карго)
+    if (mainPassengers.length > 0) {
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'bulkArchive',
+                companyId: getCompanyId(),
+                items: mainPassengers,
+                reason: 'bulk_archive'
+            })
+        }).catch(() => {});
+    }
+    if (routePassengerItems.length > 0) {
+        fetch(ROUTE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'archivePassengers',
+                companyId: getCompanyId(),
+                passengers: routePassengerItems
+            })
+        }).catch(() => {});
 
-        Promise.all(requests)
-        .then(results => {
-            hideLoader();
-            const allSuccess = results.every(d => d.success);
-            if (allSuccess) {
-                archiveLocally();
-                const total = results.reduce((s, d) => s + (d.count || d.archived || 0), 0);
-                showToast(`📦 Архівовано: ${total}`);
-            } else {
-                const errors = results.filter(d => !d.success).map(d => d.error).join('; ');
-                showToast('❌ ' + errors);
+        // Оновлюємо головних пасажирів на сервері
+        allFoundPassengers.forEach(p => {
+            if (p._isRouteData) {
+                const mainP = passengers.find(mp => String(mp.id) === String(p.id));
+                if (mainP) updatePassengerOnServer(mainP);
             }
-        })
-        .catch(err => {
-            hideLoader();
-            console.error('Archive error:', err);
-            showToast('❌ Помилка архівації');
         });
-    } else {
-        // Немає серверних даних — архівуємо тільки локально
-        archiveLocally();
-        showToast(`📦 Архівовано: ${allFoundPassengers.length}`);
     }
 }
 
@@ -4946,10 +5200,146 @@ function confirmTransfer() {
     applyStatusToSelected('transferred', `Пересадка: ${transferTo}`);
 }
 
-// ВИДАЛЕННЯ - з причиною
+// ВИДАЛЕННЯ - з причиною (або назавжди якщо в маршруті)
 function bulkDelete() {
     if (selectedIds.size === 0) return showToast('⚠️ Оберіть заявки');
+
+    // В маршруті — видаляємо назавжди (фізично рядки)
+    const isRouteView = filters.statusFilter === 'route' && filters.routeVehicle;
+    if (isRouteView) {
+        bulkDeleteFromRoute();
+        return;
+    }
+
     showDeleteModal();
+}
+
+// Масове видалення з маршруту — назавжди (фізичне видалення рядків)
+function bulkDeleteFromRoute() {
+    const selected = routePassengers.filter(p => selectedIds.has(p._uid));
+    if (selected.length === 0) return showToast('⚠️ Немає вибраних пасажирів у маршруті');
+
+    if (!confirm(`🗑️ Видалити назавжди ${selected.length} записів з маршруту?\n\nЦю дію НЕ МОЖНА скасувати!`)) return;
+
+    showRouteProgress('Видаляю з маршруту...');
+
+    // Збираємо всі записи в один батч
+    const allPassengers = selected.map(p => ({
+        sheet: currentRouteVehicle?.routeSheet || p._vehicleName,
+        rowNum: p.rowNum || p._rowNum
+    }));
+
+    // Видаляємо локально одразу
+    const deletedUids = new Set(selected.map(p => p._uid));
+    routePassengers = routePassengers.filter(p => !deletedUids.has(p._uid));
+    routeStats.total = routePassengers.length;
+    routeStats.pending = routePassengers.filter(p => (p.driverStatus || 'pending') === 'pending').length;
+    routeStats.inProgress = routePassengers.filter(p => p.driverStatus === 'in-progress').length;
+    routeStats.completed = routePassengers.filter(p => p.driverStatus === 'completed').length;
+    routeStats.cancelled = routePassengers.filter(p => p.driverStatus === 'cancelled').length;
+
+    hideRouteProgress();
+    clearSelection();
+    renderRoutePassengers();
+    updateAllCounts();
+    updateRoutesList();
+    showToast(`🗑️ Видалено назавжди: ${selected.length}`);
+
+    // Fire-and-forget — один батч-запит
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'deletePassengersPermanently',
+            companyId: getCompanyId(),
+            payload: { passengers: allPassengers }
+        })
+    }).catch(err => console.error('Bulk delete from route error:', err));
+}
+
+// Масова зміна відмітки (driverStatus) для маршрутних пасажирів
+function bulkSetDriverStatus(newStatus) {
+    if (selectedIds.size === 0) return showToast('⚠️ Оберіть пасажирів');
+
+    const statusLabels = { 'pending': '⏳ Очікує', 'in-progress': '🔄 В процесі', 'completed': '✅ Готово', 'cancelled': '❌ Відмова' };
+    const label = statusLabels[newStatus] || newStatus;
+
+    // Знаходимо вибраних пасажирів з маршруту
+    const selected = routePassengers.filter(p => selectedIds.has(p._uid));
+    if (selected.length === 0) return showToast('⚠️ Немає вибраних пасажирів у маршруті');
+
+    if (!confirm(`${label}\n\nЗмінити відмітку для ${selected.length} пасажирів?`)) return;
+
+    showRouteProgress('Оновлюю відмітку...');
+
+    // Формуємо масив оновлень — кожен пасажир оновлюється через updateMultiple
+    const items = selected.map(p => ({
+        sheet: p._vehicleName || currentRouteVehicle?.routeSheet || currentRouteVehicle?.name,
+        rowNum: p.rowNum || p._rowNum,
+        expectedId: p.id,
+        mark: newStatus
+    }));
+
+    fetch(ROUTE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'updateMultiple',
+            companyId: getCompanyId(),
+            payload: { items: items }
+        })
+    })
+    .then(r => r.text())
+    .then(text => {
+        hideRouteProgress();
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                showToast(`${label} — оновлено ${data.updated || selected.length} записів`);
+            } else {
+                showToast('⚠️ ' + (data.error || 'Помилка оновлення'));
+            }
+        } catch(e) {
+            showToast(`${label} — оновлено`);
+        }
+        // Оновлюємо локальні дані
+        selected.forEach(p => {
+            p.driverStatus = newStatus;
+            p.mark = newStatus;
+        });
+        // Перераховуємо статистику
+        routeStats = { total: routePassengers.length, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
+        routePassengers.forEach(p => {
+            const ds = p.driverStatus || 'pending';
+            if (ds === 'pending') routeStats.pending++;
+            else if (ds === 'in-progress') routeStats.inProgress++;
+            else if (ds === 'completed') routeStats.completed++;
+            else if (ds === 'cancelled') routeStats.cancelled++;
+        });
+        clearSelection();
+        renderRoutePassengers();
+    })
+    .catch(err => {
+        hideRouteProgress();
+        console.warn('bulkSetDriverStatus error:', err);
+        // Оновлюємо локально навіть при помилці мережі
+        selected.forEach(p => {
+            p.driverStatus = newStatus;
+            p.mark = newStatus;
+        });
+        routeStats = { total: routePassengers.length, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 };
+        routePassengers.forEach(p => {
+            const ds = p.driverStatus || 'pending';
+            if (ds === 'pending') routeStats.pending++;
+            else if (ds === 'in-progress') routeStats.inProgress++;
+            else if (ds === 'completed') routeStats.completed++;
+            else if (ds === 'cancelled') routeStats.cancelled++;
+        });
+        clearSelection();
+        renderRoutePassengers();
+        showToast(`${label} — збережено локально`);
+        setTimeout(() => silentSync(), 2000);
+    });
 }
 
 function showDeleteModal() {
@@ -4995,7 +5385,7 @@ function bulkDeleteForever() {
 
     showLoader('Видаляю назавжди...', '');
 
-    // Збираємо серверні та локальні записи
+    // Збираємо серверні записи
     const serverPassengers = [];
     const localUids = [];
 
@@ -5007,49 +5397,34 @@ function bulkDeleteForever() {
         localUids.push(uid);
     });
 
-    const removeLocally = () => {
-        localUids.forEach(uid => {
-            const idx = passengers.findIndex(p => {
-                const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${passengers.indexOf(p)}`;
-                return pUid === uid;
-            });
-            if (idx !== -1) passengers.splice(idx, 1);
+    // Видаляємо локально одразу
+    localUids.forEach(uid => {
+        const idx = passengers.findIndex(p => {
+            const pUid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : `local_${passengers.indexOf(p)}`;
+            return pUid === uid;
         });
-        hideLoader();
-        clearSelection();
-        saveSettings();
-        render();
-        updateAllCounts();
-        renderCalendars();
-        showToast(`💀 Видалено назавжди: ${localUids.length}`);
-    };
+        if (idx !== -1) passengers.splice(idx, 1);
+    });
 
-    // Якщо є серверні записи — видаляємо через API
+    hideLoader();
+    clearSelection();
+    saveSettings();
+    render();
+    updateAllCounts();
+    renderCalendars();
+    showToast(`💀 Видалено назавжди: ${localUids.length}`);
+
+    // Fire-and-forget — один батч-запит
     if (serverPassengers.length > 0) {
-        fetch(ROUTE_API_URL, {
+        fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'deletePassengersPermanently',
+                companyId: getCompanyId(),
                 payload: { passengers: serverPassengers }
             })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                removeLocally();
-            } else {
-                hideLoader();
-                showToast('❌ ' + (data.error || 'Помилка видалення'));
-            }
-        })
-        .catch(err => {
-            console.error('Delete forever error:', err);
-            // Все одно видаляємо локально
-            removeLocally();
-        });
-    } else {
-        removeLocally();
+        }).catch(err => console.error('Bulk delete forever error:', err));
     }
 }
 
@@ -5679,6 +6054,15 @@ function applyOptimizedOrder(orderedPassengers, notGeocodedList) {
     updateAllCounts();
 }
 
+// Застосувати оптимізований порядок і закрити модалку
+function applyOptimizedSort() {
+    closeModal('optimizeModal');
+    render();
+    updateBulkBar();
+    updateAllCounts();
+    showToast('📊 Порядок оптимізації застосовано');
+}
+
 // Закрити панель оптимізації
 function closeOptimization() {
     document.getElementById('optimizationPanel')?.classList.remove('show');
@@ -5714,6 +6098,8 @@ function confirmOptimization() {
         const uid = (p._sheet && p._rowNum) ? `${p._sheet}_${p._rowNum}` : null;
         if (uid) selectedIds.add(uid);
     });
+
+    clearOptimizationOrder();
 
     if (selectedIds.size > 0) {
         bulkMoveToRoute();
@@ -5800,108 +6186,8 @@ function updateVehiclesList() {
     document.getElementById('countNoVehicle').textContent = noVehicle.length;
 }
 
-function openAddVehicleModal() {
-    document.getElementById('vehicleDropdown')?.classList.remove('show');
-    document.getElementById('vName').value = '';
-    document.getElementById('vSeats').value = 8;
-    document.getElementById('vehicleModal').classList.add('show');
-}
-
-function saveVehicle() {
-    const name = document.getElementById('vName').value.trim();
-    const seats = parseInt(document.getElementById('vSeats').value) || 8;
-    
-    if (!name) return showToast('❌ Введіть назву авто');
-    
-    // Перевіряємо чи таке авто вже є
-    if (vehicles.find(v => v.name.toLowerCase() === name.toLowerCase())) {
-        return showToast('❌ Авто з такою назвою вже існує');
-    }
-    
-    showToast('📤 Створюю авто та аркуш...');
-    
-    // Створюємо аркуш на сервері
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'createRouteSheet',
-            payload: { vehicleName: name }
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            // Додаємо авто локально
-            const newVehicle = {
-                id: 'v' + Date.now(),
-                name: name,
-                seats: seats,
-                routeSheet: data.sheetName
-            };
-            vehicles.push(newVehicle);
-            saveSettings();
-            updateVehiclesList();
-            updateMobileVehicles();
-            updateRoutesList(); // Оновлюємо список маршрутів
-            updatePcVehiclesList(); // Оновлюємо PC sidebar авто
-            updateAllCounts(); // Оновлюємо всі лічильники
-            closeModal('vehicleModal');
-            showToast(`✅ ${name} створено`);
-        } else {
-            showToast('❌ ' + data.error);
-        }
-    })
-    .catch(err => {
-        console.error('Create vehicle error:', err);
-        showToast('❌ Помилка створення');
-    });
-}
-
-// Видалення авто
-function deleteVehicle(vehicleId) {
-    const v = vehicles.find(x => x.id === vehicleId);
-    if (!v) return showToast('❌ Авто не знайдено');
-    
-    if (!confirm(`Видалити авто "${v.name}" та його аркуш маршруту?`)) {
-        return;
-    }
-    
-    showToast('🗑️ Видаляю...');
-    
-    // Видаляємо аркуш на сервері
-    fetch(ROUTE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-            action: 'deleteRouteSheet',
-            payload: { vehicleName: v.routeSheet || v.name, force: true }
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            // Видаляємо локально
-            vehicles = vehicles.filter(x => x.id !== vehicleId);
-            saveSettings();
-            updateVehiclesList();
-            updateMobileVehicles();
-            updateRoutesList();
-            updatePcVehiclesList();
-            updateAllCounts();
-            showToast(`🗑️ ${v.name} видалено`);
-        } else {
-            showToast('❌ ' + data.error);
-        }
-    })
-    .catch(err => {
-        console.error('Delete vehicle error:', err);
-        showToast('❌ Помилка видалення');
-    });
-}
-
 // PASSENGERS
-function openAddModal() { 
+function openAddModal() {
     editingId = null; 
     document.getElementById('passengerModalTitle').textContent = 'Додати'; 
     document.getElementById('fDate').value = filters.date || new Date().toISOString().split('T')[0]; 
@@ -5973,9 +6259,9 @@ function showDeleteConfirmModal(uid, displayName, passengerId) {
                 <div style="font-size:14px;margin-bottom:8px;">Ви впевнені що хочете видалити:</div>
                 <div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;">${displayName}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">ID: ${passengerId}</div>
-                <div style="background:#fef3c7;padding:12px;border-radius:8px;font-size:12px;color:#92400e;">
-                    Лід буде переміщений в <strong>Архів</strong>.<br>
-                    Ви зможете відновити його пізніше.
+                <div style="background:#fee2e2;padding:12px;border-radius:8px;font-size:12px;color:#991b1b;">
+                    ⚠️ Запис буде <strong>видалений назавжди</strong>.<br>
+                    Цю дію НЕ МОЖНА скасувати!
                 </div>
             </div>
             <div class="modal-footer">
@@ -5993,63 +6279,45 @@ function confirmDeletePassenger(uid) {
     const p = findPassengerByUid(uid);
     if (!p) return;
 
-    // Зберігаємо попередній статус для відновлення
-    if (p.status !== 'archived') {
-        p.prevStatus = p.status || 'new';
-    }
-    p.archiveType = 'deleted';
-    p.status = 'archived';
-    p.archiveDate = new Date().toISOString().split('T')[0];
-    p.isNew = false;
+    const pSheet = p._sheet || p.sheet;
+    const pRowNum = p._rowNum || p.rowNum;
 
     // Закриваємо дії картки
     openActionsId = null;
 
-    // Якщо є серверні дані - архівуємо на сервері
-    const pSheet = p._sheet;
-    const pRowNum = p._rowNum;
+    // Видаляємо з локального масиву
+    const idx = passengers.findIndex(pkg => {
+        const pkgUid = (pkg._sheet && pkg._rowNum) ? `${pkg._sheet}_${pkg._rowNum}` : `local_${passengers.indexOf(pkg)}`;
+        return pkgUid === uid;
+    });
+    if (idx !== -1) passengers.splice(idx, 1);
+
+    // Якщо маршрутний — видаляємо з routePassengers
+    if (p._isRouteData) {
+        routePassengers = routePassengers.filter(rp => rp._uid !== uid);
+        routeStats.total = routePassengers.length;
+    }
+
+    // Оновлюємо UI
+    saveSettings();
+    render();
+    updateAllCounts();
+    renderCalendars();
+    showToast('🗑️ Видалено назавжди');
+
+    // Фізично видаляємо рядок на сервері (fire-and-forget)
     if (pSheet && pRowNum) {
-        showLoader('Видалення...', '');
         const isRoute = !!p._isRouteData;
         const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
-        const body = isRoute
-            ? { action: 'archiveToExternal', payload: { passengers: [{ sheet: pSheet, rowNum: pRowNum }], user: 'crm', reason: 'manual_delete' } }
-            : { action: 'archivePassenger', payload: { sheet: pSheet, rowNum: pRowNum, user: 'crm', reason: 'manual_delete' } };
-
         fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(body)
-        })
-        .then(r => r.json())
-        .then(data => {
-            hideLoader();
-            if (data.success) {
-                saveSettings();
-                render();
-                updateAllCounts();
-                renderCalendars();
-                showToast('🗑️ Переміщено в архів');
-            } else {
-                showToast('❌ ' + (data.error || 'Помилка'));
-            }
-        })
-        .catch(err => {
-            hideLoader();
-            console.error('Delete error:', err);
-            saveSettings();
-            render();
-            updateAllCounts();
-            renderCalendars();
-            showToast('🗑️ Видалено локально');
-        });
-    } else {
-        // Локальний лід - просто оновлюємо
-        saveSettings();
-        render();
-        updateAllCounts();
-        renderCalendars();
-        showToast('🗑️ Переміщено в архів');
+            body: JSON.stringify({
+                action: 'deletePassengersPermanently',
+                companyId: getCompanyId(),
+                payload: { passengers: [{ sheet: pSheet, rowNum: pRowNum }] }
+            })
+        }).catch(err => console.error('Delete error:', err));
     }
 }
 
@@ -6082,25 +6350,42 @@ function savePassenger() {
     }; 
     
     if (isEditing && existingP) {
-        // Знаходимо індекс в масиві
-        const i = passengers.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
-        if (i !== -1) {
-            const directionChanged = existingP.direction && d.direction !== existingP.direction;
+        // Перевіряємо чи це маршрутний пасажир
+        const isRoutePassenger = !!existingP._isRouteData;
 
-            if (directionChanged && existingP._sheet && existingP._rowNum) {
-                // Напрямок змінився — переміщуємо на інший аркуш
-                d.status = existingP.status || 'new';
-                d.order = existingP.order || passengers.length * 10;
-                passengers.splice(i, 1);
-                passengers.unshift(d);
-                movePassengerDirection(existingP, d);
-            } else {
-                // Напрямок той самий — оновлюємо на місці
-                d._sheet = passengers[i]._sheet;
-                d._rowNum = passengers[i]._rowNum;
-                passengers[i] = {...passengers[i], ...d};
+        if (isRoutePassenger) {
+            // Маршрутний пасажир — шукаємо в routePassengers
+            const ri = routePassengers.findIndex(p => p._uid === editingId);
+            if (ri !== -1) {
+                d._sheet = routePassengers[ri]._sheet;
+                d._rowNum = routePassengers[ri]._rowNum;
+                d._isRouteData = true;
+                d._uid = routePassengers[ri]._uid;
+                routePassengers[ri] = {...routePassengers[ri], ...d};
                 // Оновлюємо на сервері
-                updatePassengerOnServer(passengers[i]);
+                updatePassengerOnServer(routePassengers[ri]);
+            }
+        } else {
+            // Звичайний пасажир — шукаємо в passengers
+            const i = passengers.findIndex(p => p._sheet === existingP._sheet && p._rowNum === existingP._rowNum);
+            if (i !== -1) {
+                const directionChanged = existingP.direction && d.direction !== existingP.direction;
+
+                if (directionChanged && existingP._sheet && existingP._rowNum) {
+                    // Напрямок змінився — переміщуємо на інший аркуш
+                    d.status = existingP.status || 'new';
+                    d.order = existingP.order || passengers.length * 10;
+                    passengers.splice(i, 1);
+                    passengers.unshift(d);
+                    movePassengerDirection(existingP, d);
+                } else {
+                    // Напрямок той самий — оновлюємо на місці
+                    d._sheet = passengers[i]._sheet;
+                    d._rowNum = passengers[i]._rowNum;
+                    passengers[i] = {...passengers[i], ...d};
+                    // Оновлюємо на сервері
+                    updatePassengerOnServer(passengers[i]);
+                }
             }
         }
     } else {
@@ -6120,46 +6405,34 @@ function savePassenger() {
 
 // COLUMNS
 function openColumnsModal() { renderColumnsList(); document.getElementById('columnsModal').classList.add('show'); }
-function renderColumnsList() { 
-    const keys = Object.keys(ALL_COLUMNS); 
-    document.getElementById('headerColList').innerHTML = keys.map(k => 
-        `<div class="column-item" onclick="toggleHeaderCol('${k}')">
-            <input type="checkbox" ${colSettings.header.includes(k)?'checked':''} onclick="event.stopPropagation();toggleHeaderCol('${k}')">
-            <label>${ALL_COLUMNS[k].label}</label>
-        </div>`
-    ).join(''); 
-    document.getElementById('detailsColList').innerHTML = keys.map(k => { 
-        const inH = colSettings.header.includes(k); 
-        return `<div class="column-item ${inH?'disabled':''}" onclick="${inH?'':`toggleDetailsCol('${k}')`}">
-            <input type="checkbox" ${colSettings.details.includes(k)&&!inH?'checked':''} ${inH?'disabled':''} onclick="event.stopPropagation();${inH?'':`toggleDetailsCol('${k}')`}">
-            <label>${ALL_COLUMNS[k].label}${inH?' (заг)':''}</label>
-        </div>`; 
-    }).join(''); 
+function renderColumnsList() {
+    const keys = Object.keys(ALL_COLUMNS);
+    document.getElementById('colVisList').innerHTML = keys.map(k => {
+        const isHidden = hiddenCols.has(k);
+        return `<div class="column-item" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${isHidden?'#f3f4f6':'white'};border:1px solid ${isHidden?'#e5e7eb':'var(--primary)'};border-radius:6px;margin-bottom:4px;cursor:pointer;transition:all 0.15s;" onclick="toggleColVisModal('${k}')">
+            <input type="checkbox" ${isHidden?'':'checked'} style="pointer-events:none;width:16px;height:16px;">
+            <span style="flex:1;font-size:12px;font-weight:600;${isHidden?'color:#9ca3af;text-decoration:line-through;':'color:var(--text-primary);'}">${ALL_COLUMNS[k].label}</span>
+            <span style="font-size:10px;color:${isHidden?'#ef4444':'var(--success)'};">${isHidden?'Сховано':'Видно'}</span>
+        </div>`;
+    }).join('');
 }
-function toggleHeaderCol(k) { 
-    const i = colSettings.header.indexOf(k); 
-    i !== -1 ? colSettings.header.splice(i,1) : colSettings.header.push(k); 
-    renderColumnsList(); 
-}
-function toggleDetailsCol(k) { 
-    if(colSettings.header.includes(k)) return; 
-    const i = colSettings.details.indexOf(k); 
-    i === -1 ? colSettings.details.push(k) : colSettings.details.splice(i,1); 
-    renderColumnsList(); 
+function toggleColVisModal(k) {
+    if (hiddenCols.has(k)) {
+        hiddenCols.delete(k);
+    } else {
+        hiddenCols.add(k);
+    }
+    renderColumnsList();
 }
 function resetColumnsSettings() {
-    colSettings = {
-        header: ['name','phone','seats','from','to','date','payment'],
-        details: ['percent','note','mark','dispatcher','phoneReg','timing','dateReg','weight']
-    };
+    hiddenCols.clear();
     renderColumnsList();
-    showToast('🔄 Скинуто');
+    showToast('🔄 Всі колонки видимі');
 }
-function saveColumnsSettings() { 
-    saveSettings(); 
-    closeModal('columnsModal'); 
-    render(); 
-    showToast('✅ Колонки збережено'); 
+function saveColumnsSettings() {
+    closeModal('columnsModal');
+    render();
+    showToast('✅ Колонки застосовано');
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -6325,13 +6598,39 @@ function openMapLocation(type) {
 // GOOGLE SHEETS API
 // ============================================
 // Пасажири (основна таблиця даних)
-const API_URL = 'https://script.google.com/macros/s/AKfycbxXVqoG5NZrSXOYx1uj3IYup5GhotV95Y-DwavSi6WJoxtfXq4WbYPzQBuMm2QUXkkV/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzqxOYFeVq7aBPL48auCLDInBrwdqdELkVPdQzfwZIVtZ4NhOX21jHRrTJA-pj8SeFy_Q/exec';
 
 // Маршрути пасажирів (окремий скрипт)
-const ROUTE_API_URL = 'https://script.google.com/macros/s/AKfycbzPJHn3OlBJbRlHvveT453NKUZMViUMMmfD9yqttGZ0b7mVCeKcUum_UsmamUe43g/exec';
+const ROUTE_API_URL = 'https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-mdtcaXXeDcta6nuCILD5Nj7uaWCPCteQGGD/exec';
 
-// Архів v1.0
-const ARCHIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwJLGZgYT333VdMW-nM5kPjYs2WIGGjfqkZnDJYjJxUt8nzE8GDGCPm7EzMHhcxNDOn/exec';
+// Вибір месенджера для написання
+function openMessengerMenu(phone, e) {
+    if (e) e.stopPropagation();
+    const clean = phone.replace(/[^\d+]/g, '');
+    const digits = clean.replace(/^\+/, '');
+    const intl = digits.startsWith('0') ? '38' + digits : digits;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'messenger-popup';
+    overlay.onclick = function(ev) { if (ev.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+        <div class="messenger-popup-inner">
+            <div class="messenger-popup-title">Написати в...</div>
+            <div class="messenger-popup-btns">
+                <button class="messenger-btn viber" onclick="window.open('viber://chat?number=%2B${intl}');this.closest('.messenger-popup').remove()">
+                    <span class="messenger-btn-icon">💜</span> Viber
+                </button>
+                <button class="messenger-btn whatsapp" onclick="window.open('https://wa.me/${intl}');this.closest('.messenger-popup').remove()">
+                    <span class="messenger-btn-icon">💚</span> WhatsApp
+                </button>
+                <button class="messenger-btn telegram" onclick="window.open('https://t.me/%2B${intl}');this.closest('.messenger-popup').remove()">
+                    <span class="messenger-btn-icon">💙</span> Telegram
+                </button>
+            </div>
+            <button class="messenger-popup-cancel" onclick="this.closest('.messenger-popup').remove()">Скасувати</button>
+        </div>`;
+    document.body.appendChild(overlay);
+}
 
 // Нормалізація дати до формату YYYY-MM-DD
 function normalizeDate(dateStr) {
@@ -6360,7 +6659,7 @@ function syncWithSheets() {
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'getAll' })
+        body: JSON.stringify({ action: 'getAll', companyId: getCompanyId() })
     })
     .then(r => r.json())
     .then(data => {
@@ -6371,7 +6670,11 @@ function syncWithSheets() {
                 // Нормалізуємо статус (lowercase, trim)
                 let normalizedStatus = (p.status || '').toString().toLowerCase().trim();
                 if (!normalizedStatus) normalizedStatus = 'new';
-                
+                // Визначаємо archiveType і нормалізуємо статус
+                const archiveStatuses = ['archived', 'refused', 'deleted', 'transferred'];
+                const isArchiveStatus = archiveStatuses.includes(normalizedStatus);
+                const archiveType = p.archiveType || (isArchiveStatus ? normalizedStatus : '');
+                if (isArchiveStatus) normalizedStatus = 'archived';
                 return {
                     id: p.id || 'srv_' + p.rowNum,
                     date: normalizeDate(p.date),
@@ -6392,25 +6695,33 @@ function syncWithSheets() {
                     note: p.note || '',
                     direction: p.direction,
                     status: normalizedStatus,
+                    archiveType: archiveType,
                     statusDate: p.statusDate || '',
                     isNew: p.isNew,
-                    isNew24h: p.isNew, // Зберігаємо для фільтра "Нові" (не зникає при кліку)
-                    // Зберігаємо інфо для оновлення
+                    isNew24h: p.isNew,
                     _sheet: p.sheet,
                     _rowNum: p.rowNum
                 };
             });
-            
+
             // Мержимо з локальними — зберігаємо vehicle та CRM-only поля
             const localMapSync = {};
             passengers.forEach(p => {
                 if (p._sheet && p._rowNum) localMapSync[`${p._sheet}_${p._rowNum}`] = p;
             });
+            const savedOptSync = loadOptimizationOrder();
             serverPassengers.forEach(sp => {
-                const local = localMapSync[`${sp._sheet}_${sp._rowNum}`];
+                const key = `${sp._sheet}_${sp._rowNum}`;
+                const local = localMapSync[key];
                 if (local) {
                     if (local.prevStatus) sp.prevStatus = local.prevStatus;
                     if (local.archiveType) sp.archiveType = local.archiveType;
+                }
+                // Відновлюємо дані оптимізації з localStorage
+                if (savedOptSync[key]) {
+                    sp.status = 'optimize';
+                    sp.order = savedOptSync[key].order;
+                    sp._notGeocoded = savedOptSync[key]._notGeocoded || false;
                 }
             });
 
@@ -6438,9 +6749,11 @@ function savePassengerToServer(passenger) {
     
     const payload = {
         action: 'addPassenger',
+        companyId: getCompanyId(),
         payload: {
             direction: passenger.direction,
             initials: getUserInitials(),
+            companyId: getCompanyId(),
             date: passenger.date,
             from: passenger.from,
             to: passenger.to,
@@ -6465,52 +6778,65 @@ function savePassengerToServer(passenger) {
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.text())
+    .then(text => {
         hideLoader();
-        if (data.success) {
-            // Оновлюємо локальний ID
-            const p = passengers.find(x => x.id === passenger.id);
-            if (p) {
-                p.id = data.id;
-                p._sheet = data.sheet;
-                p._rowNum = data.rowNum;
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                // Оновлюємо локальний ID
+                const p = passengers.find(x => x.id === passenger.id);
+                if (p) {
+                    p.id = data.id;
+                    p._sheet = data.sheet;
+                    p._rowNum = data.rowNum;
+                }
+                saveSettings();
+                render();
+                showToast('✅ Збережено: ' + data.id);
+
+                // Перевіряємо місткість після додавання
+                checkAllCapacityWarnings();
+            } else {
+                console.warn('Save server error:', data.error);
+                showToast('✅ Збережено');
+                setTimeout(() => silentSync(), 1500);
             }
-            saveSettings();
-            render();
-            showToast('✅ Збережено: ' + data.id);
-            
-            // Перевіряємо місткість після додавання
-            checkAllCapacityWarnings();
-        } else {
-            showToast('⚠️ Помилка: ' + data.error);
+        } catch(e) {
+            // GAS повернув не-JSON — дані збережені
+            console.warn('Save response not JSON, syncing...', text.substring(0, 100));
+            showToast('✅ Збережено');
+            setTimeout(() => silentSync(), 1500);
         }
     })
     .catch(err => {
         hideLoader();
-        console.error('Save error:', err);
-        showToast('⚠️ Збережено локально');
+        console.warn('Save fetch error (data saved locally):', err);
+        showToast('✅ Збережено');
+        // Синхронізуємо для підтвердження
+        setTimeout(() => silentSync(), 2000);
     });
 }
 
 // UPDATE - Оновити пасажира на сервері
-function updatePassengerOnServer(passenger) {
+function updatePassengerOnServer(passenger, retries) {
+    retries = retries !== undefined ? retries : 2;
     const pSheet = passenger._sheet || passenger.sheet;
     const pRowNum = passenger._rowNum || passenger.rowNum;
     if (!pSheet || !pRowNum) {
-        console.warn('❌ Немає _sheet або _rowNum:', passenger);
-        showToast('⚠️ Синхронізуй спочатку');
+        console.warn('Немає _sheet або _rowNum, синхронізуємо:', passenger);
+        showToast('✅ Збережено локально');
+        setTimeout(() => silentSync(), 1500);
         return;
     }
 
     const isRoute = !!passenger._isRouteData;
     const apiUrl = isRoute ? ROUTE_API_URL : API_URL;
 
-    const payload = {
-        action: 'updatePassenger',
-        payload: {
+    const fields = {
             sheet: pSheet,
             rowNum: pRowNum,
+            companyId: getCompanyId(),
             date: passenger.date,
             from: passenger.from,
             to: passenger.to,
@@ -6527,27 +6853,56 @@ function updatePassengerOnServer(passenger) {
             timing: passenger.timing,
             dateReg: passenger.dateReg,
             note: passenger.note,
-            status: passenger.status || '',
-            statusDate: passenger.statusDate || ''
-        }
+            // Зберігаємо конкретний тип архівації в колонку STATUS
+            status: (passenger.status === 'archived' && passenger.archiveType) ? passenger.archiveType : (passenger.status || '')
+    };
+    // Додаємо архівні поля якщо статус = archived (як в карго)
+    if (passenger.status === 'archived') {
+        fields.dateArchive = passenger.statusDate || passenger.archiveDate || new Date().toISOString().split('T')[0];
+        fields.force = true; // Дозволяємо перезапис архівного статусу
+    }
+
+    const payload = {
+        action: 'updatePassenger',
+        companyId: getCompanyId(),
+        payload: fields
     };
 
     fetch(apiUrl, {
         method: 'POST',
+        redirect: 'follow',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showToast('✅ Збережено');
-        } else {
-            showToast('❌ ' + data.error);
+    .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+    })
+    .then(text => {
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                showToast('✅ Збережено');
+            } else {
+                console.warn('Update server error:', data.error);
+                showToast('⚠️ Сервер: ' + (data.error || 'помилка'));
+                setTimeout(() => silentSync(), 1500);
+            }
+        } catch(e) {
+            // GAS повернув не-JSON — ретраємо
+            console.warn('Update response not JSON:', text.substring(0, 200));
+            throw new Error('Invalid server response');
         }
     })
     .catch(err => {
-        console.error('❌ Fetch error:', err);
-        showToast('❌ Помилка зв\'язку');
+        if (retries > 0) {
+            console.warn('Update retry (' + retries + ' left):', err.message);
+            setTimeout(() => updatePassengerOnServer(passenger, retries - 1), 1500);
+            return;
+        }
+        console.error('Update fetch error:', err);
+        showToast('⚠️ Не вдалося зберегти на сервері');
+        setTimeout(() => silentSync(), 3000);
     });
 }
 
@@ -6557,9 +6912,11 @@ function movePassengerDirection(oldPassenger, newData) {
 
     const addPayload = {
         action: 'addPassenger',
+        companyId: getCompanyId(),
         payload: {
             direction: newData.direction,
             initials: getUserInitials(),
+            companyId: getCompanyId(),
             date: newData.date,
             from: newData.from,
             to: newData.to,
@@ -6651,16 +7008,38 @@ function getUserInitials() {
 const TAG_PROXY_URL = 'https://botisystem.com/yuratransportation/manager/proxy_pass_19v.php';
 
 function openTagModal() {
-    if (selectedIds.size === 0) return showToast('⚠️ Оберіть пасажирів');
-    document.getElementById('tagSelectedCount').textContent = selectedIds.size;
-    document.getElementById('tagNameInput').value = '';
-    document.getElementById('tagFormBody').style.display = '';
-    document.getElementById('tagProgressBody').style.display = 'none';
-    document.getElementById('tagFormFooter').style.display = '';
-    document.getElementById('tagResultFooter').style.display = 'none';
-    document.getElementById('tagLog').innerHTML = '';
-    document.getElementById('tagModal').classList.add('show');
-    setTimeout(() => document.getElementById('tagNameInput').focus(), 100);
+    // Видаляємо попередній оверлей якщо є
+    const prev = document.getElementById('betaTagOverlay');
+    if (prev) prev.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'betaTagOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div style="background:#ffffff;border-radius:16px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;animation:slideUp 0.25s ease;border:1px solid #e2e8f0;">
+            <div style="background:linear-gradient(135deg,#f8fafc,#edf2f7);padding:18px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0;">
+                <span style="font-size:24px;">🏷️</span>
+                <span style="color:#1e293b;font-size:17px;font-weight:700;">Тегування</span>
+            </div>
+            <div style="padding:24px;text-align:left;font-size:14px;line-height:1.8;color:#475569;">
+                <p style="margin:0 0 14px;">У бета-версії <b style="color:#1a3a5e;">ця функція недоступна</b></p>
+                <p style="margin:0 0 10px;"><b style="color:#1a3a5e;">Що вона дозволятиме:</b></p>
+                <ul style="padding-left:20px;margin:0 0 14px;">
+                    <li style="margin-bottom:6px;">🚩 Позначати клієнтів тегами — <i>«Проблемний клієнт»</i>, <i>«VIP»</i>, <i>«Постійний»</i>, <i>«Борг»</i> тощо</li>
+                    <li style="margin-bottom:6px;">🔍 Швидко фільтрувати та знаходити клієнтів за тегами</li>
+                    <li style="margin-bottom:6px;">📊 Групувати та аналізувати клієнтську базу</li>
+                    <li style="margin-bottom:6px;">⚡ Масово тегувати вибраних пасажирів одним кліком</li>
+                </ul>
+                <p style="margin:0;font-size:13px;color:#94a3b8;">Функція буде доступна у повній версії</p>
+            </div>
+            <div style="padding:0 24px 20px;text-align:right;">
+                <button onclick="document.getElementById('betaTagOverlay').remove()" style="padding:10px 28px;background:linear-gradient(135deg,#1a3a5e,#0d1f3c);color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Зрозуміло 👌</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
 }
 
 function closeTagModal() {

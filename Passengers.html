@@ -7334,9 +7334,35 @@ document.addEventListener('click', e => {
 // ============================================
 // ONBOARDING TOUR WITH SPOTLIGHT
 // ============================================
+
+function onbIsMobile() { return window.innerWidth < 900; }
+
+function onbEnsureSideMenuOpen() {
+    const menu = document.getElementById('sideMenu');
+    const overlay = document.getElementById('sideMenuOverlay');
+    if (menu && !menu.classList.contains('open')) {
+        menu.classList.add('open');
+        if (overlay) overlay.classList.add('show');
+        if (typeof renderMobileCalendar === 'function') renderMobileCalendar();
+        if (typeof updateMobileVehicles === 'function') updateMobileVehicles();
+    }
+}
+
+function onbEnsureMobileSectionOpen(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (el && !el.classList.contains('open')) el.classList.add('open');
+}
+
+function onbEnsurePcSectionOpen(contentId) {
+    const el = document.getElementById(contentId);
+    if (el && el.classList.contains('collapsed')) el.classList.remove('collapsed');
+    // also open the header
+    const header = el?.previousElementSibling;
+    if (header && header.classList.contains('collapsed')) header.classList.remove('collapsed');
+}
+
 const PASSENGER_ONBOARDING = [
     {
-        // Step 0: Welcome — no spotlight, centered modal
         icon: '👋',
         title: 'Ласкаво просимо до CRM Пасажири!',
         text: 'Коротка екскурсія по основних функціях. Займе менше хвилини.',
@@ -7345,43 +7371,127 @@ const PASSENGER_ONBOARDING = [
     {
         icon: '➕',
         title: 'Додавання пасажира',
-        text: 'Натисніть <strong>➕ Додати</strong> внизу, щоб створити нового пасажира. Вкажіть напрямок, дату, ім\'я та контакти.',
+        text: 'Натисніть <strong>➕ Додати</strong> внизу, щоб створити нового пасажира — вкажіть напрямок, дату, ім\'я та контакти.',
         target: () => document.querySelectorAll('.bottom-nav .nav-item')[4],
-        arrow: 'bottom'
+        arrow: 'bottom',
+        before: () => {
+            // close side menu if open
+            const menu = document.getElementById('sideMenu');
+            if (menu && menu.classList.contains('open')) closeSideMenu();
+        }
+    },
+    {
+        icon: '🔍',
+        title: 'Пошук',
+        text: 'Шукайте пасажирів по <strong>імені, телефону</strong> або <strong>адресі</strong> — результати фільтруються миттєво.',
+        target: () => document.getElementById('searchInput'),
+        arrow: 'top'
+    },
+    {
+        icon: '🧭',
+        title: 'Фільтр: Напрямок',
+        text: 'Оберіть напрямок поїздки: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Також тут є кнопка <strong>Нові (24 год)</strong> — показує свіжих пасажирів.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileDirectionSection');
+                return document.querySelector('#sideMenu .side-menu-section:nth-child(1) .side-menu-section-header')
+                    || document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
+            }
+            onbEnsurePcSectionOpen('pcSectionDirection');
+            return document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '📅',
+        title: 'Фільтр: Дата виїзду',
+        text: 'Оберіть конкретну <strong>дату виїзду</strong> в календарі. Дні з пасажирами підсвічені — натисніть, щоб побачити тільки їх.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileDatesSection');
+                return document.querySelector('#sideMenu .side-menu-section:nth-child(2) .side-menu-section-header')
+                    || document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
+            }
+            onbEnsurePcSectionOpen('pcSectionDate');
+            return document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '🚐',
+        title: 'Фільтр: Автомобіль',
+        text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже пасажирів, яким ще не призначили транспорт.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileVehiclesSection');
+                return document.querySelector('#sideMenu .side-menu-section:nth-child(3) .side-menu-section-header')
+                    || document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
+            }
+            onbEnsurePcSectionOpen('pcSectionVehicles');
+            return document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '🚀',
+        title: 'Фільтр: Маршрути',
+        text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити тільки його пасажирів. Видаляти пасажирів можна окремо — тільки з маршруту або повністю.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileRoutesSection');
+                return document.querySelector('#sideMenu .side-menu-section:nth-child(4) .side-menu-section-header')
+                    || document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
+            }
+            onbEnsurePcSectionOpen('pcSectionRoutes');
+            return document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '📋',
+        title: 'Фільтр: Статуси',
+        text: 'Перегляд <strong>архівованих</strong> та інших статусів. Завершені поїздки переносьте в архів — вони не заважають, але завжди доступні.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileActionsSection');
+                return document.querySelector('#sideMenu .side-menu-section:nth-child(5) .side-menu-section-header')
+                    || document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
+            }
+            onbEnsurePcSectionOpen('pcSectionActions');
+            return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '⚡',
+        title: 'Оптимізація маршруту',
+        text: 'Виберіть пасажирів → натисніть <strong>⚡ Оптимізація</strong> — адреси відкриються в <strong>Google Maps</strong> для побудови оптимального маршруту. Потім натисніть <strong>✅ В маршрут</strong>.',
+        target: () => {
+            // close side menu first
+            if (onbIsMobile()) {
+                const menu = document.getElementById('sideMenu');
+                if (menu && menu.classList.contains('open')) closeSideMenu();
+            }
+            return document.querySelector('.wf-btn.optimize');
+        },
+        arrow: 'top',
+        before: () => {
+            if (onbIsMobile()) {
+                const menu = document.getElementById('sideMenu');
+                if (menu && menu.classList.contains('open')) closeSideMenu();
+            }
+        }
     },
     {
         icon: '☑️',
         title: 'Вибір та масові дії',
-        text: 'Натисніть <strong>галочку</strong> на картці пасажира — зліва з\'явиться панель дій: призначити авто, архівувати, видалити та інше.',
+        text: 'Натисніть <strong>галочку</strong> на картці — зліва з\'явиться панель: призначити авто, оптимізувати, в маршрут, архівувати, видалити.',
         target: () => document.getElementById('selectAll')?.closest('.checkbox-wrapper') || document.getElementById('selectAll'),
-        arrow: 'top'
-    },
-    {
-        icon: '⚡',
-        title: 'Оптимізація',
-        text: 'Виберіть пасажирів і натисніть <strong>⚡ Оптимізація</strong> — адреси занесуться в Google Maps для побудови маршруту.',
-        target: () => document.querySelector('.wf-btn.optimize'),
-        arrow: 'top'
-    },
-    {
-        icon: '🚀',
-        title: 'Маршрути',
-        text: 'Після оптимізації натисніть <strong>✅ В маршрут</strong>, щоб зафіксувати маршрут. Перегляд маршрутів — кнопка <strong>🚀 Маршрути</strong>.',
-        target: () => document.getElementById('btnRoute'),
-        arrow: 'top'
-    },
-    {
-        icon: '📦',
-        title: 'Архів',
-        text: 'Завершені поїздки переносьте в <strong>архів</strong>. Архівовані пасажири не заважають в основному списку, але завжди доступні.',
-        target: () => document.getElementById('btnArchive'),
-        arrow: 'top'
-    },
-    {
-        icon: '🔍',
-        title: 'Пошук та фільтри',
-        text: 'Шукайте по імені, телефону чи адресі. Фільтруйте по <strong>даті, авто та напрямку</strong> через кнопки зверху.',
-        target: () => document.getElementById('searchInput'),
         arrow: 'top'
     }
 ];
@@ -7405,17 +7515,17 @@ function renderOnbStep() {
     const isLast = onbStep === total - 1;
     const isFirst = onbStep === 0;
 
+    // Run before hook
+    if (hint.before) hint.before();
+
     let overlay = document.getElementById('onbOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.className = 'onboarding-overlay';
         overlay.id = 'onbOverlay';
         document.body.appendChild(overlay);
-        // close on backdrop click
         overlay.addEventListener('click', e => {
-            if (e.target === overlay || e.target.classList.contains('onboarding-backdrop')) {
-                finishOnb();
-            }
+            if (e.target === overlay || e.target.classList.contains('onboarding-backdrop')) finishOnb();
         });
         requestAnimationFrame(() => overlay.classList.add('show'));
     }
@@ -7435,7 +7545,7 @@ function renderOnbStep() {
         </div>
     `;
 
-    // Step 0 — welcome modal, no spotlight
+    // Step 0 — welcome modal
     if (!hint.target) {
         overlay.innerHTML = `
             <div class="onboarding-backdrop"></div>
@@ -7451,47 +7561,65 @@ function renderOnbStep() {
         return;
     }
 
-    // Steps with spotlight
-    const el = hint.target();
-    if (!el) {
-        // element not found — skip step
-        if (!isLast) { onbStep++; renderOnbStep(); }
-        else finishOnb();
-        return;
-    }
-
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
+    // Small delay for DOM updates (side menu opening etc)
     setTimeout(() => {
-        const rect = el.getBoundingClientRect();
-        const pad = 8;
-        const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
-
-        // Tooltip position
-        const arrowDir = hint.arrow || 'top';
-        let tooltipStyle = '';
-        if (arrowDir === 'top') {
-            tooltipStyle = `top:${rect.bottom + pad + 14}px;left:${Math.max(12, Math.min(rect.left - 10, window.innerWidth - 360))}px;`;
-        } else if (arrowDir === 'bottom') {
-            tooltipStyle = `top:${rect.top - pad - 14}px;left:${Math.max(12, Math.min(rect.left - 10, window.innerWidth - 360))}px;transform:translateY(-100%);`;
-        } else if (arrowDir === 'left') {
-            tooltipStyle = `top:${rect.top - 10}px;left:${rect.right + pad + 14}px;`;
-        } else {
-            tooltipStyle = `top:${rect.top - 10}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
+        const el = typeof hint.target === 'function' ? hint.target() : hint.target;
+        if (!el) {
+            if (!isLast) { onbStep++; renderOnbStep(); }
+            else finishOnb();
+            return;
         }
 
-        overlay.innerHTML = `
-            <div class="onboarding-spotlight" style="${spotStyle}"></div>
-            <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
-                <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
-                <div class="onboarding-tooltip-icon">${hint.icon}</div>
-                <div class="onboarding-tooltip-title">${hint.title}</div>
-                <div class="onboarding-tooltip-text">${hint.text}</div>
-                <div class="onboarding-dots">${dots}</div>
-                ${btns}
-            </div>
-        `;
-    }, 350);
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        setTimeout(() => {
+            const rect = el.getBoundingClientRect();
+            const pad = 6;
+            const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
+
+            const arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
+
+            // Smart tooltip positioning
+            let tooltipStyle = '';
+            const tooltipW = 320;
+            const safeLeft = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+
+            if (arrowDir === 'top') {
+                let topPos = rect.bottom + pad + 14;
+                // If tooltip would go off screen bottom, put it above
+                if (topPos + 200 > window.innerHeight) topPos = Math.max(10, rect.top - pad - 220);
+                tooltipStyle = `top:${topPos}px;left:${safeLeft}px;`;
+            } else if (arrowDir === 'bottom') {
+                tooltipStyle = `top:${rect.top - pad - 14}px;left:${safeLeft}px;transform:translateY(-100%);`;
+            } else if (arrowDir === 'left') {
+                // Tooltip to the right of the element
+                let leftPos = rect.right + pad + 14;
+                let topPos = Math.max(10, rect.top - 10);
+                // On mobile, put tooltip below if no space on right
+                if (leftPos + tooltipW > window.innerWidth) {
+                    leftPos = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+                    topPos = rect.bottom + pad + 14;
+                    // If still off screen, force it
+                    if (topPos + 180 > window.innerHeight) topPos = Math.max(10, rect.top - 200);
+                }
+                tooltipStyle = `top:${topPos}px;left:${leftPos}px;`;
+            } else {
+                tooltipStyle = `top:${Math.max(10, rect.top - 10)}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
+            }
+
+            overlay.innerHTML = `
+                <div class="onboarding-spotlight" style="${spotStyle}"></div>
+                <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
+                    <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
+                    <div class="onboarding-tooltip-icon">${hint.icon}</div>
+                    <div class="onboarding-tooltip-title">${hint.title}</div>
+                    <div class="onboarding-tooltip-text">${hint.text}</div>
+                    <div class="onboarding-dots">${dots}</div>
+                    ${btns}
+                </div>
+            `;
+        }, 300);
+    }, 150);
 }
 
 function nextOnbStep() {
@@ -7511,12 +7639,21 @@ function prevOnbStep() {
 function finishOnb() {
     localStorage.setItem('passengers_onboarding_seen', 'true');
     closeOnb();
+    // close side menu if we left it open
+    if (onbIsMobile()) {
+        const menu = document.getElementById('sideMenu');
+        if (menu && menu.classList.contains('open')) closeSideMenu();
+    }
 }
 
 function disableOnb() {
     localStorage.setItem('passengers_onboarding_disabled', 'true');
     localStorage.setItem('passengers_onboarding_seen', 'true');
     closeOnb();
+    if (onbIsMobile()) {
+        const menu = document.getElementById('sideMenu');
+        if (menu && menu.classList.contains('open')) closeSideMenu();
+    }
     if (typeof showToast === 'function') showToast('Підказки вимкнено назавжди');
 }
 

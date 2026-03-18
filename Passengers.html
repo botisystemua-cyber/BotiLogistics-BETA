@@ -7356,9 +7356,26 @@ function onbEnsureMobileSectionOpen(sectionId) {
 function onbEnsurePcSectionOpen(contentId) {
     const el = document.getElementById(contentId);
     if (el && el.classList.contains('collapsed')) el.classList.remove('collapsed');
-    // also open the header
     const header = el?.previousElementSibling;
     if (header && header.classList.contains('collapsed')) header.classList.remove('collapsed');
+}
+
+// Scroll the sidebar container so target element is visible
+function onbScrollSidebarTo(el) {
+    if (!el) return;
+    if (onbIsMobile()) {
+        const menuContent = document.querySelector('#sideMenu .side-menu-content');
+        if (menuContent) {
+            const elTop = el.offsetTop;
+            menuContent.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        }
+    } else {
+        const sidebar = document.getElementById('pcSidebar');
+        if (sidebar) {
+            const elTop = el.offsetTop;
+            sidebar.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        }
+    }
 }
 
 const PASSENGER_ONBOARDING = [
@@ -7395,11 +7412,14 @@ const PASSENGER_ONBOARDING = [
             if (onbIsMobile()) {
                 onbEnsureSideMenuOpen();
                 onbEnsureMobileSectionOpen('mobileDirectionSection');
-                return document.querySelector('#sideMenu .side-menu-section:nth-child(1) .side-menu-section-header')
-                    || document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
+                const section = document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
             }
             onbEnsurePcSectionOpen('pcSectionDirection');
-            return document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
+            const section = document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7411,11 +7431,14 @@ const PASSENGER_ONBOARDING = [
             if (onbIsMobile()) {
                 onbEnsureSideMenuOpen();
                 onbEnsureMobileSectionOpen('mobileDatesSection');
-                return document.querySelector('#sideMenu .side-menu-section:nth-child(2) .side-menu-section-header')
-                    || document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
+                const section = document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
             }
             onbEnsurePcSectionOpen('pcSectionDate');
-            return document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
+            const section = document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7427,11 +7450,14 @@ const PASSENGER_ONBOARDING = [
             if (onbIsMobile()) {
                 onbEnsureSideMenuOpen();
                 onbEnsureMobileSectionOpen('mobileVehiclesSection');
-                return document.querySelector('#sideMenu .side-menu-section:nth-child(3) .side-menu-section-header')
-                    || document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
+                const section = document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
             }
             onbEnsurePcSectionOpen('pcSectionVehicles');
-            return document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
+            const section = document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7443,11 +7469,14 @@ const PASSENGER_ONBOARDING = [
             if (onbIsMobile()) {
                 onbEnsureSideMenuOpen();
                 onbEnsureMobileSectionOpen('mobileRoutesSection');
-                return document.querySelector('#sideMenu .side-menu-section:nth-child(4) .side-menu-section-header')
-                    || document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
+                const section = document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
             }
             onbEnsurePcSectionOpen('pcSectionRoutes');
-            return document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
+            const section = document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7459,11 +7488,14 @@ const PASSENGER_ONBOARDING = [
             if (onbIsMobile()) {
                 onbEnsureSideMenuOpen();
                 onbEnsureMobileSectionOpen('mobileActionsSection');
-                return document.querySelector('#sideMenu .side-menu-section:nth-child(5) .side-menu-section-header')
-                    || document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
+                const section = document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
             }
             onbEnsurePcSectionOpen('pcSectionActions');
-            return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
+            const section = document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },

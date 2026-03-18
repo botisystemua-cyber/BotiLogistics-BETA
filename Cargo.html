@@ -1441,40 +1441,66 @@
             .workflow-bar { display: none; }
         }
 
-        /* ONBOARDING HINTS */
+        /* ONBOARDING TOUR WITH SPOTLIGHT */
         .onboarding-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.55); z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease;
+            z-index: 10000; opacity: 0; transition: opacity 0.3s ease;
+            pointer-events: none;
         }
-        .onboarding-overlay.show { opacity: 1; }
-        .onboarding-card {
-            background: white; border-radius: 16px; padding: 28px 24px;
-            max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center; position: relative;
-            transform: translateY(20px); transition: transform 0.3s ease;
+        .onboarding-overlay.show { opacity: 1; pointer-events: auto; }
+        .onboarding-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55);
         }
-        .onboarding-overlay.show .onboarding-card { transform: translateY(0); }
-        .onboarding-icon { font-size: 48px; margin-bottom: 12px; }
-        .onboarding-title { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
-        .onboarding-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
-        .onboarding-text strong { color: var(--text-primary); }
-        .onboarding-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
-        .onboarding-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
-        .onboarding-dot.active { background: var(--primary); transform: scale(1.2); }
-        .onboarding-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .onboarding-spotlight {
+            position: absolute; border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+            transition: all 0.4s ease;
+            z-index: 10001;
+            pointer-events: none;
+        }
+        .onboarding-tooltip {
+            position: absolute; z-index: 10002;
+            background: white; border-radius: 14px; padding: 22px 20px;
+            max-width: 340px; width: max-content; min-width: 260px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            transition: all 0.35s ease;
+        }
+        .onboarding-tooltip::before {
+            content: ''; position: absolute;
+            width: 14px; height: 14px; background: white;
+            transform: rotate(45deg);
+        }
+        .onboarding-tooltip.arrow-top::before { top: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-bottom::before { bottom: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-left::before { left: -7px; top: 24px; }
+        .onboarding-tooltip.arrow-right::before { right: -7px; top: 24px; }
+        .onboarding-tooltip-icon { font-size: 32px; margin-bottom: 6px; }
+        .onboarding-tooltip-title { font-size: 15px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+        .onboarding-tooltip-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .onboarding-tooltip-text strong { color: var(--text-primary); }
+        .onboarding-dots { display: flex; gap: 6px; margin-bottom: 14px; }
+        .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
+        .onboarding-dot.active { background: var(--primary); transform: scale(1.3); }
+        .onboarding-btns { display: flex; gap: 8px; align-items: center; }
         .onboarding-btn {
-            padding: 10px 20px; border: none; border-radius: 8px; font-size: 13px;
+            padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px;
             font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s;
         }
         .onboarding-btn.primary { background: var(--primary); color: white; }
         .onboarding-btn.primary:hover { background: var(--primary-dark); }
         .onboarding-btn.secondary { background: var(--bg-main); color: var(--text-secondary); }
         .onboarding-btn.secondary:hover { background: var(--border); }
-        .onboarding-btn.danger { background: #fee2e2; color: #dc2626; font-size: 11px; }
-        .onboarding-btn.danger:hover { background: #dc2626; color: white; }
-        .onboarding-step-num { position: absolute; top: 12px; right: 16px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .onboarding-btn.skip { background: none; color: var(--text-secondary); font-size: 11px; margin-left: auto; text-decoration: underline; padding: 8px 4px; }
+        .onboarding-btn.skip:hover { color: var(--danger); }
+        .onboarding-step-num { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px; }
+        .onboarding-welcome {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) translateY(20px);
+            z-index: 10002; background: white; border-radius: 16px; padding: 28px 24px;
+            max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center; transition: transform 0.3s ease;
+        }
+        .onboarding-overlay.show .onboarding-welcome { transform: translate(-50%, -50%) translateY(0); }
         /* BIG SUCCESS NOTIFICATION */
         .big-notify-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -9061,126 +9087,365 @@ document.addEventListener('click', e => {
 });
 
 // ============================================
-// ONBOARDING HINTS SYSTEM
+// ONBOARDING TOUR WITH SPOTLIGHT
 // ============================================
-const ONBOARDING_HINTS = [
+
+function onbIsMobile() { return window.innerWidth < 900; }
+
+function onbEnsureSideMenuOpen() {
+    const menu = document.getElementById('sideMenu');
+    const overlay = document.getElementById('sideMenuOverlay');
+    if (menu && !menu.classList.contains('open')) {
+        menu.classList.add('open');
+        if (overlay) overlay.classList.add('show');
+        if (typeof renderMobileCalendar === 'function') renderMobileCalendar();
+        if (typeof updateMobileVehicles === 'function') updateMobileVehicles();
+    }
+}
+
+function onbEnsureMobileSectionOpen(sectionId) {
+    const el = document.getElementById(sectionId);
+    if (el && !el.classList.contains('open')) el.classList.add('open');
+}
+
+function onbEnsurePcSectionOpen(contentId) {
+    const el = document.getElementById(contentId);
+    if (el && el.classList.contains('collapsed')) el.classList.remove('collapsed');
+    const header = el?.previousElementSibling;
+    if (header && header.classList.contains('collapsed')) header.classList.remove('collapsed');
+}
+
+// Scroll the sidebar container so target element is visible
+function onbScrollSidebarTo(el) {
+    if (!el) return;
+    if (onbIsMobile()) {
+        const menuContent = document.querySelector('#sideMenu .side-menu-content');
+        if (menuContent) {
+            const elTop = el.offsetTop;
+            menuContent.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        }
+    } else {
+        const sidebar = document.getElementById('pcSidebar');
+        if (sidebar) {
+            const elTop = el.offsetTop;
+            sidebar.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        }
+    }
+}
+
+const CARGO_ONBOARDING = [
     {
         icon: '👋',
         title: 'Ласкаво просимо до CRM Посилки!',
-        text: 'Це ваша система управління посилками. Тут ви можете <strong>додавати, редагувати та відстежувати</strong> всі посилки в одному місці.'
+        text: 'Коротка екскурсія по основних функціях. Займе менше хвилини.',
+        target: null
+    },
+    {
+        icon: '➕',
+        title: 'Додавання посилки',
+        text: 'Натисніть <strong>➕ Додати</strong> внизу — оберіть <strong>вручну</strong> або <strong>сканер ТТН</strong>. Вкажіть напрямок, дату, отримувача та адресу.',
+        target: () => document.querySelectorAll('.bottom-nav .nav-item')[4],
+        arrow: 'bottom',
+        before: () => {
+            const menu = document.getElementById('sideMenu');
+            if (menu && menu.classList.contains('open')) closeSideMenu();
+        }
+    },
+    {
+        icon: '🔍',
+        title: 'Пошук',
+        text: 'Шукайте посилки по <strong>ТТН, імені, телефону</strong> або <strong>адресі</strong> — результати фільтруються миттєво.',
+        target: () => document.getElementById('searchInput'),
+        arrow: 'top'
+    },
+    {
+        icon: '🧭',
+        title: 'Фільтр: Напрямок',
+        text: 'Оберіть напрямок: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Кнопка <strong>Нові (24 год)</strong> покаже свіжі посилки.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileDirectionSection');
+                const section = document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
+            }
+            onbEnsurePcSectionOpen('pcSectionDirection');
+            const section = document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '📅',
+        title: 'Фільтр: Дата відправки',
+        text: 'Оберіть <strong>дату відправки</strong> в календарі. Дні з посилками підсвічені — натисніть, щоб побачити тільки їх.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileDatesSection');
+                const section = document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
+            }
+            onbEnsurePcSectionOpen('pcSectionDate');
+            const section = document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '🚐',
+        title: 'Фільтр: Автомобіль',
+        text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже посилки без транспорту.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileVehiclesSection');
+                const section = document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
+            }
+            onbEnsurePcSectionOpen('pcSectionVehicles');
+            const section = document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '🚀',
+        title: 'Фільтр: Маршрути',
+        text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити його посилки. Видаляти можна <strong>тільки з маршруту</strong> або <strong>повністю</strong>.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileRoutesSection');
+                const section = document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
+            }
+            onbEnsurePcSectionOpen('pcSectionRoutes');
+            const section = document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '📋',
+        title: 'Фільтр: Статуси',
+        text: 'Перегляд <strong>архівованих</strong> посилок та інших статусів. Завершені доставки переносьте в архів — вони не заважають, але завжди доступні.',
+        target: () => {
+            if (onbIsMobile()) {
+                onbEnsureSideMenuOpen();
+                onbEnsureMobileSectionOpen('mobileActionsSection');
+                const section = document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
+                onbScrollSidebarTo(section);
+                return section;
+            }
+            onbEnsurePcSectionOpen('pcSectionActions');
+            const section = document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
+            onbScrollSidebarTo(section);
+            return section;
+        },
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '⚡',
+        title: 'Оптимізація маршруту',
+        text: 'Виберіть посилки → натисніть <strong>⚡ Оптимізація</strong> — адреси відкриються в <strong>Google Maps</strong>. Потім натисніть <strong>✅ В маршрут</strong>, щоб зафіксувати.',
+        target: () => {
+            if (onbIsMobile()) {
+                const menu = document.getElementById('sideMenu');
+                if (menu && menu.classList.contains('open')) closeSideMenu();
+            }
+            return document.querySelector('.wf-btn.optimize');
+        },
+        arrow: 'top',
+        before: () => {
+            if (onbIsMobile()) {
+                const menu = document.getElementById('sideMenu');
+                if (menu && menu.classList.contains('open')) closeSideMenu();
+            }
+        }
     },
     {
         icon: '☑️',
         title: 'Вибір та масові дії',
-        text: 'Натисніть <strong>галочку</strong> на картці посилки, щоб вибрати її. При виборі зліва з\'явиться <strong>панель масових дій</strong> — архівування, призначення авто, зміна статусу та інше.'
-    },
-    {
-        icon: '✏️',
-        title: 'Редагування та видалення',
-        text: 'Натисніть <strong>▼</strong> на картці, щоб розгорнути дії. Тепер доступні кнопки <strong>Редагувати</strong> та <strong>Видалити</strong> прямо на кожній картці — і в основному списку, і в маршруті.'
-    },
-    {
-        icon: '🚀',
-        title: 'Маршрути',
-        text: 'Призначте авто посилці, потім перемістіть у <strong>маршрут</strong>. У маршруті можна видаляти посилки окремо — <strong>тільки з маршруту</strong> або <strong>повністю в корзину</strong>.'
-    },
-    {
-        icon: '📊',
-        title: 'Фільтри та пошук',
-        text: 'Використовуйте <strong>бокову панель</strong> зліва для фільтрації по даті, авто, напрямку та статусу. <strong>Пошук</strong> у хедері шукає по телефону, імені, ТТН та адресі.'
+        text: 'Натисніть <strong>галочку</strong> на картці — зліва з\'явиться панель: призначити авто, оптимізувати, в маршрут, архівувати, видалити.',
+        target: () => document.getElementById('selectAll')?.closest('.checkbox-wrapper') || document.getElementById('selectAll'),
+        arrow: 'top'
     }
 ];
 
-let onboardingStep = 0;
+let onbStep = 0;
 
 function initOnboarding() {
     if (localStorage.getItem('posylki_onboarding_disabled') === 'true') return;
     if (localStorage.getItem('posylki_onboarding_seen') === 'true') return;
-
-    // Невелика затримка для завантаження сторінки
-    setTimeout(() => showOnboarding(), 800);
+    setTimeout(() => showCargoOnboarding(), 900);
 }
 
-function showOnboarding() {
-    onboardingStep = 0;
-    renderOnboardingStep();
+function showCargoOnboarding() {
+    onbStep = 0;
+    renderOnbStep();
 }
 
-function renderOnboardingStep() {
-    let overlay = document.getElementById('onboardingOverlay');
+function renderOnbStep() {
+    const hint = CARGO_ONBOARDING[onbStep];
+    const total = CARGO_ONBOARDING.length;
+    const isLast = onbStep === total - 1;
+    const isFirst = onbStep === 0;
+
+    if (hint.before) hint.before();
+
+    let overlay = document.getElementById('onbOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.className = 'onboarding-overlay';
-        overlay.id = 'onboardingOverlay';
+        overlay.id = 'onbOverlay';
         document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay || e.target.classList.contains('onboarding-backdrop')) finishOnb();
+        });
         requestAnimationFrame(() => overlay.classList.add('show'));
     }
 
-    const hint = ONBOARDING_HINTS[onboardingStep];
-    const total = ONBOARDING_HINTS.length;
-    const isLast = onboardingStep === total - 1;
-    const isFirst = onboardingStep === 0;
-
-    const dots = ONBOARDING_HINTS.map((_, i) =>
-        `<div class="onboarding-dot ${i === onboardingStep ? 'active' : ''}"></div>`
+    const dots = CARGO_ONBOARDING.map((_, i) =>
+        `<div class="onboarding-dot ${i === onbStep ? 'active' : ''}"></div>`
     ).join('');
 
-    overlay.innerHTML = `
-        <div class="onboarding-card">
-            <span class="onboarding-step-num">${onboardingStep + 1} / ${total}</span>
-            <div class="onboarding-icon">${hint.icon}</div>
-            <div class="onboarding-title">${hint.title}</div>
-            <div class="onboarding-text">${hint.text}</div>
-            <div class="onboarding-dots">${dots}</div>
-            <div class="onboarding-btns">
-                ${!isFirst ? '<button class="onboarding-btn secondary" onclick="prevOnboardingStep()">← Назад</button>' : ''}
-                ${isLast
-                    ? '<button class="onboarding-btn primary" onclick="finishOnboarding()">Зрозуміло!</button>'
-                    : '<button class="onboarding-btn primary" onclick="nextOnboardingStep()">Далі →</button>'
-                }
-            </div>
-            <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
-                <button class="onboarding-btn danger" onclick="disableOnboarding()">Вимкнути підказки назавжди</button>
-            </div>
+    const btns = `
+        <div class="onboarding-btns">
+            ${!isFirst ? '<button class="onboarding-btn secondary" onclick="prevOnbStep()">← Назад</button>' : ''}
+            ${isLast
+                ? '<button class="onboarding-btn primary" onclick="finishOnb()">Зрозуміло!</button>'
+                : '<button class="onboarding-btn primary" onclick="nextOnbStep()">Далі →</button>'
+            }
+            <button class="onboarding-btn skip" onclick="disableOnb()">Вимкнути підказки</button>
         </div>
     `;
+
+    // Step 0 — welcome modal
+    if (!hint.target) {
+        overlay.innerHTML = `
+            <div class="onboarding-backdrop"></div>
+            <div class="onboarding-welcome">
+                <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
+                <div class="onboarding-tooltip-icon">${hint.icon}</div>
+                <div class="onboarding-tooltip-title">${hint.title}</div>
+                <div class="onboarding-tooltip-text">${hint.text}</div>
+                <div class="onboarding-dots" style="justify-content:center;">${dots}</div>
+                ${btns}
+            </div>
+        `;
+        return;
+    }
+
+    // Small delay for DOM updates (side menu opening etc)
+    setTimeout(() => {
+        const el = typeof hint.target === 'function' ? hint.target() : hint.target;
+        if (!el) {
+            if (!isLast) { onbStep++; renderOnbStep(); }
+            else finishOnb();
+            return;
+        }
+
+        // Scroll the element into view within the page
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        setTimeout(() => {
+            const rect = el.getBoundingClientRect();
+            const pad = 6;
+            const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
+
+            const arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
+
+            // Smart tooltip positioning
+            let tooltipStyle = '';
+            const tooltipW = 320;
+            const safeLeft = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+
+            if (arrowDir === 'top') {
+                let topPos = rect.bottom + pad + 14;
+                if (topPos + 200 > window.innerHeight) topPos = Math.max(10, rect.top - pad - 220);
+                tooltipStyle = `top:${topPos}px;left:${safeLeft}px;`;
+            } else if (arrowDir === 'bottom') {
+                tooltipStyle = `top:${rect.top - pad - 14}px;left:${safeLeft}px;transform:translateY(-100%);`;
+            } else if (arrowDir === 'left') {
+                let leftPos = rect.right + pad + 14;
+                let topPos = Math.max(10, rect.top - 10);
+                if (leftPos + tooltipW > window.innerWidth) {
+                    leftPos = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+                    topPos = rect.bottom + pad + 14;
+                    if (topPos + 180 > window.innerHeight) topPos = Math.max(10, rect.top - 200);
+                }
+                tooltipStyle = `top:${topPos}px;left:${leftPos}px;`;
+            } else {
+                tooltipStyle = `top:${Math.max(10, rect.top - 10)}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
+            }
+
+            overlay.innerHTML = `
+                <div class="onboarding-spotlight" style="${spotStyle}"></div>
+                <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
+                    <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
+                    <div class="onboarding-tooltip-icon">${hint.icon}</div>
+                    <div class="onboarding-tooltip-title">${hint.title}</div>
+                    <div class="onboarding-tooltip-text">${hint.text}</div>
+                    <div class="onboarding-dots">${dots}</div>
+                    ${btns}
+                </div>
+            `;
+        }, 300);
+    }, 150);
 }
 
-function nextOnboardingStep() {
-    if (onboardingStep < ONBOARDING_HINTS.length - 1) {
-        onboardingStep++;
-        renderOnboardingStep();
+function nextOnbStep() {
+    if (onbStep < CARGO_ONBOARDING.length - 1) {
+        onbStep++;
+        renderOnbStep();
     }
 }
 
-function prevOnboardingStep() {
-    if (onboardingStep > 0) {
-        onboardingStep--;
-        renderOnboardingStep();
+function prevOnbStep() {
+    if (onbStep > 0) {
+        onbStep--;
+        renderOnbStep();
     }
 }
 
-function finishOnboarding() {
+function finishOnb() {
     localStorage.setItem('posylki_onboarding_seen', 'true');
-    closeOnboarding();
+    closeOnb();
+    if (onbIsMobile()) {
+        const menu = document.getElementById('sideMenu');
+        if (menu && menu.classList.contains('open')) closeSideMenu();
+    }
 }
 
-function disableOnboarding() {
+function disableOnb() {
     localStorage.setItem('posylki_onboarding_disabled', 'true');
     localStorage.setItem('posylki_onboarding_seen', 'true');
-    closeOnboarding();
-    showToast('Підказки вимкнено. Щоб увімкнути — очистіть localStorage.');
+    closeOnb();
+    if (onbIsMobile()) {
+        const menu = document.getElementById('sideMenu');
+        if (menu && menu.classList.contains('open')) closeSideMenu();
+    }
+    if (typeof showToast === 'function') showToast('Підказки вимкнено назавжди');
 }
 
-function closeOnboarding() {
-    const overlay = document.getElementById('onboardingOverlay');
+function closeOnb() {
+    const overlay = document.getElementById('onbOverlay');
     if (overlay) {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 300);
     }
 }
 
-// Запуск онбордингу при завантаженні
+// Launch onboarding
 initOnboarding();
 </script>
 </body>

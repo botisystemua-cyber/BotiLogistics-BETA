@@ -9115,22 +9115,17 @@ function onbEnsurePcSectionOpen(contentId) {
     if (header && header.classList.contains('collapsed')) header.classList.remove('collapsed');
 }
 
-// Scroll the sidebar container so target element is visible
+// Scroll the sidebar/menu container so target element is visible
 function onbScrollSidebarTo(el) {
     if (!el) return;
-    if (onbIsMobile()) {
-        const menuContent = document.querySelector('#sideMenu .side-menu-content');
-        if (menuContent) {
-            const elTop = el.offsetTop;
-            menuContent.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
-        }
-    } else {
-        const sidebar = document.getElementById('pcSidebar');
-        if (sidebar) {
-            const elTop = el.offsetTop;
-            sidebar.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
-        }
-    }
+    const container = onbIsMobile()
+        ? document.querySelector('#sideMenu .side-menu-content')
+        : document.getElementById('pcSidebar');
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const offset = elRect.top - containerRect.top;
+    container.scrollTo({ top: container.scrollTop + offset - 60, behavior: 'smooth' });
 }
 
 const CARGO_ONBOARDING = [
@@ -9354,9 +9349,18 @@ function renderOnbStep() {
             return;
         }
 
-        // Scroll the element into view within the page
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Scroll sidebar container if element is inside it, otherwise scroll page
+        const sideMenu = document.getElementById('sideMenu');
+        const pcSidebar = document.getElementById('pcSidebar');
+        if (sideMenu && sideMenu.contains(el)) {
+            onbScrollSidebarTo(el);
+        } else if (pcSidebar && pcSidebar.contains(el)) {
+            onbScrollSidebarTo(el);
+        } else {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
 
+        // Wait for scroll to finish before measuring position
         setTimeout(() => {
             const rect = el.getBoundingClientRect();
             const pad = 6;
@@ -9399,8 +9403,8 @@ function renderOnbStep() {
                     ${btns}
                 </div>
             `;
-        }, 300);
-    }, 150);
+        }, 450);
+    }, 200);
 }
 
 function nextOnbStep() {

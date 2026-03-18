@@ -7405,18 +7405,10 @@ const PASSENGER_ONBOARDING = [
         icon: '🧭',
         title: 'Фільтр: Напрямок',
         text: 'Оберіть напрямок поїздки: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Також тут є кнопка <strong>Нові (24 год)</strong> — показує свіжих пасажирів.',
+        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDirectionSection'); onbEnsurePcSectionOpen('pcSectionDirection'); },
         target: () => {
-            if (onbIsMobile()) {
-                onbEnsureSideMenuOpen();
-                onbEnsureMobileSectionOpen('mobileDirectionSection');
-                const section = document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
-                onbScrollSidebarTo(section);
-                return section;
-            }
-            onbEnsurePcSectionOpen('pcSectionDirection');
-            const section = document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
-            onbScrollSidebarTo(section);
-            return section;
+            if (onbIsMobile()) return document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
+            return document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7424,18 +7416,10 @@ const PASSENGER_ONBOARDING = [
         icon: '📅',
         title: 'Фільтр: Дата виїзду',
         text: 'Оберіть конкретну <strong>дату виїзду</strong> в календарі. Дні з пасажирами підсвічені — натисніть, щоб побачити тільки їх.',
+        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDatesSection'); onbEnsurePcSectionOpen('pcSectionDate'); },
         target: () => {
-            if (onbIsMobile()) {
-                onbEnsureSideMenuOpen();
-                onbEnsureMobileSectionOpen('mobileDatesSection');
-                const section = document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
-                onbScrollSidebarTo(section);
-                return section;
-            }
-            onbEnsurePcSectionOpen('pcSectionDate');
-            const section = document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
-            onbScrollSidebarTo(section);
-            return section;
+            if (onbIsMobile()) return document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
+            return document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7443,18 +7427,10 @@ const PASSENGER_ONBOARDING = [
         icon: '🚐',
         title: 'Фільтр: Автомобіль',
         text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже пасажирів, яким ще не призначили транспорт.',
+        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileVehiclesSection'); onbEnsurePcSectionOpen('pcSectionVehicles'); },
         target: () => {
-            if (onbIsMobile()) {
-                onbEnsureSideMenuOpen();
-                onbEnsureMobileSectionOpen('mobileVehiclesSection');
-                const section = document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
-                onbScrollSidebarTo(section);
-                return section;
-            }
-            onbEnsurePcSectionOpen('pcSectionVehicles');
-            const section = document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
-            onbScrollSidebarTo(section);
-            return section;
+            if (onbIsMobile()) return document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
+            return document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7462,18 +7438,10 @@ const PASSENGER_ONBOARDING = [
         icon: '🚀',
         title: 'Фільтр: Маршрути',
         text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити тільки його пасажирів. Видаляти пасажирів можна окремо — тільки з маршруту або повністю.',
+        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileRoutesSection'); onbEnsurePcSectionOpen('pcSectionRoutes'); },
         target: () => {
-            if (onbIsMobile()) {
-                onbEnsureSideMenuOpen();
-                onbEnsureMobileSectionOpen('mobileRoutesSection');
-                const section = document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
-                onbScrollSidebarTo(section);
-                return section;
-            }
-            onbEnsurePcSectionOpen('pcSectionRoutes');
-            const section = document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
-            onbScrollSidebarTo(section);
-            return section;
+            if (onbIsMobile()) return document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
+            return document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7481,18 +7449,10 @@ const PASSENGER_ONBOARDING = [
         icon: '📋',
         title: 'Фільтр: Статуси',
         text: 'Перегляд <strong>архівованих</strong> та інших статусів. Завершені поїздки переносьте в архів — вони не заважають, але завжди доступні.',
+        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileActionsSection'); onbEnsurePcSectionOpen('pcSectionActions'); },
         target: () => {
-            if (onbIsMobile()) {
-                onbEnsureSideMenuOpen();
-                onbEnsureMobileSectionOpen('mobileActionsSection');
-                const section = document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
-                onbScrollSidebarTo(section);
-                return section;
-            }
-            onbEnsurePcSectionOpen('pcSectionActions');
-            const section = document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
-            onbScrollSidebarTo(section);
-            return section;
+            if (onbIsMobile()) return document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
+            return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
     },
@@ -7536,6 +7496,48 @@ function initPassengerOnboarding() {
 function showPassengerOnboarding() {
     onbStep = 0;
     renderOnbStep();
+}
+
+function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
+    const rect = el.getBoundingClientRect();
+    const pad = 6;
+    const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
+
+    const arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
+    const tooltipW = 320;
+    const safeLeft = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+    let tooltipStyle = '';
+
+    if (arrowDir === 'top') {
+        let topPos = rect.bottom + pad + 14;
+        if (topPos + 200 > window.innerHeight) topPos = Math.max(10, rect.top - pad - 220);
+        tooltipStyle = `top:${topPos}px;left:${safeLeft}px;`;
+    } else if (arrowDir === 'bottom') {
+        tooltipStyle = `top:${rect.top - pad - 14}px;left:${safeLeft}px;transform:translateY(-100%);`;
+    } else if (arrowDir === 'left') {
+        let leftPos = rect.right + pad + 14;
+        let topPos = Math.max(10, rect.top - 10);
+        if (leftPos + tooltipW > window.innerWidth) {
+            leftPos = safeLeft;
+            topPos = rect.bottom + pad + 14;
+            if (topPos + 180 > window.innerHeight) topPos = Math.max(10, rect.top - 200);
+        }
+        tooltipStyle = `top:${topPos}px;left:${leftPos}px;`;
+    } else {
+        tooltipStyle = `top:${Math.max(10, rect.top - 10)}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
+    }
+
+    overlay.innerHTML = `
+        <div class="onboarding-spotlight" style="${spotStyle}"></div>
+        <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
+            <div class="onboarding-step-num">${step + 1} / ${total}</div>
+            <div class="onboarding-tooltip-icon">${hint.icon}</div>
+            <div class="onboarding-tooltip-title">${hint.title}</div>
+            <div class="onboarding-tooltip-text">${hint.text}</div>
+            <div class="onboarding-dots">${dots}</div>
+            ${btns}
+        </div>
+    `;
 }
 
 function renderOnbStep() {
@@ -7590,7 +7592,7 @@ function renderOnbStep() {
         return;
     }
 
-    // Small delay for DOM updates (side menu opening etc)
+    // Step 1: Wait for before() effects (menu open animation = 350ms)
     setTimeout(() => {
         const el = typeof hint.target === 'function' ? hint.target() : hint.target;
         if (!el) {
@@ -7599,66 +7601,21 @@ function renderOnbStep() {
             return;
         }
 
-        // Scroll sidebar container if element is inside it, otherwise scroll page
+        // Step 2: Scroll the correct container
         const sideMenu = document.getElementById('sideMenu');
         const pcSidebar = document.getElementById('pcSidebar');
-        if (sideMenu && sideMenu.contains(el)) {
-            onbScrollSidebarTo(el);
-        } else if (pcSidebar && pcSidebar.contains(el)) {
+        const isInSidebar = (sideMenu && sideMenu.contains(el)) || (pcSidebar && pcSidebar.contains(el));
+        if (isInSidebar) {
             onbScrollSidebarTo(el);
         } else {
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Wait for scroll to finish before measuring position
+        // Step 3: Wait for scroll to finish, then measure & render spotlight
         setTimeout(() => {
-            const rect = el.getBoundingClientRect();
-            const pad = 6;
-            const spotStyle = `top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;`;
-
-            const arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
-
-            // Smart tooltip positioning
-            let tooltipStyle = '';
-            const tooltipW = 320;
-            const safeLeft = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
-
-            if (arrowDir === 'top') {
-                let topPos = rect.bottom + pad + 14;
-                // If tooltip would go off screen bottom, put it above
-                if (topPos + 200 > window.innerHeight) topPos = Math.max(10, rect.top - pad - 220);
-                tooltipStyle = `top:${topPos}px;left:${safeLeft}px;`;
-            } else if (arrowDir === 'bottom') {
-                tooltipStyle = `top:${rect.top - pad - 14}px;left:${safeLeft}px;transform:translateY(-100%);`;
-            } else if (arrowDir === 'left') {
-                // Tooltip to the right of the element
-                let leftPos = rect.right + pad + 14;
-                let topPos = Math.max(10, rect.top - 10);
-                // On mobile, put tooltip below if no space on right
-                if (leftPos + tooltipW > window.innerWidth) {
-                    leftPos = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
-                    topPos = rect.bottom + pad + 14;
-                    // If still off screen, force it
-                    if (topPos + 180 > window.innerHeight) topPos = Math.max(10, rect.top - 200);
-                }
-                tooltipStyle = `top:${topPos}px;left:${leftPos}px;`;
-            } else {
-                tooltipStyle = `top:${Math.max(10, rect.top - 10)}px;left:${rect.left - pad - 14}px;transform:translateX(-100%);`;
-            }
-
-            overlay.innerHTML = `
-                <div class="onboarding-spotlight" style="${spotStyle}"></div>
-                <div class="onboarding-tooltip arrow-${arrowDir}" style="${tooltipStyle}">
-                    <div class="onboarding-step-num">${onbStep + 1} / ${total}</div>
-                    <div class="onboarding-tooltip-icon">${hint.icon}</div>
-                    <div class="onboarding-tooltip-title">${hint.title}</div>
-                    <div class="onboarding-tooltip-text">${hint.text}</div>
-                    <div class="onboarding-dots">${dots}</div>
-                    ${btns}
-                </div>
-            `;
-        }, 450);
-    }, 200);
+            onbRenderSpotlight(overlay, el, hint, onbStep, total, dots, btns);
+        }, 500);
+    }, 400);
 }
 
 function nextOnbStep() {

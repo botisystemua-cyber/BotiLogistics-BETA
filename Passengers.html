@@ -61,6 +61,7 @@
             position: sticky;
             top: 52px;
             height: calc(100vh - 52px);
+            padding-bottom: 60px;
             box-shadow: 4px 0 20px rgba(0,0,0,0.08);
             transition: width 0.3s ease, min-width 0.3s ease;
             min-width: 300px;
@@ -7346,6 +7347,9 @@ function onbEnsureSideMenuOpen() {
         if (typeof renderMobileCalendar === 'function') renderMobileCalendar();
         if (typeof updateMobileVehicles === 'function') updateMobileVehicles();
     }
+    // Raise side menu above onboarding overlay so it's fully visible
+    if (menu) menu.style.zIndex = '10003';
+    if (overlay) overlay.style.zIndex = '10002';
 }
 
 function onbEnsureMobileSectionOpen(sectionId) {
@@ -7405,7 +7409,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🧭',
         title: 'Фільтр: Напрямок',
         text: 'Оберіть напрямок поїздки: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Також тут є кнопка <strong>Нові (24 год)</strong> — показує свіжих пасажирів.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDirectionSection'); onbEnsurePcSectionOpen('pcSectionDirection'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDirection'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
@@ -7416,7 +7420,7 @@ const PASSENGER_ONBOARDING = [
         icon: '📅',
         title: 'Фільтр: Дата виїзду',
         text: 'Оберіть конкретну <strong>дату виїзду</strong> в календарі. Дні з пасажирами підсвічені — натисніть, щоб побачити тільки їх.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDatesSection'); onbEnsurePcSectionOpen('pcSectionDate'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDate'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
@@ -7427,7 +7431,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🚐',
         title: 'Фільтр: Автомобіль',
         text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже пасажирів, яким ще не призначили транспорт.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileVehiclesSection'); onbEnsurePcSectionOpen('pcSectionVehicles'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionVehicles'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
@@ -7438,7 +7442,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🚀',
         title: 'Фільтр: Маршрути',
         text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити тільки його пасажирів. Видаляти пасажирів можна окремо — тільки з маршруту або повністю.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileRoutesSection'); onbEnsurePcSectionOpen('pcSectionRoutes'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionRoutes'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
@@ -7449,7 +7453,7 @@ const PASSENGER_ONBOARDING = [
         icon: '📋',
         title: 'Фільтр: Статуси',
         text: 'Перегляд <strong>архівованих</strong> та інших статусів. Завершені поїздки переносьте в архів — вони не заважають, але завжди доступні.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileActionsSection'); onbEnsurePcSectionOpen('pcSectionActions'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionActions'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
@@ -7659,6 +7663,11 @@ function closeOnb() {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 300);
     }
+    // Restore side menu z-index
+    const menu = document.getElementById('sideMenu');
+    const menuOverlay = document.getElementById('sideMenuOverlay');
+    if (menu) menu.style.zIndex = '';
+    if (menuOverlay) menuOverlay.style.zIndex = '';
 }
 
 // Launch onboarding

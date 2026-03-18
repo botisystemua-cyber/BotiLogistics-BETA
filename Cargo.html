@@ -58,6 +58,7 @@
             position: sticky;
             top: 52px;
             height: calc(100vh - 52px);
+            padding-bottom: 60px;
             box-shadow: 4px 0 20px rgba(0,0,0,0.08);
             transition: width 0.3s ease, min-width 0.3s ease;
             min-width: 300px;
@@ -9101,6 +9102,9 @@ function onbEnsureSideMenuOpen() {
         if (typeof renderMobileCalendar === 'function') renderMobileCalendar();
         if (typeof updateMobileVehicles === 'function') updateMobileVehicles();
     }
+    // Raise side menu above onboarding overlay so it's fully visible
+    if (menu) menu.style.zIndex = '10003';
+    if (overlay) overlay.style.zIndex = '10002';
 }
 
 function onbEnsureMobileSectionOpen(sectionId) {
@@ -9157,7 +9161,7 @@ const CARGO_ONBOARDING = [
         icon: '🧭',
         title: 'Фільтр: Напрямок',
         text: 'Оберіть напрямок: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Кнопка <strong>Нові (24 год)</strong> покаже свіжі посилки.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDirectionSection'); onbEnsurePcSectionOpen('pcSectionDirection'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDirection'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionDirection')?.closest('.pc-sidebar-section');
@@ -9168,7 +9172,7 @@ const CARGO_ONBOARDING = [
         icon: '📅',
         title: 'Фільтр: Дата відправки',
         text: 'Оберіть <strong>дату відправки</strong> в календарі. Дні з посилками підсвічені — натисніть, щоб побачити тільки їх.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileDatesSection'); onbEnsurePcSectionOpen('pcSectionDate'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDate'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionDate')?.closest('.pc-sidebar-section');
@@ -9179,7 +9183,7 @@ const CARGO_ONBOARDING = [
         icon: '🚐',
         title: 'Фільтр: Автомобіль',
         text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже посилки без транспорту.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileVehiclesSection'); onbEnsurePcSectionOpen('pcSectionVehicles'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionVehicles'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionVehicles')?.closest('.pc-sidebar-section');
@@ -9190,7 +9194,7 @@ const CARGO_ONBOARDING = [
         icon: '🚀',
         title: 'Фільтр: Маршрути',
         text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити його посилки. Видаляти можна <strong>тільки з маршруту</strong> або <strong>повністю</strong>.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileRoutesSection'); onbEnsurePcSectionOpen('pcSectionRoutes'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionRoutes'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionRoutes')?.closest('.pc-sidebar-section');
@@ -9201,7 +9205,7 @@ const CARGO_ONBOARDING = [
         icon: '📋',
         title: 'Фільтр: Статуси',
         text: 'Перегляд <strong>архівованих</strong> посилок та інших статусів. Завершені доставки переносьте в архів — вони не заважають, але завжди доступні.',
-        before: () => { onbEnsureSideMenuOpen(); onbEnsureMobileSectionOpen('mobileActionsSection'); onbEnsurePcSectionOpen('pcSectionActions'); },
+        before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionActions'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
             return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
@@ -9408,6 +9412,11 @@ function closeOnb() {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 300);
     }
+    // Restore side menu z-index
+    const menu = document.getElementById('sideMenu');
+    const menuOverlay = document.getElementById('sideMenuOverlay');
+    if (menu) menu.style.zIndex = '';
+    if (menuOverlay) menuOverlay.style.zIndex = '';
 }
 
 // Launch onboarding

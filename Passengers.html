@@ -7535,11 +7535,20 @@ function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
             tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:${Math.min(tWidth, 180)}px;max-width:${tWidth}px;min-width:100px;`;
             arrowClass = 'arrow-left';
         } else {
-            // Element outside menu (e.g. bottom-nav button) — position above it
-            const tTop = Math.max(10, rect.top - 160);
+            // Element outside menu — smart position based on element location
+            const isNearBottom = rect.top > window.innerHeight * 0.5;
             const tLeft = Math.max(8, Math.min(rect.left - 40, window.innerWidth - 188));
-            tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:180px;`;
-            arrowClass = 'arrow-top';
+            if (isNearBottom) {
+                // Bottom element (e.g. bottom-nav) — tooltip ABOVE, arrow at bottom pointing down
+                const tTop = Math.max(10, rect.top - 190);
+                tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:180px;`;
+                arrowClass = 'arrow-bottom';
+            } else {
+                // Top element (e.g. search input) — tooltip BELOW, arrow at top pointing up
+                const tTop = rect.bottom + 14;
+                tStyle = `position:fixed;top:${tTop}px;left:${tLeft}px;width:180px;`;
+                arrowClass = 'arrow-top';
+            }
         }
 
         tipLayer.innerHTML = `

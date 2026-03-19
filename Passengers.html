@@ -1492,6 +1492,12 @@
         .onboarding-tooltip-mobile .onboarding-btns { flex-wrap: wrap; gap: 4px; }
         .onboarding-tooltip-mobile .onboarding-btn { padding: 5px 8px; font-size: 10px; }
         .onboarding-tooltip-mobile .onboarding-btn.skip { font-size: 9px; padding: 4px 2px; }
+        @keyframes onb-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+        .onb-click-zone { animation: onb-pulse 1.5s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -7584,6 +7590,113 @@ const PASSENGER_ONBOARDING = [
         text: 'Видалить запис. Перед видаленням буде <strong>запит на підтвердження</strong>.',
         target: () => document.querySelector('.lead-card .card-actions.show .btn-delete'),
         arrow: 'top'
+    },
+    // ── Bulk actions tutorial ──
+    {
+        icon: '☑️',
+        title: 'Масові дії: Вибір',
+        text: 'Натисніть <strong>чекбокс</strong> зліва на картці, щоб вибрати її. З\'явиться панель масових дій.',
+        before: () => {
+            // Close card actions/details, clear previous selection
+            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+            if (openDetailsId) { document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show'); openDetailsId = null; }
+            clearSelection();
+        },
+        target: () => document.querySelector('.lead-card .card-checkbox-wrap'),
+        arrow: 'top',
+        afterDelay: () => {
+            const card = document.querySelector('.lead-card');
+            if (card) toggleSelect(card.dataset.uid);
+            onbEnsureBulkVisible();
+        },
+        afterTarget: () => onbIsMobile()
+            ? document.getElementById('bulkActionsBar')
+            : document.getElementById('bulkActionsSidebar'),
+        afterArrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '☑️',
+        title: 'Вибрати всіх',
+        text: 'Одразу <strong>виділяє всіх</strong> видимих пасажирів для масової дії.',
+        before: () => {
+            onbEnsureBulkVisible();
+            const card = document.querySelector('.lead-card');
+            if (card && !selectedIds.has(card.dataset.uid)) toggleSelect(card.dataset.uid);
+        },
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn.select-all')
+            : document.querySelector('#bulkActionsSidebar .bulk-sidebar-btn[onclick="selectAllVisible()"]'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '🚐',
+        title: 'Призначити авто',
+        text: 'Призначає <strong>автомобіль</strong> усім вибраним пасажирам одночасно.',
+        before: () => onbEnsureBulkVisible(),
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn.vehicle')
+            : document.querySelector('#bulkActionsSidebar .bulk-sidebar-btn[onclick="openBulkVehicleModal()"]'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '⚡',
+        title: 'Оптимізація',
+        text: 'Автоматично <strong>оптимізує порядок</strong> вибраних пасажирів для найкращого маршруту.',
+        before: () => onbEnsureBulkVisible(),
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn.optimize')
+            : document.querySelector('#bulkActionsSidebar .bulk-sidebar-btn[onclick="bulkOptimize()"]'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '🚀',
+        title: 'В маршрут',
+        text: 'Додає вибраних пасажирів до <strong>нового або існуючого маршруту</strong>.',
+        before: () => onbEnsureBulkVisible(),
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn.route')
+            : document.querySelector('#bulkActionsSidebar .bulk-sidebar-btn[onclick="bulkMoveToRoute()"]'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '🏷️',
+        title: 'Протегувати',
+        text: 'Додає <strong>тег</strong> до вибраних пасажирів для зручної організації.',
+        before: () => onbEnsureBulkVisible(),
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn[onclick="openTagModal()"]')
+            : document.querySelector('#bulkActionsSidebar .bulk-sidebar-btn[onclick="openTagModal()"]'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
+    },
+    {
+        icon: '📦',
+        title: 'Архівувати',
+        text: 'Переносить вибраних пасажирів в <strong>архів</strong>. Вони не зникають — завжди можна відновити.',
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn.archive')
+            : document.querySelector('#bulkActionsSidebar #btnSidebarArchive'),
+        arrow: () => onbIsMobile() ? 'top' : 'left',
+        before: () => {
+            onbEnsureBulkVisible();
+            // On desktop, open "Ще дії" if not visible
+            if (!onbIsMobile()) {
+                const sec = document.getElementById('bulkSecondaryActions');
+                if (sec && sec.style.display !== 'flex') {
+                    const toggle = document.getElementById('bulkMoreToggle');
+                    if (toggle) toggle.click();
+                }
+            }
+        }
+    },
+    {
+        icon: '🗑️',
+        title: 'Масове видалення',
+        text: 'Видаляє <strong>всіх вибраних</strong> пасажирів. Буде запит на підтвердження.',
+        before: () => onbEnsureBulkVisible(),
+        target: () => onbIsMobile()
+            ? document.querySelector('#bulkActionsBar .bulk-btn[onclick="bulkDelete()"]')
+            : document.querySelector('#bulkActionsSidebar #btnSidebarDelete'),
+        arrow: () => onbIsMobile() ? 'top' : 'left'
     }
 ];
 
@@ -7595,6 +7708,20 @@ function initPassengerOnboarding() {
     if (localStorage.getItem('passengers_onboarding_disabled') === 'true') return;
     if (localStorage.getItem('passengers_onboarding_seen') === 'true') return;
     setTimeout(() => showPassengerOnboarding(), 900);
+}
+
+function onbEnsureBulkVisible() {
+    // Lift bulk panels above onboarding overlay during bulk steps
+    const sidebar = document.getElementById('bulkActionsSidebar');
+    const bar = document.getElementById('bulkActionsBar');
+    if (sidebar) sidebar.style.zIndex = '10003';
+    if (bar) bar.style.zIndex = '10003';
+}
+function onbResetBulkZIndex() {
+    const sidebar = document.getElementById('bulkActionsSidebar');
+    const bar = document.getElementById('bulkActionsBar');
+    if (sidebar) sidebar.style.zIndex = '';
+    if (bar) bar.style.zIndex = '';
 }
 
 function showPassengerOnboarding() {
@@ -7801,6 +7928,7 @@ function renderOnbStep() {
                 // Create clickable zone on top of spotlight
                 if (onbClickZone) onbClickZone.remove();
                 onbClickZone = document.createElement('div');
+                onbClickZone.className = 'onb-click-zone';
                 onbClickZone.style.cssText = `position:fixed;top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;z-index:10006;cursor:pointer;border-radius:12px;`;
                 document.body.appendChild(onbClickZone);
                 onbClickZone.addEventListener('click', function handler() {
@@ -7888,6 +8016,9 @@ function closeOnb() {
         document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open');
         openActionsId = null;
     }
+    // Clear bulk selection & reset z-index
+    onbResetBulkZIndex();
+    if (selectedIds.size > 0) clearSelection();
 }
 
 // Launch onboarding

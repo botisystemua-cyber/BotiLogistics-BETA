@@ -260,6 +260,10 @@ function doPost(e) {
         if (!payload.companyId) return respond({ success: false, error: 'Не вказано companyId' });
         return respond(fixMissingCompanyId(payload.companyId));
 
+      // --- ЛОГУВАННЯ З ФРОНТУ ---
+      case 'logAction':
+        return respond(logActionFromClient(payload));
+
       // --- ДЕБАГ ---
       case 'getStructure':
         return respond(getStructure());
@@ -850,28 +854,23 @@ function handleDriverStatusUpdate(data) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-    // Логуємо
+    // Логуємо (тільки якщо аркуш вже існує)
     var logSheet = ss.getSheetByName(SHEET_LOGS);
-    if (!logSheet) {
-      logSheet = ss.insertSheet(SHEET_LOGS);
-      logSheet.getRange(1, 1, 1, 8).setValues([[
-        'Дата', 'Час', 'Водій', 'Маршрут', 'ІД пасажира', 'Адреса', 'Статус', 'Причина'
-      ]]);
-      logSheet.getRange(1, 1, 1, 8)
-        .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold');
+    if (logSheet) {
+      var now = new Date();
+      logSheet.appendRow([
+        Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
+        Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
+        data.driverId || '',
+        data.routeName || '',
+        data.passengerId || data.deliveryNumber || '',
+        data.address || '',
+        data.status || '',
+        data.cancelReason || ''
+      ]);
     }
 
-    var now = new Date();
-    logSheet.appendRow([
-      Utilities.formatDate(now, 'Europe/Kiev', 'yyyy-MM-dd'),
-      Utilities.formatDate(now, 'Europe/Kiev', 'HH:mm:ss'),
-      data.driverId || '',
-      data.routeName || '',
-      data.passengerId || data.deliveryNumber || '',
-      data.address || '',
-      data.status || '',
-      data.cancelReason || ''
-    ]);
+    var now = now || new Date();
 
     // Оновлюємо в маршруті
     var routeSheet = ss.getSheetByName(data.routeName);
@@ -916,6 +915,7 @@ function handleDriverStatusUpdate(data) {
         }
 
         rowsUpdated++;
+        break; // Один пасажир — один рядок, не оновлюємо дублікати
       }
     }
 
@@ -1565,9 +1565,44 @@ function addPassengerToRoute(payload) {
 }
 
 // ============================================
+// logActionFromClient — Логування дій з фронтенду
+// ============================================
+var ACTION_LABELS = {
+  'savePackage': 'Збереження посилки', 'archivePackage': 'Архівація', 'deletePackage': 'Видалення назавжди',
+  'bulkArchive': 'Масовий архів', 'bulkRestore': 'Масове відновлення', 'bulkDeleteForever': 'Масове видалення назавжди',
+  'bulkRefuse': 'Масова відмова', 'copyToRoute': 'Копіювання в маршрут',
+  'bulkAssignVehicle': 'Масове призначення авто', 'assignVehicle': 'Призначення авто',
+  'deleteFromRoute': 'Видалення з маршруту', 'bulkDeleteFromRoute': 'Масове видалення з маршруту',
+  'bulkSetDriverStatus': 'Масова зміна статусу водія', 'restoreToOriginal': 'Відновлення до оригіналу',
+  'savePassenger': 'Збереження пасажира', 'updatePassenger': 'Оновлення пасажира',
+  'archivePassenger': 'Архівація пасажира', 'restorePassenger': 'Відновлення пасажира',
+  'deletePassenger': 'Видалення пасажира', 'bulkTransfer': 'Масова пересадка',
+  'bulkRemoveVehicle': 'Масове зняття авто', 'applyStatus': 'Зміна статусу',
+  'moveDirection': 'Зміна напрямку',
+  'loginSuccess': 'Вхід в систему', 'loginFailed': 'Невдалий вхід', 'logout': 'Вихід з системи',
+  'addUser': 'Додавання користувача', 'deleteUser': 'Видалення користувача', 'changePassword': 'Зміна паролю',
+  'openRoute': 'Відкриття маршруту', 'driverSetStatus': 'Водій: зміна статусу',
+  'driverCancel': 'Водій: скасування', 'driverUndoStatus': 'Водій: відміна статусу',
+  'driverSetPassengerStatus': 'Водій: статус пасажира', 'driverAddLead': 'Водій: новий лід',
+  'driverEditDelivery': 'Водій: редагування'
+};
+
+function logActionFromClient(payload) {
+  var actionKey = payload.logAction || 'unknown';
+  var actionLabel = ACTION_LABELS[actionKey] || actionKey;
+  var object = payload.object || '';
+  var count = payload.count || '';
+  var detail = payload.detail || '';
+  var user = payload.user || '';
+
+  writeLog(actionLabel, object, count, detail, '', user);
+  return { success: true };
+}
+
+// ============================================
 // ЛОГУВАННЯ — пише в архівну таблицю, аркуш "Логи"
 // ============================================
-var ARCHIVE_SS_ID_LOG = '1Kmf6NF1sJUi-j3SamrhUqz337pcZSvZCUkGxBzari6U';
+var ARCHIVE_SS_ID_LOG = '1MxX6aA1kZYmBwgI2g2pylxSZz-Tzvi0v0YyJENWXBPw';
 
 function writeLog(action, sheetName, rowNum, detail, extra, user) {
   try {
@@ -1575,7 +1610,7 @@ function writeLog(action, sheetName, rowNum, detail, extra, user) {
     var logSheet = archiveSS.getSheetByName('Логи');
     if (!logSheet) {
       logSheet = archiveSS.insertSheet('Логи');
-      logSheet.appendRow(['Дата/Час', 'Джерело', 'Користувач', 'Дія', 'Аркуш', 'Рядок', 'Деталі']);
+      logSheet.appendRow(['Дата/Час', 'Модуль', 'Користувач', 'Дія', 'Об\'єкт', 'К-сть', 'Деталі']);
       logSheet.getRange(1, 1, 1, 7)
         .setBackground('#1a1a2e').setFontColor('#ffffff').setFontWeight('bold');
       logSheet.setFrozenRows(1);

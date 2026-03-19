@@ -1939,9 +1939,6 @@
             <button class="bulk-sidebar-btn" id="btnSidebarArchive" onclick="bulkArchive()">
                 <span class="btn-icon">📦</span> Архівувати
             </button>
-            <button class="bulk-sidebar-btn" id="btnSidebarRefuse" onclick="bulkRefuse()">
-                <span class="btn-icon">❌</span> Відмова
-            </button>
             <button class="bulk-sidebar-btn" id="btnSidebarDelete" onclick="bulkDelete()">
                 <span class="btn-icon">🗑️</span> Видалити
             </button>
@@ -3633,7 +3630,6 @@ function updateBulkBar() {
     const sidebarDeleteForever = document.getElementById('btnSidebarDeleteForever');
     const sidebarMoreToggle = document.getElementById('bulkMoreToggle');
     const sidebarArchive = document.getElementById('btnSidebarArchive');
-    const sidebarRefuse = document.getElementById('btnSidebarRefuse');
     const sidebarDelete = document.getElementById('btnSidebarDelete');
     const sidebarSecondary = document.getElementById('bulkSecondaryActions');
     const bulkSidebarMainActions = document.getElementById('bulkSidebarMainActions');
@@ -3663,7 +3659,6 @@ function updateBulkBar() {
         // В маршрутах: ховаємо "Ще дії", Архівувати, Відмова; показуємо тільки Видалити + кнопки відмітки
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = 'none';
         if (sidebarArchive) sidebarArchive.style.display = 'none';
-        if (sidebarRefuse) sidebarRefuse.style.display = 'none';
         if (sidebarDelete) sidebarDelete.style.display = 'flex';
         if (sidebarSecondary) { sidebarSecondary.style.display = 'flex'; sidebarSecondary.classList.add('expanded'); }
         if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';
@@ -3677,7 +3672,6 @@ function updateBulkBar() {
     } else {
         if (sidebarMoreToggle) sidebarMoreToggle.style.display = '';
         if (sidebarArchive) sidebarArchive.style.display = '';
-        if (sidebarRefuse) sidebarRefuse.style.display = '';
         if (sidebarDelete) sidebarDelete.style.display = '';
         if (sidebarSecondary) sidebarSecondary.style.display = '';
         if (bulkSidebarMainActions) bulkSidebarMainActions.style.display = '';

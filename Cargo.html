@@ -2842,6 +2842,7 @@ async function retryOfflineBuffer() {
 
     let sent = 0;
     for (const pkg of buf) {
+        const tempId = pkg.id;
         try {
             const payload = {
                 action: 'addPackage',
@@ -2862,7 +2863,7 @@ async function retryOfflineBuffer() {
                 // Оновлюємо локальний пакет
                 const p = packages.find(x => x.id === pkg.id);
                 if (p) { p.id = data.id; p._sheet = data.sheet; p._rowNum = data.rowNum; }
-                removeFromOfflineBuffer(pkg.id);
+                removeFromOfflineBuffer(tempId);
                 sent++;
             }
         } catch(e) {
@@ -8740,6 +8741,7 @@ function savePackageToServer(pkg) {
 
     // Зберігаємо в офлайн буфер на випадок помилки
     addToOfflineBuffer(pkg);
+    const tempId = pkg.id; // зберігаємо тимчасовий ID до того як сервер його перезапише
 
     const payload = {
         action: 'addPackage',
@@ -8786,7 +8788,7 @@ function savePackageToServer(pkg) {
                     p._rowNum = data.rowNum;
                 }
                 // Видаляємо з офлайн буфера — успішно збережено
-                removeFromOfflineBuffer(pkg.id);
+                removeFromOfflineBuffer(tempId);
                 saveSettings();
                 render();
                 showBigNotify(
@@ -8812,7 +8814,7 @@ function savePackageToServer(pkg) {
         } catch(e) {
             // GAS повернув не-JSON — дані збережені, синхронізуємо
             console.warn('Save response not JSON, syncing...', text.substring(0, 100));
-            removeFromOfflineBuffer(pkg.id);
+            removeFromOfflineBuffer(tempId);
             showBigNotify(
                 'ДОДАНО В УСІ ПОСИЛКИ',
                 'Посилку збережено в загальний список',

@@ -7493,6 +7493,69 @@ const PASSENGER_ONBOARDING = [
             return document.getElementById('pcSectionActions')?.closest('.pc-sidebar-section');
         },
         arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '👆',
+        title: 'Деталі картки',
+        text: 'Натисніть на картку, щоб переглянути повну інформацію — примітки, статус оплати, дату та інші деталі.',
+        before: () => {
+            const menu = document.getElementById('sideMenu');
+            if (menu && menu.classList.contains('open')) closeSideMenu();
+            // Close any open details/actions
+            if (openDetailsId) { document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show'); openDetailsId = null; }
+            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+        },
+        target: () => document.querySelector('.lead-card .card-body'),
+        arrow: 'top'
+    },
+    {
+        icon: '🔽',
+        title: 'Кнопка дій',
+        text: 'Натисніть <strong>стрілку ▼</strong> справа на картці, щоб відкрити панель швидких дій.',
+        before: () => {
+            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+        },
+        target: () => document.querySelector('.lead-card .card-actions-toggle'),
+        arrow: () => onbIsMobile() ? 'left' : 'left'
+    },
+    {
+        icon: '📞',
+        title: 'Дзвонити',
+        text: 'Натисніть, щоб <strong>одразу зателефонувати</strong> клієнту на вказаний номер.',
+        before: () => {
+            const card = document.querySelector('.lead-card');
+            if (card) { const uid = card.dataset.uid; if (openActionsId !== uid) toggleActions(uid); }
+        },
+        target: () => document.querySelector('.lead-card .card-actions.show .btn-call'),
+        arrow: 'top'
+    },
+    {
+        icon: '💬',
+        title: 'Писати',
+        text: 'Відкриє вибір <strong>месенджера</strong> — Viber, Telegram, WhatsApp або SMS.',
+        target: () => document.querySelector('.lead-card .card-actions.show .btn-msg'),
+        arrow: 'top'
+    },
+    {
+        icon: '🗺️',
+        title: 'Карта',
+        text: 'Покаже <strong>місцезнаходження</strong> клієнта на карті.',
+        target: () => document.querySelector('.lead-card .card-actions.show .btn-map'),
+        arrow: 'top'
+    },
+    {
+        icon: '✏️',
+        title: 'Редагувати',
+        text: 'Відкриє форму <strong>редагування</strong> — змінити дані, дату, авто, примітку та інше.',
+        target: () => document.querySelector('.lead-card .card-actions.show .btn-edit'),
+        arrow: 'top'
+    },
+    {
+        icon: '🗑️',
+        title: 'Видалити',
+        text: 'Видалить запис. Перед видаленням буде <strong>запит на підтвердження</strong>.',
+        target: () => document.querySelector('.lead-card .card-actions.show .btn-delete'),
+        arrow: 'top'
     }
 ];
 
@@ -7750,6 +7813,12 @@ function closeOnb() {
     const menuOverlay = document.getElementById('sideMenuOverlay');
     if (menu) menu.style.zIndex = '';
     if (menuOverlay) menuOverlay.style.zIndex = '';
+    // Close any card actions opened during tutorial
+    if (openActionsId) {
+        document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show');
+        document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open');
+        openActionsId = null;
+    }
 }
 
 // Launch onboarding

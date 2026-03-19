@@ -2303,7 +2303,7 @@
             
             <div class="optimize-section">
                 <label class="optimize-label">📍 Точка старту:</label>
-                <input type="text" class="optimize-input" id="optimizeStart" placeholder="Залиште пустим → Ужгород">
+                <input type="text" class="optimize-input" id="optimizeStart" placeholder="Залиште пустим → перша точка">
                 <small class="optimize-hint">Звідки починається маршрут</small>
             </div>
             
@@ -6460,7 +6460,7 @@ function selectOptimizeBy(by) {
 
 // Google Maps API key (same as Apps Script)
 const GMAPS_API_KEY = 'AIzaSyCthPzhD6zDM9zR-re0R2ceohyhCRdawNc';
-const DEFAULT_START = { lat: 48.6209, lng: 22.2879, name: 'Ужгород' };
+// Start point буде визначатися з першої геокодованої точки, якщо не вказано вручну
 const MAX_POINTS_PER_MAP = 25;
 
 async function geocodeAddressClient(address) {
@@ -6617,21 +6617,7 @@ async function startOptimization() {
     const endAddress = document.getElementById('optimizeEnd').value.trim();
 
     try {
-        // Resolve start coords
-        let startCoords = { ...DEFAULT_START };
-        if (startAddress) {
-            const sc = await geocodeAddressClient(startAddress);
-            if (sc) startCoords = { lat: sc.lat, lng: sc.lng, name: startAddress };
-        }
-
-        // Resolve end coords
-        let endCoords = null;
-        if (endAddress) {
-            const ec = await geocodeAddressClient(endAddress);
-            if (ec) endCoords = { lat: ec.lat, lng: ec.lng, name: endAddress };
-        }
-
-        // Geocode all packages
+        // Geocode all packages first
         const items = [];
         const notGeocoded = [];
 
@@ -6655,6 +6641,23 @@ async function startOptimization() {
             document.getElementById('optimizeLoadingBody').style.display = 'none';
             document.getElementById('optimizeFormFooter').style.display = 'flex';
             return showToast('❌ Жодну адресу не вдалось знайти');
+        }
+
+        // Resolve start coords (якщо не вказано — перша геокодована точка)
+        let startCoords = null;
+        if (startAddress) {
+            const sc = await geocodeAddressClient(startAddress);
+            if (sc) startCoords = { lat: sc.lat, lng: sc.lng, name: startAddress };
+        }
+        if (!startCoords) {
+            startCoords = { lat: items[0].coords.lat, lng: items[0].coords.lng, name: items[0].address };
+        }
+
+        // Resolve end coords
+        let endCoords = null;
+        if (endAddress) {
+            const ec = await geocodeAddressClient(endAddress);
+            if (ec) endCoords = { lat: ec.lat, lng: ec.lng, name: endAddress };
         }
 
         // Оптимізація маршруту: спочатку Google Directions API, потім fallback на Nearest Neighbor

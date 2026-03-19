@@ -2147,7 +2147,7 @@
             
             <div class="optimize-section">
                 <label class="optimize-label">📍 Точка старту:</label>
-                <input type="text" class="optimize-input" id="optimizeStart" placeholder="Залиште пустим → Ужгород">
+                <input type="text" class="optimize-input" id="optimizeStart" placeholder="Залиште пустим → перша точка">
                 <small class="optimize-hint">Звідки починається маршрут</small>
             </div>
             
@@ -5892,7 +5892,7 @@ function generateOptimizeMapLinks(orderedPassengers, startAddr, endAddr) {
         const chunk = orderedPassengers.slice(chunkStart, chunkEnd);
 
         const origin = chunkStart === 0
-            ? (startAddr || 'Ужгород')
+            ? (startAddr || orderedPassengers[0].address)
             : orderedPassengers[chunkStart - 1].address;
 
         let destination, waypointItems;
@@ -5938,7 +5938,7 @@ async function startOptimization() {
         if (pr && progress !== undefined) pr.textContent = progress;
     }
 
-    const startAddress = document.getElementById('optimizeStart').value.trim() || 'Ужгород';
+    const startAddress = document.getElementById('optimizeStart').value.trim();
     const endAddress = document.getElementById('optimizeEnd').value.trim();
     const optimizeLabel = optimizeBy === 'from' ? 'Адреса ВІДПРАВКИ' : 'Адреса ПРИБУТТЯ';
 
@@ -6000,8 +6000,15 @@ async function startOptimization() {
         }
 
         // 3. Геокодуємо старт та фініш
-        updateOptStatus('📍 Геокодування старту...', '');
-        const startCoords = await geocodeClient(startAddress) || { lat: 48.6209, lng: 22.2879 };
+        let startCoords = null;
+        if (startAddress) {
+            updateOptStatus('📍 Геокодування старту...', '');
+            startCoords = await geocodeClient(startAddress);
+        }
+        if (!startCoords) {
+            // Якщо старт не вказано або не геокодовано — беремо першу точку зі списку
+            startCoords = geocoded[0].coords;
+        }
         let endCoords = null;
         if (endAddress) {
             updateOptStatus('📍 Геокодування фінішу...', '');
@@ -6044,7 +6051,7 @@ async function startOptimization() {
         showOptimizationResult({
             success: true,
             optimizeBy: optimizeLabel,
-            start: startAddress,
+            start: startAddress || orderedPassengers[0].address,
             end: endAddress || '(остання точка)',
             stats: {
                 total: withAddress.length,

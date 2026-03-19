@@ -7589,6 +7589,7 @@ const PASSENGER_ONBOARDING = [
 
 let onbStep = 0;
 let onbAfterTimer = null;
+let onbClickZone = null;
 
 function initPassengerOnboarding() {
     if (localStorage.getItem('passengers_onboarding_disabled') === 'true') return;
@@ -7714,8 +7715,9 @@ function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
 }
 
 function renderOnbStep() {
-    // Cancel any pending afterDelay animation from previous step
+    // Cancel any pending animation / clickable zone from previous step
     if (onbAfterTimer) { clearTimeout(onbAfterTimer); onbAfterTimer = null; }
+    if (onbClickZone) { onbClickZone.remove(); onbClickZone = null; }
 
     const hint = PASSENGER_ONBOARDING[onbStep];
     const total = PASSENGER_ONBOARDING.length;
@@ -7791,12 +7793,24 @@ function renderOnbStep() {
         setTimeout(() => {
             onbRenderSpotlight(overlay, el, hint, onbStep, total, dots, btns);
 
-            // Step 4: If hint has afterDelay — wait 1s, run callback, re-render spotlight on new target
+            // Step 4: If hint has afterDelay — add clickable zone over spotlight
             if (hint.afterDelay) {
                 const savedStep = onbStep;
-                onbAfterTimer = setTimeout(() => {
+                const rect = el.getBoundingClientRect();
+                const pad = 6;
+                // Create clickable zone on top of spotlight
+                if (onbClickZone) onbClickZone.remove();
+                onbClickZone = document.createElement('div');
+                onbClickZone.style.cssText = `position:fixed;top:${rect.top - pad}px;left:${rect.left - pad}px;width:${rect.width + pad * 2}px;height:${rect.height + pad * 2}px;z-index:10006;cursor:pointer;border-radius:12px;`;
+                document.body.appendChild(onbClickZone);
+                onbClickZone.addEventListener('click', function handler() {
+                    onbClickZone.removeEventListener('click', handler);
+                    onbClickZone.remove();
+                    onbClickZone = null;
                     if (onbStep !== savedStep) return;
+                    // Execute the afterDelay action (toggleDetails/toggleActions)
                     hint.afterDelay();
+                    // Wait for DOM to update, then re-render spotlight on new target
                     setTimeout(() => {
                         if (onbStep !== savedStep) return;
                         const newEl = typeof hint.afterTarget === 'function' ? hint.afterTarget() : null;
@@ -7804,13 +7818,12 @@ function renderOnbStep() {
                             newEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                             setTimeout(() => {
                                 if (onbStep !== savedStep) return;
-                                // Use afterArrow if specified for correct arrow direction
                                 const afterHint = hint.afterArrow ? Object.assign({}, hint, { arrow: hint.afterArrow }) : hint;
                                 onbRenderSpotlight(overlay, newEl, afterHint, onbStep, total, dots, btns);
                             }, 400);
                         }
                     }, 350);
-                }, 1000);
+                });
             }
         }, 500);
     }, 400);
@@ -7852,6 +7865,8 @@ function disableOnb() {
 }
 
 function closeOnb() {
+    if (onbAfterTimer) { clearTimeout(onbAfterTimer); onbAfterTimer = null; }
+    if (onbClickZone) { onbClickZone.remove(); onbClickZone = null; }
     const overlay = document.getElementById('onbOverlay');
     if (overlay) {
         overlay.classList.remove('show');

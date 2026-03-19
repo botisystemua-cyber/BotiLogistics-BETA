@@ -1430,7 +1430,7 @@
         .onboarding-spotlight {
             position: absolute; border-radius: 12px;
             box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-            transition: all 0.4s ease;
+            transition: all 0.15s ease;
             z-index: 10004;
             pointer-events: none;
         }
@@ -1439,7 +1439,7 @@
             background: white; border-radius: 14px; padding: 22px 20px;
             max-width: 340px; width: max-content; min-width: 260px;
             box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-            transition: all 0.35s ease;
+            transition: all 0.12s ease;
         }
         .onboarding-tooltip::before {
             content: ''; position: absolute;
@@ -7416,7 +7416,7 @@ function onbScrollSidebarTo(el) {
     // How far the element is from the top of the visible container area
     const offset = elRect.top - containerRect.top;
     // Scroll so element is ~60px from top of container
-    container.scrollTo({ top: container.scrollTop + offset - 60, behavior: 'smooth' });
+    container.scrollTo({ top: container.scrollTop + offset - 60, behavior: 'instant' });
 }
 
 const PASSENGER_ONBOARDING = [
@@ -7449,6 +7449,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🧭',
         title: 'Фільтр: Напрямок',
         text: 'Оберіть напрямок поїздки: <strong>Україна→Європа</strong> або <strong>Європа→Україна</strong>. Також тут є кнопка <strong>Нові (24 год)</strong> — показує свіжих пасажирів.',
+        beforeDelay: 350,
         before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDirection'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDirectionSection')?.closest('.side-menu-section');
@@ -7460,6 +7461,7 @@ const PASSENGER_ONBOARDING = [
         icon: '📅',
         title: 'Фільтр: Дата виїзду',
         text: 'Оберіть конкретну <strong>дату виїзду</strong> в календарі. Дні з пасажирами підсвічені — натисніть, щоб побачити тільки їх.',
+        beforeDelay: 350,
         before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionDate'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileDatesSection')?.closest('.side-menu-section');
@@ -7471,6 +7473,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🚐',
         title: 'Фільтр: Автомобіль',
         text: 'Фільтруйте по <strong>призначеному авто</strong>. Пункт <strong>«Без авто»</strong> покаже пасажирів, яким ще не призначили транспорт.',
+        beforeDelay: 350,
         before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionVehicles'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileVehiclesSection')?.closest('.side-menu-section');
@@ -7482,6 +7485,7 @@ const PASSENGER_ONBOARDING = [
         icon: '🚀',
         title: 'Фільтр: Маршрути',
         text: 'Тут зберігаються <strong>сформовані маршрути</strong>. Натисніть на маршрут, щоб побачити тільки його пасажирів. Видаляти пасажирів можна окремо — тільки з маршруту або повністю.',
+        beforeDelay: 350,
         before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionRoutes'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileRoutesSection')?.closest('.side-menu-section');
@@ -7493,6 +7497,7 @@ const PASSENGER_ONBOARDING = [
         icon: '📋',
         title: 'Фільтр: Статуси',
         text: 'Перегляд <strong>архівованих</strong> та інших статусів. Завершені поїздки переносьте в архів — вони не заважають, але завжди доступні.',
+        beforeDelay: 350,
         before: () => { onbEnsureSideMenuOpen(); if (!onbIsMobile()) onbEnsurePcSectionOpen('pcSectionActions'); },
         target: () => {
             if (onbIsMobile()) return document.getElementById('mobileActionsSection')?.closest('.side-menu-section');
@@ -7897,7 +7902,8 @@ function renderOnbStep() {
         return;
     }
 
-    // Step 1: Wait for before() effects (menu open animation = 350ms)
+    // Step 1: Wait for before() effects (menu open animation needs 350ms, everything else is instant)
+    const beforeDelay = hint.beforeDelay || (hint.before ? 50 : 30);
     setTimeout(() => {
         const el = typeof hint.target === 'function' ? hint.target() : hint.target;
         if (!el) {
@@ -7913,11 +7919,11 @@ function renderOnbStep() {
         if (isInSidebar) {
             onbScrollSidebarTo(el);
         } else {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            el.scrollIntoView({ behavior: 'instant', block: 'nearest' });
         }
 
-        // Step 3: Wait for scroll to finish, then measure & render spotlight
-        setTimeout(() => {
+        // Step 3: Measure & render spotlight (instant after scroll)
+        requestAnimationFrame(() => {
             onbRenderSpotlight(overlay, el, hint, onbStep, total, dots, btns);
 
             // Step 4: If hint has afterDelay — add clickable zone over spotlight
@@ -7936,25 +7942,25 @@ function renderOnbStep() {
                     onbClickZone.remove();
                     onbClickZone = null;
                     if (onbStep !== savedStep) return;
-                    // Execute the afterDelay action (toggleDetails/toggleActions)
+                    // Execute the afterDelay action
                     hint.afterDelay();
-                    // Wait for DOM to update, then re-render spotlight on new target
-                    setTimeout(() => {
+                    // Wait for DOM update, then re-render spotlight on new target
+                    requestAnimationFrame(() => {
                         if (onbStep !== savedStep) return;
                         const newEl = typeof hint.afterTarget === 'function' ? hint.afterTarget() : null;
                         if (newEl) {
-                            newEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                            setTimeout(() => {
+                            newEl.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+                            requestAnimationFrame(() => {
                                 if (onbStep !== savedStep) return;
                                 const afterHint = hint.afterArrow ? Object.assign({}, hint, { arrow: hint.afterArrow }) : hint;
                                 onbRenderSpotlight(overlay, newEl, afterHint, onbStep, total, dots, btns);
-                            }, 400);
+                            });
                         }
-                    }, 350);
+                    });
                 });
             }
-        }, 500);
-    }, 400);
+        });
+    }, beforeDelay);
 }
 
 function nextOnbStep() {

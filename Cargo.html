@@ -9253,26 +9253,37 @@ const CARGO_ONBOARDING = [
     {
         icon: '👆',
         title: 'Деталі картки',
-        text: 'Натисніть на картку, щоб переглянути повну інформацію — примітки, статус оплати, дату отримання та інші деталі.',
+        text: 'Натисніть на картку — розгорнуться <strong>деталі</strong>: примітки, статус оплати, дата отримання та інше. Ось як це виглядає:',
         before: () => {
             const menu = document.getElementById('sideMenu');
             if (menu && menu.classList.contains('open')) closeSideMenu();
-            // Close any open details/actions
-            if (openDetailsId) { const prevCard = document.querySelector(`[data-uid="${openDetailsId}"]`); if (prevCard) prevCard.classList.remove('details-open'); document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show'); openDetailsId = null; }
+            // Close any open actions
             if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+            // Auto-open details on first card
+            const card = document.querySelector('.lead-card');
+            if (card) {
+                const uid = card.dataset.uid;
+                if (openDetailsId !== uid) toggleDetails(uid);
+            }
         },
-        target: () => document.querySelector('.lead-card .card-grid'),
+        target: () => document.querySelector('.lead-card .card-details.show'),
         arrow: 'top'
     },
     {
         icon: '🔽',
         title: 'Кнопка дій',
-        text: 'Натисніть <strong>стрілку ▼</strong> справа на картці, щоб відкрити панель швидких дій.',
+        text: 'Натисніть <strong>стрілку ▼</strong> справа на картці — відкриється панель швидких дій.',
         before: () => {
-            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+            // Close details, open actions
+            const card = document.querySelector('.lead-card');
+            if (card) {
+                const uid = card.dataset.uid;
+                if (openDetailsId) toggleDetails(openDetailsId);
+                if (openActionsId !== uid) toggleActions(uid);
+            }
         },
-        target: () => document.querySelector('.lead-card .card-actions-toggle'),
-        arrow: () => onbIsMobile() ? 'left' : 'left'
+        target: () => document.querySelector('.lead-card .card-actions.show'),
+        arrow: 'top'
     },
     {
         icon: '📞',

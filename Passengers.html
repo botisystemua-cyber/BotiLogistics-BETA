@@ -7501,32 +7501,50 @@ const PASSENGER_ONBOARDING = [
         before: () => {
             const menu = document.getElementById('sideMenu');
             if (menu && menu.classList.contains('open')) closeSideMenu();
-            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
-            if (openDetailsId) { document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show'); openDetailsId = null; }
+            // Close everything first
+            if (openActionsId) {
+                document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show');
+                document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open');
+                openActionsId = null;
+            }
+            if (openDetailsId) {
+                document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show');
+                openDetailsId = null;
+            }
         },
-        target: () => document.querySelector('.lead-card .card-body'),
+        target: () => document.querySelector('.lead-card'),
         arrow: 'top',
         afterDelay: () => {
             const card = document.querySelector('.lead-card');
-            if (card) { const uid = card.dataset.uid; if (openDetailsId !== uid) toggleDetails(uid); }
+            if (card) toggleDetails(card.dataset.uid);
         },
-        afterTarget: () => document.querySelector('.lead-card .card-details.show')
+        afterTarget: () => document.querySelector('.lead-card .card-details.show'),
+        afterArrow: 'top'
     },
     {
         icon: '🔽',
         title: 'Кнопка дій',
         text: 'Натисніть <strong>стрілку ▼</strong> справа на картці — відкриється панель швидких дій.',
         before: () => {
-            if (openDetailsId) toggleDetails(openDetailsId);
-            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
+            // Close everything first
+            if (openDetailsId) {
+                document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show');
+                openDetailsId = null;
+            }
+            if (openActionsId) {
+                document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show');
+                document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open');
+                openActionsId = null;
+            }
         },
         target: () => document.querySelector('.lead-card .card-actions-toggle'),
         arrow: () => onbIsMobile() ? 'left' : 'left',
         afterDelay: () => {
             const card = document.querySelector('.lead-card');
-            if (card) { const uid = card.dataset.uid; if (openActionsId !== uid) toggleActions(uid); }
+            if (card) toggleActions(card.dataset.uid);
         },
-        afterTarget: () => document.querySelector('.lead-card .card-actions.show')
+        afterTarget: () => document.querySelector('.lead-card .card-actions.show'),
+        afterArrow: 'top'
     },
     {
         icon: '📞',
@@ -7777,7 +7795,7 @@ function renderOnbStep() {
             if (hint.afterDelay) {
                 const savedStep = onbStep;
                 onbAfterTimer = setTimeout(() => {
-                    if (onbStep !== savedStep) return; // user navigated away
+                    if (onbStep !== savedStep) return;
                     hint.afterDelay();
                     setTimeout(() => {
                         if (onbStep !== savedStep) return;
@@ -7786,7 +7804,9 @@ function renderOnbStep() {
                             newEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                             setTimeout(() => {
                                 if (onbStep !== savedStep) return;
-                                onbRenderSpotlight(overlay, newEl, hint, onbStep, total, dots, btns);
+                                // Use afterArrow if specified for correct arrow direction
+                                const afterHint = hint.afterArrow ? Object.assign({}, hint, { arrow: hint.afterArrow }) : hint;
+                                onbRenderSpotlight(overlay, newEl, afterHint, onbStep, total, dots, btns);
                             }, 400);
                         }
                     }, 350);

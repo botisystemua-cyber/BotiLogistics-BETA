@@ -9253,37 +9253,36 @@ const CARGO_ONBOARDING = [
     {
         icon: '👆',
         title: 'Деталі картки',
-        text: 'Натисніть на картку — розгорнуться <strong>деталі</strong>: примітки, статус оплати, дата отримання та інше. Ось як це виглядає:',
+        text: 'Натисніть на картку — розгорнуться <strong>деталі</strong>: примітки, статус оплати, дата отримання та інше.',
         before: () => {
             const menu = document.getElementById('sideMenu');
             if (menu && menu.classList.contains('open')) closeSideMenu();
-            // Close any open actions
             if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
-            // Auto-open details on first card
-            const card = document.querySelector('.lead-card');
-            if (card) {
-                const uid = card.dataset.uid;
-                if (openDetailsId !== uid) toggleDetails(uid);
-            }
+            if (openDetailsId) { const prevCard = document.querySelector(`[data-uid="${openDetailsId}"]`); if (prevCard) prevCard.classList.remove('details-open'); document.querySelector(`[data-uid="${openDetailsId}"] .card-details`)?.classList.remove('show'); openDetailsId = null; }
         },
-        target: () => document.querySelector('.lead-card .card-details.show'),
-        arrow: 'top'
+        target: () => document.querySelector('.lead-card .card-grid'),
+        arrow: 'top',
+        afterDelay: () => {
+            const card = document.querySelector('.lead-card');
+            if (card) { const uid = card.dataset.uid; if (openDetailsId !== uid) toggleDetails(uid); }
+        },
+        afterTarget: () => document.querySelector('.lead-card .card-details.show')
     },
     {
         icon: '🔽',
         title: 'Кнопка дій',
         text: 'Натисніть <strong>стрілку ▼</strong> справа на картці — відкриється панель швидких дій.',
         before: () => {
-            // Close details, open actions
-            const card = document.querySelector('.lead-card');
-            if (card) {
-                const uid = card.dataset.uid;
-                if (openDetailsId) toggleDetails(openDetailsId);
-                if (openActionsId !== uid) toggleActions(uid);
-            }
+            if (openDetailsId) toggleDetails(openDetailsId);
+            if (openActionsId) { document.querySelector(`[data-uid="${openActionsId}"] .card-actions`)?.classList.remove('show'); document.querySelector(`[data-uid="${openActionsId}"] .card-actions-toggle`)?.classList.remove('open'); openActionsId = null; }
         },
-        target: () => document.querySelector('.lead-card .card-actions.show'),
-        arrow: 'top'
+        target: () => document.querySelector('.lead-card .card-actions-toggle'),
+        arrow: () => onbIsMobile() ? 'left' : 'left',
+        afterDelay: () => {
+            const card = document.querySelector('.lead-card');
+            if (card) { const uid = card.dataset.uid; if (openActionsId !== uid) toggleActions(uid); }
+        },
+        afterTarget: () => document.querySelector('.lead-card .card-actions.show')
     },
     {
         icon: '📞',
@@ -9327,6 +9326,7 @@ const CARGO_ONBOARDING = [
 ];
 
 let onbStep = 0;
+let onbAfterTimer = null;
 
 function initOnboarding() {
     if (localStorage.getItem('posylki_onboarding_disabled') === 'true') return;
@@ -9450,6 +9450,9 @@ function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
 }
 
 function renderOnbStep() {
+    // Cancel any pending afterDelay animation from previous step
+    if (onbAfterTimer) { clearTimeout(onbAfterTimer); onbAfterTimer = null; }
+
     const hint = CARGO_ONBOARDING[onbStep];
     const total = CARGO_ONBOARDING.length;
     const isLast = onbStep === total - 1;
@@ -9522,6 +9525,26 @@ function renderOnbStep() {
         // Step 3: Wait for scroll to finish, then measure & render spotlight
         setTimeout(() => {
             onbRenderSpotlight(overlay, el, hint, onbStep, total, dots, btns);
+
+            // Step 4: If hint has afterDelay — wait 1s, run callback, re-render spotlight on new target
+            if (hint.afterDelay) {
+                const savedStep = onbStep;
+                onbAfterTimer = setTimeout(() => {
+                    if (onbStep !== savedStep) return; // user navigated away
+                    hint.afterDelay();
+                    setTimeout(() => {
+                        if (onbStep !== savedStep) return;
+                        const newEl = typeof hint.afterTarget === 'function' ? hint.afterTarget() : null;
+                        if (newEl) {
+                            newEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            setTimeout(() => {
+                                if (onbStep !== savedStep) return;
+                                onbRenderSpotlight(overlay, newEl, hint, onbStep, total, dots, btns);
+                            }, 400);
+                        }
+                    }, 350);
+                }, 1000);
+            }
         }, 500);
     }, 400);
 }

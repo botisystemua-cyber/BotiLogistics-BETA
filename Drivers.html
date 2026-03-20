@@ -689,6 +689,86 @@
         .big-notify-sub {
             font-size: 14px; color: #555; font-weight: 500;
         }
+        /* ONBOARDING */
+        .onboarding-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10000; opacity: 0; transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .onboarding-overlay.show { opacity: 1; pointer-events: auto; }
+        .onboarding-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55);
+        }
+        .onboarding-spotlight {
+            position: absolute; border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+            transition: all 0.15s ease;
+            z-index: 10004;
+            pointer-events: none;
+        }
+        .onboarding-tooltip {
+            position: absolute; z-index: 10005;
+            background: white; border-radius: 14px; padding: 22px 20px;
+            max-width: 340px; width: max-content; min-width: 260px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            transition: all 0.12s ease;
+        }
+        .onboarding-tooltip::before {
+            content: ''; position: absolute;
+            width: 14px; height: 14px; background: white;
+            transform: rotate(45deg);
+        }
+        .onboarding-tooltip.arrow-top::before { top: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-bottom::before { bottom: -7px; left: 30px; }
+        .onboarding-tooltip.arrow-left::before { left: -7px; top: 24px; }
+        .onboarding-tooltip.arrow-right::before { right: -7px; top: 24px; }
+        .onboarding-tooltip-icon { font-size: 32px; margin-bottom: 6px; }
+        .onboarding-tooltip-title { font-size: 15px; font-weight: 800; color: #1a3a5e; margin-bottom: 6px; }
+        .onboarding-tooltip-text { font-size: 12.5px; color: #666; line-height: 1.6; margin-bottom: 16px; }
+        .onboarding-tooltip-text strong { color: #333; }
+        .onboarding-dots { display: flex; gap: 6px; margin-bottom: 14px; }
+        .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; transition: all 0.2s; }
+        .onboarding-dot.active { background: #1a3a5e; transform: scale(1.3); }
+        .onboarding-btns { display: flex; gap: 8px; align-items: center; }
+        .onboarding-btn {
+            padding: 8px 16px; border: none; border-radius: 8px; font-size: 12px;
+            font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .onboarding-btn.primary { background: #1a3a5e; color: white; }
+        .onboarding-btn.primary:hover { background: #0d1f3c; }
+        .onboarding-btn.secondary { background: #f0f2f5; color: #666; }
+        .onboarding-btn.secondary:hover { background: #ddd; }
+        .onboarding-btn.skip { background: none; color: #666; font-size: 11px; margin-left: auto; text-decoration: underline; padding: 8px 4px; }
+        .onboarding-btn.skip:hover { color: #d90d0d; }
+        .onboarding-step-num { font-size: 11px; color: #666; font-weight: 600; margin-bottom: 8px; }
+        .onboarding-welcome {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) translateY(20px);
+            z-index: 10002; background: white; border-radius: 16px; padding: 28px 24px;
+            max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center; transition: transform 0.3s ease;
+        }
+        .onboarding-overlay.show .onboarding-welcome { transform: translate(-50%, -50%) translateY(0); }
+        .onboarding-tooltip-mobile {
+            padding: 10px 10px !important;
+            border-radius: 10px !important;
+            min-width: 120px !important;
+        }
+        .onboarding-tooltip-mobile .onboarding-tooltip-icon { display: none; }
+        .onboarding-tooltip-mobile .onboarding-tooltip-title { font-size: 11px; margin-bottom: 3px; }
+        .onboarding-tooltip-mobile .onboarding-tooltip-text { font-size: 10px; line-height: 1.4; margin-bottom: 8px; }
+        .onboarding-tooltip-mobile .onboarding-step-num { font-size: 9px; margin-bottom: 4px; }
+        .onboarding-tooltip-mobile .onboarding-dots { margin-bottom: 8px; }
+        .onboarding-tooltip-mobile .onboarding-dot { width: 5px; height: 5px; }
+        .onboarding-tooltip-mobile .onboarding-btns { flex-wrap: wrap; gap: 4px; }
+        .onboarding-tooltip-mobile .onboarding-btn { padding: 5px 8px; font-size: 10px; }
+        .onboarding-tooltip-mobile .onboarding-btn.skip { font-size: 9px; padding: 4px 2px; }
+        @keyframes onb-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+        .onb-click-zone { animation: onb-pulse 1.5s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -1094,6 +1174,7 @@
                 renderDeliveries();
                 updateStats();
                 showToast('Завантажено ' + deliveries.length + ' записів');
+                initDriverOnboarding();
             } catch (error) {
                 console.error('Помилка завантаження:', error);
                 list.innerHTML = '<div class="loading">&#10060; Помилка: ' + escapeHtml(error.message) + '</div>';
@@ -2465,6 +2546,302 @@
                 if (nav) nav.style.display = 'none';
             }
         };
+        // ==================== ONBOARDING ====================
+        var DRIVER_ONBOARDING = [
+            {
+                icon: '👋', title: 'Вітаємо!',
+                text: 'Це <strong>панель водія</strong>. Тут ви керуєте доставками та пасажирами. Давайте пройдемо коротке навчання!',
+                target: null
+            },
+            {
+                icon: '📋', title: 'Фільтр: Всі рейси',
+                text: 'Показує <strong>всі</strong> записи маршруту. Лічильник відображає загальну кількість.',
+                target: function() { return document.getElementById('filterAll'); },
+                arrow: 'top'
+            },
+            {
+                icon: '🔄', title: 'Фільтр: В процесі',
+                text: 'Фільтрує записи зі статусом <strong>В процесі</strong> — ті, що зараз в роботі.',
+                target: function() { return document.getElementById('filterProgress'); },
+                arrow: 'top'
+            },
+            {
+                icon: '✅', title: 'Фільтр: Готово',
+                text: 'Показує тільки <strong>завершені</strong> доставки або поїздки.',
+                target: function() { return document.getElementById('filterCompleted'); },
+                arrow: 'top'
+            },
+            {
+                icon: '❌', title: 'Фільтр: Скасовано',
+                text: 'Показує <strong>скасовані</strong> записи з причинами відмови.',
+                target: function() { return document.getElementById('filterCancelled'); },
+                arrow: 'top'
+            },
+            {
+                icon: '👆', title: 'Карточка запису',
+                text: 'Кожен запис — це карточка з основною інформацією: <strong>адреса, ТТН, телефон, сума</strong>.',
+                target: function() { return document.querySelector('.delivery-card'); },
+                arrow: 'top'
+            },
+            {
+                icon: '📞', title: 'Дзвінок клієнту',
+                text: 'Натисніть <strong>📞 Дзвонити</strong>, щоб зателефонувати клієнту напряму.',
+                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[0] : null; },
+                arrow: 'top'
+            },
+            {
+                icon: '🗺️', title: 'Навігація',
+                text: 'Кнопка <strong>🗺 Карта</strong> відкриє Google Maps з адресою доставки для навігації.',
+                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[1] : null; },
+                arrow: 'top'
+            },
+            {
+                icon: '📂', title: 'Деталі',
+                text: 'Натисніть <strong>📂 Деталі</strong>, щоб розгорнути повну інформацію по запису.',
+                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[2] : null; },
+                arrow: 'top'
+            },
+            {
+                icon: '🔄', title: 'Зміна статусу',
+                text: 'Кнопки статусу: <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong>, <strong>✏️ Редагувати</strong>. Натисніть для зміни.',
+                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-buttons-card') : null; },
+                arrow: 'top'
+            },
+            {
+                icon: '🔄', title: 'Оновити дані',
+                text: 'Натисніть <strong>🔄 Оновити</strong>, щоб завантажити свіжі дані з сервера.',
+                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[1] : null; },
+                arrow: 'bottom'
+            },
+            {
+                icon: '➕', title: 'Додати запис',
+                text: 'Кнопка <strong>➕ Додати</strong> для створення нового запису вручну.',
+                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[2] : null; },
+                arrow: 'bottom'
+            },
+            {
+                icon: '⚙️', title: 'Налаштування колонок',
+                text: '<strong>⚙️ Колонки</strong> — налаштуйте, які поля відображати на карточках. Приховайте зайве!',
+                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[3] : null; },
+                arrow: 'bottom'
+            }
+        ];
+
+        var onbStep = 0;
+        var onbAfterTimer = null;
+        var onbClickZone = null;
+
+        function onbIsMobile() { return window.innerWidth < 900; }
+
+        function onbGetOrCreateLayer(id, zIndex) {
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:' + zIndex + ';pointer-events:none;';
+                document.body.appendChild(el);
+            }
+            return el;
+        }
+
+        function onbRenderSpotlight(overlay, el, hint, step, total, dots, btns) {
+            var rect = el.getBoundingClientRect();
+            var pad = 6;
+            var spotStyle = 'top:' + (rect.top - pad) + 'px;left:' + (rect.left - pad) + 'px;width:' + (rect.width + pad * 2) + 'px;height:' + (rect.height + pad * 2) + 'px;';
+            var isMobile = onbIsMobile();
+            var arrowDir = typeof hint.arrow === 'function' ? hint.arrow() : (hint.arrow || 'top');
+
+            overlay.innerHTML = '';
+
+            var spotLayer = onbGetOrCreateLayer('onbSpotLayer', 10004);
+            spotLayer.innerHTML = '<div class="onboarding-spotlight" style="' + spotStyle + '"></div>';
+
+            var tipLayer = onbGetOrCreateLayer('onbTipLayer', 10005);
+            tipLayer.style.pointerEvents = 'auto';
+
+            if (isMobile) {
+                var isNearBottom = rect.top > window.innerHeight * 0.5;
+                var tLeft = Math.max(8, Math.min(rect.left - 40, window.innerWidth - 188));
+                var tStyle = '';
+                var arrowClass = '';
+                if (isNearBottom) {
+                    var tTop = Math.max(10, rect.top - 190);
+                    tStyle = 'position:fixed;top:' + tTop + 'px;left:' + tLeft + 'px;width:180px;';
+                    arrowClass = 'arrow-bottom';
+                } else {
+                    var tTop2 = rect.bottom + 14;
+                    tStyle = 'position:fixed;top:' + tTop2 + 'px;left:' + tLeft + 'px;width:180px;';
+                    arrowClass = 'arrow-top';
+                }
+
+                tipLayer.innerHTML =
+                    '<div class="onboarding-tooltip onboarding-tooltip-mobile ' + arrowClass + '" style="' + tStyle + '">' +
+                        '<div class="onboarding-step-num">' + (step + 1) + ' / ' + total + '</div>' +
+                        '<div class="onboarding-tooltip-title">' + hint.title + '</div>' +
+                        '<div class="onboarding-tooltip-text">' + hint.text + '</div>' +
+                        '<div class="onboarding-dots">' + dots + '</div>' +
+                        btns +
+                    '</div>';
+                return;
+            }
+
+            // Desktop positioning
+            var tooltipW = 320;
+            var bottomSafe = 70;
+            var safeLeft = Math.max(10, Math.min(rect.left, window.innerWidth - tooltipW - 10));
+            var tooltipStyle = '';
+
+            if (arrowDir === 'top') {
+                var topPos = rect.bottom + pad + 14;
+                if (topPos + 200 > window.innerHeight - bottomSafe) topPos = Math.max(10, rect.top - pad - 220);
+                tooltipStyle = 'top:' + topPos + 'px;left:' + safeLeft + 'px;';
+            } else if (arrowDir === 'bottom') {
+                tooltipStyle = 'top:' + (rect.top - pad - 14) + 'px;left:' + safeLeft + 'px;transform:translateY(-100%);';
+            } else if (arrowDir === 'left') {
+                var leftPos = rect.right + pad + 14;
+                var topPos2 = Math.max(10, rect.top - 10);
+                var maxTop = window.innerHeight - bottomSafe - 200;
+                if (topPos2 > maxTop) topPos2 = Math.max(10, maxTop);
+                if (leftPos + tooltipW > window.innerWidth) {
+                    leftPos = safeLeft;
+                    topPos2 = rect.bottom + pad + 14;
+                    if (topPos2 + 180 > window.innerHeight - bottomSafe) topPos2 = Math.max(10, rect.top - 200);
+                }
+                tooltipStyle = 'top:' + topPos2 + 'px;left:' + leftPos + 'px;';
+            } else {
+                tooltipStyle = 'top:' + Math.max(10, rect.top - 10) + 'px;left:' + (rect.left - pad - 14) + 'px;transform:translateX(-100%);';
+            }
+
+            tipLayer.innerHTML =
+                '<div class="onboarding-tooltip arrow-' + arrowDir + '" style="' + tooltipStyle + '">' +
+                    '<div class="onboarding-step-num">' + (step + 1) + ' / ' + total + '</div>' +
+                    '<div class="onboarding-tooltip-icon">' + hint.icon + '</div>' +
+                    '<div class="onboarding-tooltip-title">' + hint.title + '</div>' +
+                    '<div class="onboarding-tooltip-text">' + hint.text + '</div>' +
+                    '<div class="onboarding-dots">' + dots + '</div>' +
+                    btns +
+                '</div>';
+        }
+
+        function renderOnbStep() {
+            if (onbAfterTimer) { clearTimeout(onbAfterTimer); onbAfterTimer = null; }
+            if (onbClickZone) { onbClickZone.remove(); onbClickZone = null; }
+
+            var hint = DRIVER_ONBOARDING[onbStep];
+            var total = DRIVER_ONBOARDING.length;
+            var isLast = onbStep === total - 1;
+            var isFirst = onbStep === 0;
+
+            if (hint.before) hint.before();
+
+            var overlay = document.getElementById('onbOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'onboarding-overlay';
+                overlay.id = 'onbOverlay';
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay || e.target.classList.contains('onboarding-backdrop')) finishOnb();
+                });
+                requestAnimationFrame(function() { overlay.classList.add('show'); });
+            }
+
+            var dots = '';
+            for (var i = 0; i < total; i++) {
+                dots += '<div class="onboarding-dot ' + (i === onbStep ? 'active' : '') + '"></div>';
+            }
+
+            var btns =
+                '<div class="onboarding-btns">' +
+                    (!isFirst ? '<button class="onboarding-btn secondary" onclick="prevOnbStep()">← Назад</button>' : '') +
+                    (isLast
+                        ? '<button class="onboarding-btn primary" onclick="finishOnb()">Зрозуміло!</button>'
+                        : '<button class="onboarding-btn primary" onclick="nextOnbStep()">Далі →</button>'
+                    ) +
+                    '<button class="onboarding-btn skip" onclick="disableOnb()">Вимкнути підказки</button>' +
+                '</div>';
+
+            // Welcome modal (no target)
+            if (!hint.target) {
+                overlay.innerHTML =
+                    '<div class="onboarding-backdrop"></div>' +
+                    '<div class="onboarding-welcome">' +
+                        '<div class="onboarding-step-num">' + (onbStep + 1) + ' / ' + total + '</div>' +
+                        '<div class="onboarding-tooltip-icon">' + hint.icon + '</div>' +
+                        '<div class="onboarding-tooltip-title">' + hint.title + '</div>' +
+                        '<div class="onboarding-tooltip-text">' + hint.text + '</div>' +
+                        '<div class="onboarding-dots" style="justify-content:center;">' + dots + '</div>' +
+                        btns +
+                    '</div>';
+                return;
+            }
+
+            var beforeDelay = hint.beforeDelay || (hint.before ? 50 : 30);
+            setTimeout(function() {
+                var el = typeof hint.target === 'function' ? hint.target() : hint.target;
+                if (!el) {
+                    // Skip step if target not found (e.g. no cards loaded)
+                    if (!isLast) { onbStep++; renderOnbStep(); }
+                    else finishOnb();
+                    return;
+                }
+
+                el.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+
+                requestAnimationFrame(function() {
+                    onbRenderSpotlight(overlay, el, hint, onbStep, total, dots, btns);
+                });
+            }, beforeDelay);
+        }
+
+        function nextOnbStep() {
+            if (onbStep < DRIVER_ONBOARDING.length - 1) {
+                onbStep++;
+                renderOnbStep();
+            }
+        }
+
+        function prevOnbStep() {
+            if (onbStep > 0) {
+                onbStep--;
+                renderOnbStep();
+            }
+        }
+
+        function finishOnb() {
+            localStorage.setItem('drivers_onboarding_seen', 'true');
+            closeOnb();
+        }
+
+        function disableOnb() {
+            localStorage.setItem('drivers_onboarding_disabled', 'true');
+            localStorage.setItem('drivers_onboarding_seen', 'true');
+            closeOnb();
+            if (typeof showToast === 'function') showToast('Підказки вимкнено назавжди');
+        }
+
+        function closeOnb() {
+            if (onbAfterTimer) { clearTimeout(onbAfterTimer); onbAfterTimer = null; }
+            if (onbClickZone) { onbClickZone.remove(); onbClickZone = null; }
+            var overlay = document.getElementById('onbOverlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+                setTimeout(function() { overlay.remove(); }, 300);
+            }
+            var spotLayer = document.getElementById('onbSpotLayer');
+            var tipLayer = document.getElementById('onbTipLayer');
+            if (spotLayer) spotLayer.remove();
+            if (tipLayer) tipLayer.remove();
+        }
+
+        function initDriverOnboarding() {
+            if (localStorage.getItem('drivers_onboarding_disabled') === 'true') return;
+            if (localStorage.getItem('drivers_onboarding_seen') === 'true') return;
+            setTimeout(function() {
+                onbStep = 0;
+                renderOnbStep();
+            }, 900);
+        }
     </script>
 </body>
 </html>

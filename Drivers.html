@@ -855,7 +855,7 @@
                     <span class="filter-count" id="countCompleted">0</span>
                 </button>
                 <button class="filter-btn" id="filterCancelled" onclick="filterByStatus('cancelled')">
-                    <span class="filter-label">&#10060; СКАС.</span>
+                    <span class="filter-label">&#10060; СКАСОВАНІ</span>
                     <span class="filter-count" id="countCancelled">0</span>
                 </button>
                 <button class="filter-btn" id="filterDispatch" onclick="filterByStatus('dispatch')" style="display:none;">
@@ -2572,9 +2572,15 @@
                 arrow: 'top'
             },
             {
-                icon: '❌', title: 'Фільтр: Скасовано',
+                icon: '❌', title: 'Фільтр: Скасовані',
                 text: 'Показує <strong>скасовані</strong> записи з причинами відмови.',
                 target: function() { return document.getElementById('filterCancelled'); },
+                arrow: 'top'
+            },
+            {
+                icon: '📦', title: 'Фільтр: Відправки',
+                text: 'Показує <strong>відправки</strong> — записи зі статусом відправлення. Доступно тільки для карго маршрутів.',
+                target: function() { return document.getElementById('filterDispatch'); },
                 arrow: 'top'
             },
             {

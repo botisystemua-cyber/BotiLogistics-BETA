@@ -1448,11 +1448,11 @@
                 list.innerHTML = '<div class="loading">&#128230; Відправок не знайдено</div>';
                 return;
             }
+            var dshow = function(k) { return !hiddenDispatchCols.has(k); };
             dispatchData.forEach(function(item, index) {
                 var uid = 'disp_' + index;
                 var status = deliveryStatuses[item._statusKey] || 'pending';
                 var statusIcon = status === 'completed' ? '&#9989;' : status === 'cancelled' ? '&#10060;' : status === 'in-progress' ? '&#128260;' : '&#9203;';
-                var canUndo = status === 'completed' || status === 'cancelled';
                 var safeName = escapeHtml(item.name || '');
                 var safeParcel = escapeHtml(item.parcelNum || '');
                 var safeCity = escapeHtml(item.city || '');
@@ -1463,25 +1463,27 @@
                 card.innerHTML = '<div class="card-row">' +
                     '<div class="delivery-number">' + (index + 1) + '</div>' +
                     '<div class="card-main-info">' +
-                        '<div class="card-address">' + safeName + '</div>' +
-                        (safeCity ? '<div style="font-size:11px;color:#666;margin-top:2px;">&#128205; ' + safeCity + '</div>' : '') +
+                        (dshow('name') ? '<div class="card-address">' + safeName + '</div>' : '') +
+                        (dshow('city') && safeCity ? '<div style="font-size:11px;color:#666;margin-top:2px;">&#128205; ' + safeCity + '</div>' : '') +
                     '</div>' +
                     '<span style="font-size:16px;font-weight:bold;">' + statusIcon + '</span>' +
                 '</div>' +
                 '<div class="card-details-line">' +
-                    (safeParcel ? '<span class="detail-badge">&#128230; №' + safeParcel + '</span>' : '') +
-                    (item.weight ? '<span class="detail-badge">&#9878; ' + escapeHtml(item.weight) + ' кг</span>' : '') +
-                    (item.amount ? '<span class="detail-badge" style="font-weight:800;color:#2E7D32;">&#128176; ' + escapeHtml(item.amount) + ' ' + escapeHtml(item.currency || '') + '</span>' : '') +
+                    (dshow('parcelNum') && safeParcel ? '<span class="detail-badge">&#128230; №' + safeParcel + '</span>' : '') +
+                    (dshow('weight') && item.weight ? '<span class="detail-badge">&#9878; ' + escapeHtml(item.weight) + ' кг</span>' : '') +
+                    (dshow('amount') && item.amount ? '<span class="detail-badge" style="font-weight:800;color:#2E7D32;">&#128176; ' + escapeHtml(item.amount) + ' ' + escapeHtml(item.currency || '') + '</span>' : '') +
                 '</div>' +
                 '<div class="card-details-line">' +
-                    (safePhone ? '<span class="card-phone" style="font-weight:700;">&#128222; <strong>' + safePhone + '</strong></span>' : '') +
-                    (item.paymentType ? '<span class="detail-badge">&#128179; ' + escapeHtml(item.paymentType) + '</span>' : '') +
+                    (dshow('senderPhone') && safePhone ? '<span class="card-phone" style="font-weight:700;">&#128222; <strong>' + safePhone + '</strong></span>' : '') +
+                    (dshow('paymentType') && item.paymentType ? '<span class="detail-badge">&#128179; ' + escapeHtml(item.paymentType) + '</span>' : '') +
                 '</div>' +
                 '<div class="card-buttons">' +
                     (safePhone ? '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' : '') +
                     '<button class="btn-small-card" onclick="navigateDispatch(' + index + ')">&#128506; Карта</button>' +
-                    '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
                     '<button class="btn-small-card" onclick="openEditDispatch(' + index + ')" style="background:#1a3a5e;color:white;">&#9998; Редагувати</button>' +
+                '</div>' +
+                '<div style="margin-top:4px;">' +
+                    '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')" style="width:100%;text-align:center;">&#9660; Деталі</button>' +
                 '</div>' +
                 '<div class="card-expandable" id="expand-' + uid + '">' +
                     renderExpandedInfoDispatch(item) +
@@ -2109,6 +2111,7 @@
         }
         // ============ COLUMN VISIBILITY ============
         var hiddenDriverCols = new Set();
+        var hiddenDispatchCols = new Set();
         var allDriverCols = [
             { key: 'id', label: '# Номер' },
             { key: 'vo', label: 'ВО' },
@@ -2130,17 +2133,38 @@
             { key: 'receiveDate', label: 'Дата отримання' },
             { key: 'photo', label: 'Фото' }
         ];
+        var allDispatchCols = [
+            { key: 'name', label: 'ПІБ' },
+            { key: 'parcelNum', label: '№ Посилки' },
+            { key: 'city', label: 'Місто/НП' },
+            { key: 'weight', label: 'Вага' },
+            { key: 'amount', label: 'Сума' },
+            { key: 'senderPhone', label: 'Телефон відправника' },
+            { key: 'paymentType', label: 'Тип оплати' },
+            { key: 'currency', label: 'Валюта' },
+            { key: 'description', label: 'Опис' },
+            { key: 'envelope', label: 'Конверт' }
+        ];
         function loadDriverColSettings() {
             try {
                 var saved = localStorage.getItem('driverHiddenCols');
                 if (saved) hiddenDriverCols = new Set(JSON.parse(saved));
+                var savedDisp = localStorage.getItem('dispatchHiddenCols');
+                if (savedDisp) hiddenDispatchCols = new Set(JSON.parse(savedDisp));
             } catch(e) {}
         }
         function saveDriverColSettings() {
             localStorage.setItem('driverHiddenCols', JSON.stringify([...hiddenDriverCols]));
         }
+        function saveDispatchColSettings() {
+            localStorage.setItem('dispatchHiddenCols', JSON.stringify([...hiddenDispatchCols]));
+        }
         loadDriverColSettings();
         function openColumnEditor() {
+            var isDispatch = currentFilter === 'dispatch';
+            var cols = isDispatch ? allDispatchCols : allDriverCols;
+            var hiddenSet = isDispatch ? hiddenDispatchCols : hiddenDriverCols;
+            var title = isDispatch ? '&#9881; Колонки відправок' : '&#9881; Налаштування колонок';
             var overlay = document.getElementById('colEditorOverlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -2149,9 +2173,10 @@
                 overlay.onclick = function(e) { if (e.target === overlay) closeColumnEditor(); };
                 document.body.appendChild(overlay);
             }
-            var html = '<div class="col-editor-box"><div class="col-editor-title">&#9881; Налаштування колонок</div>';
-            allDriverCols.forEach(function(col) {
-                var isOn = !hiddenDriverCols.has(col.key);
+            var html = '<div class="col-editor-box"><div class="col-editor-title">' + title + '</div>';
+            html += '<button class="col-editor-close" style="margin-top:0;margin-bottom:12px;background:#10b981;" onclick="resetAllColumns()">&#128260; Увімкнути всі колонки</button>';
+            cols.forEach(function(col) {
+                var isOn = !hiddenSet.has(col.key);
                 html += '<div class="col-toggle-item"><label>' + col.label + '</label>' +
                     '<div class="col-toggle-switch ' + (isOn ? 'on' : '') + '" onclick="toggleDriverCol(\'' + col.key + '\',this)"></div></div>';
             });
@@ -2163,15 +2188,30 @@
             var overlay = document.getElementById('colEditorOverlay');
             if (overlay) overlay.classList.remove('show');
         }
+        function resetAllColumns() {
+            if (currentFilter === 'dispatch') {
+                hiddenDispatchCols.clear();
+                saveDispatchColSettings();
+            } else {
+                hiddenDriverCols.clear();
+                saveDriverColSettings();
+            }
+            renderDeliveries();
+            closeColumnEditor();
+            showToast('Всі колонки увімкнено');
+        }
         function toggleDriverCol(key, el) {
-            if (hiddenDriverCols.has(key)) {
-                hiddenDriverCols.delete(key);
+            var isDispatch = currentFilter === 'dispatch';
+            var hiddenSet = isDispatch ? hiddenDispatchCols : hiddenDriverCols;
+            if (hiddenSet.has(key)) {
+                hiddenSet.delete(key);
                 el.classList.add('on');
             } else {
-                hiddenDriverCols.add(key);
+                hiddenSet.add(key);
                 el.classList.remove('on');
             }
-            saveDriverColSettings();
+            if (isDispatch) saveDispatchColSettings();
+            else saveDriverColSettings();
             renderDeliveries();
         }
         // ============ ADD LEAD ============
@@ -2519,12 +2559,15 @@
         }
         // ============ BOTTOM NAV INIT ============
         function initBottomNav() {
-            if (document.getElementById('bottomNav')) return;
+            var existing = document.getElementById('bottomNav');
+            if (existing) existing.remove();
             var nav = document.createElement('div');
             nav.className = 'bottom-nav';
             nav.id = 'bottomNav';
+            var listIcon = currentRouteType === 'passenger' ? '&#128101;' : '&#128230;';
+            var listLabel = currentRouteType === 'passenger' ? 'Пасажири' : 'Посилки';
             nav.innerHTML =
-                '<button class="bottom-nav-item active" onclick="bottomNavAction(\'list\',this)"><span>&#128230;</span>Посилки</button>' +
+                '<button class="bottom-nav-item active" onclick="bottomNavAction(\'list\',this)"><span>' + listIcon + '</span>' + listLabel + '</button>' +
                 '<button class="bottom-nav-item" onclick="bottomNavAction(\'refresh\',this)"><span>&#128260;</span>Оновити</button>' +
                 '<button class="bottom-nav-item" onclick="bottomNavAction(\'add\',this)"><span>&#10133;</span>Додати</button>' +
                 '<button class="bottom-nav-item" onclick="bottomNavAction(\'columns\',this)"><span>&#9881;</span>Колонки</button>';

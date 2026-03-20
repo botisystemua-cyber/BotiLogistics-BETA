@@ -3418,7 +3418,7 @@ function handleDrop(e, targetId) {
         origDragged.order = dragIdx < targetIdx ? origTarget.order + 1 : origTarget.order - 1;
     }
     saveSettings();
-    logAction('reorder', savedDraggedId + ' → ' + targetId, '', '');
+    logAction('reorder', savedDraggedId + ' → ' + targetId, 1, '');
     setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
@@ -3503,6 +3503,7 @@ function quickAssignVehicle(uid, vehicleId) {
         if (p.status === 'new') p.status = 'work';
         showToast(`🚐 ${veh.name}`);
     } else {
+        logAction('removeVehicle', p.name || uid, 1, p.vehicle || '');
         p.vehicle = '';
         showToast('❌ Авто знято');
     }
@@ -4384,9 +4385,8 @@ function deleteFromRouteOnly(uid) {
     document.getElementById('routeDeleteChoiceModal')?.remove();
     const p = routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
-    logAction('deleteFromRoute', p.name || uid, 1, '');
-
     const sheetName = currentRouteVehicle?.routeSheet || p._vehicleName;
+    logAction('deleteFromRoute', p.name || uid, 1, sheetName || '');
     if (!sheetName) return showToast('❌ Невідомий аркуш маршруту');
 
     showRouteProgress('Видаляю з маршруту...');
@@ -4515,7 +4515,7 @@ function moveOneToRoute(id) {
 function archivePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
-    logAction('archivePassenger', p.name || id, 1, '');
+    logAction('archivePassenger', p.name || id, 1, p.vehicle || '');
     const today = new Date().toISOString().split('T')[0];
     if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
     p.archiveType = 'archived';
@@ -4541,7 +4541,7 @@ function archivePassenger(id) {
 function restorePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
-    logAction('restorePassenger', p.name || id, 1, '');
+    logAction('restorePassenger', p.name || id, 1, p.prevStatus || 'new');
     const newStatus = p.prevStatus || 'new';
     p.status = newStatus;
     delete p.prevStatus;
@@ -4730,7 +4730,8 @@ function confirmBulkAssignVehicle() {
         bulkRemoveVehicle();
         return;
     }
-    logAction('bulkAssignVehicle', selectedBulkVehicleId, selectedIds.size, '');
+    const _veh = vehicles.find(v => v.id === selectedBulkVehicleId);
+    logAction('bulkAssignVehicle', _veh ? _veh.name : selectedBulkVehicleId, selectedIds.size, '');
     bulkAssignVehicle(selectedBulkVehicleId);
 }
 
@@ -5042,7 +5043,7 @@ function handleRouteConflict(action) {
 }
 
 function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
-    logAction('copyToRoute', Object.keys(byVehicle).join(', '), '', conflictAction || '');
+    logAction('copyToRoute', Object.keys(byVehicle).join(', '), withVehicle.length || '', conflictAction || '');
     showRouteProgress('Записую в маршрут...');
 
     const payload = {
@@ -6414,7 +6415,7 @@ function confirmDeletePassenger(uid) {
 
     const p = findPassengerByUid(uid);
     if (!p) return;
-    logAction('deletePassenger', p.name || uid, 1, '');
+    logAction('deletePassenger', p.name || uid, 1, p.phone || '');
 
     const pSheet = p._sheet || p.sheet;
     const pRowNum = p._rowNum || p.rowNum;
@@ -6897,7 +6898,7 @@ function syncWithSheets() {
 
 // SAVE - Додати нового пасажира на сервер
 function savePassengerToServer(passenger) {
-    logAction('savePassenger', passenger.name || 'новий', 1, '');
+    logAction('addPassenger', passenger.name || 'новий', 1, (passenger.phone || '') + (passenger.from ? ' | ' + passenger.from + ' → ' + (passenger.to || '') : ''));
     showLoader('Збереження...', '');
 
     const payload = {
@@ -6990,7 +6991,7 @@ function savePassengerToServer(passenger) {
 // UPDATE - Оновити пасажира на сервері
 function updatePassengerOnServer(passenger, retries) {
     retries = retries !== undefined ? retries : 2;
-    logAction('updatePassenger', passenger.name || '', 1, '');
+    logAction('editPassenger', passenger.name || '', 1, (passenger.phone || '') + (passenger.from ? ' | ' + passenger.from + ' → ' + (passenger.to || '') : ''));
     const pSheet = passenger._sheet || passenger.sheet;
     const pRowNum = passenger._rowNum || passenger.rowNum;
     if (!pSheet || !pRowNum) {

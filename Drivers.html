@@ -1025,6 +1025,7 @@
             document.getElementById('routeNameDisplay').textContent = route;
             showToast('Відкрито ' + route);
             loadDeliveries();
+            setTimeout(initDriverOnboarding, 1200);
             if (routeType === 'delivery') {
                 loadDispatchCount();
             }
@@ -1174,7 +1175,6 @@
                 renderDeliveries();
                 updateStats();
                 showToast('Завантажено ' + deliveries.length + ' записів');
-                initDriverOnboarding();
             } catch (error) {
                 console.error('Помилка завантаження:', error);
                 list.innerHTML = '<div class="loading">&#10060; Помилка: ' + escapeHtml(error.message) + '</div>';

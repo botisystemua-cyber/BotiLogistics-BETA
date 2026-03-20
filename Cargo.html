@@ -5983,6 +5983,7 @@ function bulkRestore() {
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'bulkUpdateStatus',
+                    companyId: getCompanyId(),
                     items: mainPackages,
                     status: 'new'
                 })
@@ -7514,6 +7515,7 @@ function inlineSave(uid, field, value) {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'updateField',
+                companyId: getCompanyId(),
                 sheet: p._sheet,
                 rowNum: p._rowNum,
                 field: field,
@@ -7605,6 +7607,7 @@ function restorePackageToOriginal(uid) {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'bulkUpdateStatus',
+                companyId: getCompanyId(),
                 items: [{ sheet: p._sheet, rowNum: p._rowNum }],
                 status: 'new'
             })
@@ -8348,6 +8351,7 @@ function applyBulkParcelStatus(status) {
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'updateField',
+                    companyId: getCompanyId(),
                     sheet: item.sheet,
                     rowNum: item.rowNum,
                     field: 'parcelStatus',
@@ -8428,7 +8432,7 @@ function applyBulkSmsNote() {
         let done = 0;
         items.forEach(item => {
             fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'updateField', sheet: item.sheet, rowNum: item.rowNum, field: 'smsNote', value: text })
+                body: JSON.stringify({ action: 'updateField', companyId: getCompanyId(), sheet: item.sheet, rowNum: item.rowNum, field: 'smsNote', value: text })
             }).then(r => r.json()).then(() => { done++; if (done >= items.length) hideLoader(); }).catch(() => { done++; if (done >= items.length) hideLoader(); });
         });
     }
@@ -8483,7 +8487,7 @@ function applyBulkDateReceive() {
         let done = 0;
         items.forEach(item => {
             fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'updateField', sheet: item.sheet, rowNum: item.rowNum, field: 'dateReceive', value: dateVal })
+                body: JSON.stringify({ action: 'updateField', companyId: getCompanyId(), sheet: item.sheet, rowNum: item.rowNum, field: 'dateReceive', value: dateVal })
             }).then(r => r.json()).then(() => { done++; if (done >= items.length) hideLoader(); }).catch(() => { done++; if (done >= items.length) hideLoader(); });
         });
     }

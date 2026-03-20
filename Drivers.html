@@ -1592,7 +1592,7 @@
                     '<div class="card-buttons">' +
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
                         mapBtn +
-                        '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
+                        '<button class="btn-small-card" onclick="openEditDelivery(' + globalIndex + ')">&#9998; Редагувати</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
                         '<span class="status-group">' +
@@ -1600,7 +1600,7 @@
                             '<button class="status-btn-card status-completed-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
                             '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
                         '</span>' +
-                        '<button class="status-btn-card" onclick="openEditDelivery(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
+                        '<button class="status-btn-card" onclick="toggleExpand(\'' + uid + '\')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#128194; Деталі</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
                         renderExpandedInfoDelivery(delivery) +
@@ -1712,7 +1712,7 @@
                     '<div class="card-buttons">' +
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
                         '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'to\')">&#128506; Карта</button>' +
-                        '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
+                        '<button class="btn-small-card" onclick="openEditPassenger(' + globalIndex + ')">&#9998; Редагувати</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
                         '<span class="status-group">' +
@@ -1720,7 +1720,7 @@
                             '<button class="status-btn-card status-completed-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
                             '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
                         '</span>' +
-                        '<button class="status-btn-card" onclick="openEditPassenger(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
+                        '<button class="status-btn-card" onclick="toggleExpand(\'' + uid + '\')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#128194; Деталі</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
                         renderExpandedInfoPassenger(passenger) +
@@ -2663,8 +2663,8 @@
                     arrow: 'top'
                 },
                 {
-                    icon: '📂', title: 'Деталі',
-                    text: 'Натисніть <strong>📂 Деталі</strong>, щоб розгорнути повну інформацію по запису.',
+                    icon: '✏️', title: 'Редагування',
+                    text: 'Кнопка <strong>✏️ Редагувати</strong> — відкриває форму редагування запису. Можна змінити адресу, телефон, суму та інші поля.',
                     target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[2] : null; },
                     arrow: 'top'
                 },
@@ -2675,9 +2675,9 @@
                     arrow: 'top'
                 },
                 {
-                    icon: '✏️', title: 'Редагування запису',
-                    text: 'Кнопка <strong>✏️ Редагувати</strong> — відкриває форму редагування запису. Можна змінити адресу, телефон, суму та інші поля.',
-                    target: function() { var c = document.querySelector('.delivery-card'); var btns = c ? c.querySelector('.status-buttons-card') : null; return btns ? btns.querySelector('[onclick*="openEdit"]') : null; },
+                    icon: '📂', title: 'Деталі',
+                    text: 'Кнопка <strong>📂 Деталі</strong> — розгортає повну інформацію по запису. Знаходиться поряд зі статусами.',
+                    target: function() { var c = document.querySelector('.delivery-card'); var btns = c ? c.querySelector('.status-buttons-card') : null; return btns ? btns.querySelector('[onclick*="toggleExpand"]') : null; },
                     arrow: 'top'
                 },
                 {

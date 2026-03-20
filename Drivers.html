@@ -1008,13 +1008,13 @@
             }
         }
         function openRoute(route, routeType) {
-            logAction('openRoute', currentSheet, '', routeType === 'passenger' ? 'Пасажири' : 'Посилки');
             var list = document.getElementById('deliveriesList');
             list.innerHTML = '<div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>';
             deliveries = [];
             dispatchData = [];
             dispatchLastUpdate = 0;
             currentSheet = (routeType === 'passenger') ? 'Пас. ' + route : route;
+            logAction('openRoute', currentSheet, '', routeType === 'passenger' ? 'Пасажири' : 'Посилки');
             currentRouteType = routeType;
             deliveryStatuses = {};
             newDeliveries = [];

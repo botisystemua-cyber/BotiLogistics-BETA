@@ -105,6 +105,19 @@ PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmS
 - Аркуші: `Братислава марш.`, `Нітра марш.`, `Словаччина марш.`, `Кошице+прешов марш.` та інші
 - Спец. аркуші: `Маршрути водіїв` (логи), `Провірка розсилки` (розсилка)
 
+### Логи (централізовані)
+- **Spreadsheet ID:** `1MxX6aA1kZYmBwgI2g2pylxSZz-Tzvi0v0YyJENWXBPw`
+- **Аркуш:** `Логи`
+- Всі скрипти пишуть в одну таблицю
+- Колонки: `Дата/Час`, `Модуль`, `Користувач`, `Дія`, `Об'єкт`, `К-сть`, `Деталі`
+
+| LOG_SOURCE | Скрипт |
+|------------|--------|
+| `CRM-Посилки` | `script-cargo.gs` |
+| `CRM-Пасажири` | `script-passengers.gs` |
+| `Маршрути-Посилки` | `script-marshrut-cargo.gs` |
+| `Маршрути-Пасажири` | `script-marshrut-passengers.gs` |
+
 ---
 
 ## Як працює система
@@ -148,3 +161,9 @@ PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmS
 | `script-cargo.gs` | `Cargo.html` | `API_URL` |
 | `script-marshrut-cargo.gs` | `Cargo.html` | `ROUTE_API_URL` |
 | `script-marshrut-cargo.gs` | `Drivers.html` | `CONFIG.DELIVERY_API_URL` |
+
+---
+
+## Відомі баги / нотатки
+
+- **Drivers.html — пасажирські маршрути**: у пасажирів немає функції "Відправки" (dispatch). Фільтр "Відправки" та кнопка "Додати → Відправки" стосуються тільки карго маршрутів. Кнопка навігації в карточці пасажира — "Карта" (пункт призначення), а не "Відправка".

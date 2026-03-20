@@ -3137,10 +3137,15 @@ function mobileSetVehicle(id) {
         filters.vehicle = id;
     }
     filters.statusFilter = '';
+    filters.routeVehicle = '';
+    routePassengers = [];
+    currentRouteVehicle = null;
     closeSideMenu();
     render();
     renderCalendars();
     updateMobileVehicles();
+    renderRoutesListLocal();
+    updatePcVehiclesList();
 }
 
 // DATA
@@ -3418,7 +3423,7 @@ function handleDrop(e, targetId) {
         origDragged.order = dragIdx < targetIdx ? origTarget.order + 1 : origTarget.order - 1;
     }
     saveSettings();
-    logAction('reorder', savedDraggedId + ' → ' + targetId, '', '');
+    logAction('reorder', savedDraggedId + ' → ' + targetId, 1, '');
     setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
@@ -3503,6 +3508,7 @@ function quickAssignVehicle(uid, vehicleId) {
         if (p.status === 'new') p.status = 'work';
         showToast(`🚐 ${veh.name}`);
     } else {
+        logAction('removeVehicle', p.name || uid, 1, p.vehicle || '');
         p.vehicle = '';
         showToast('❌ Авто знято');
     }
@@ -3961,10 +3967,15 @@ function showRoute(sheetName) {
     clearSelection();
     filters.statusFilter = 'route';
     filters.routeVehicle = sheetName;
+    filters.vehicle = '';
     filters.showArchive = false;
     filters.specialStatus = '';
     document.getElementById('routeDropdown')?.classList.remove('show');
     closeSideMenu();
+    // Оновлюємо сайдбари одразу щоб active стан кнопок відобразився
+    renderRoutesListLocal();
+    updatePcVehiclesList();
+    updateMobileVehicles();
 
     const displayName = sheetName.replace(/^Пас\.\s*/, '');
     showLoader(`Завантаження: ${displayName}`, '');
@@ -4384,9 +4395,8 @@ function deleteFromRouteOnly(uid) {
     document.getElementById('routeDeleteChoiceModal')?.remove();
     const p = routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
-    logAction('deleteFromRoute', p.name || uid, 1, '');
-
     const sheetName = currentRouteVehicle?.routeSheet || p._vehicleName;
+    logAction('deleteFromRoute', p.name || uid, 1, sheetName || '');
     if (!sheetName) return showToast('❌ Невідомий аркуш маршруту');
 
     showRouteProgress('Видаляю з маршруту...');
@@ -4466,7 +4476,7 @@ function updateFilterButtons() {
 }
 
 function toggleDropdown(id) { document.querySelectorAll('.dropdown-menu').forEach(d => { if(d.id !== id) d.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); if(id === 'dateDropdown') renderCalendarTo('desktopCalendar'); }
-function resetFilters() { closeDashboard(); filters.date = ''; filters.vehicle = ''; filters.showArchive = false; filters.statusFilter = ''; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); renderCalendars(); updateVehiclesList(); updateAllCounts(); updatePcVehiclesList(); }
+function resetFilters() { closeDashboard(); filters.date = ''; filters.vehicle = ''; filters.showArchive = false; filters.statusFilter = ''; filters.routeVehicle = ''; routePassengers = []; routeStats = { total: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, archived: 0 }; currentRouteVehicle = null; routeStatusFilter = 'all'; render(); renderCalendars(); updateVehiclesList(); updateAllCounts(); updatePcVehiclesList(); renderRoutesListLocal(); updateMobileVehicles(); }
 function setVehicleFilter(id) {
     closeDashboard();
     // Toggle: якщо той самий фільтр — скидаємо
@@ -4488,6 +4498,8 @@ function setVehicleFilter(id) {
     renderCalendars();
     updatePcVehiclesList();
     updateVehiclesList();
+    renderRoutesListLocal();
+    updateMobileVehicles();
 }
 
 // Скинути фільтр авто (кнопка під меню авто)
@@ -4515,7 +4527,7 @@ function moveOneToRoute(id) {
 function archivePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
-    logAction('archivePassenger', p.name || id, 1, '');
+    logAction('archivePassenger', p.name || id, 1, p.vehicle || '');
     const today = new Date().toISOString().split('T')[0];
     if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
     p.archiveType = 'archived';
@@ -4541,7 +4553,7 @@ function archivePassenger(id) {
 function restorePassenger(id) {
     const p = passengers.find(x => x.id === id);
     if (!p) return;
-    logAction('restorePassenger', p.name || id, 1, '');
+    logAction('restorePassenger', p.name || id, 1, p.prevStatus || 'new');
     const newStatus = p.prevStatus || 'new';
     p.status = newStatus;
     delete p.prevStatus;
@@ -4730,7 +4742,8 @@ function confirmBulkAssignVehicle() {
         bulkRemoveVehicle();
         return;
     }
-    logAction('bulkAssignVehicle', selectedBulkVehicleId, selectedIds.size, '');
+    const _veh = vehicles.find(v => v.id === selectedBulkVehicleId);
+    logAction('bulkAssignVehicle', _veh ? _veh.name : selectedBulkVehicleId, selectedIds.size, '');
     bulkAssignVehicle(selectedBulkVehicleId);
 }
 
@@ -5042,7 +5055,7 @@ function handleRouteConflict(action) {
 }
 
 function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
-    logAction('copyToRoute', Object.keys(byVehicle).join(', '), '', conflictAction || '');
+    logAction('copyToRoute', Object.keys(byVehicle).join(', '), withVehicle.length || '', conflictAction || '');
     showRouteProgress('Записую в маршрут...');
 
     const payload = {
@@ -6414,7 +6427,7 @@ function confirmDeletePassenger(uid) {
 
     const p = findPassengerByUid(uid);
     if (!p) return;
-    logAction('deletePassenger', p.name || uid, 1, '');
+    logAction('deletePassenger', p.name || uid, 1, p.phone || '');
 
     const pSheet = p._sheet || p.sheet;
     const pRowNum = p._rowNum || p.rowNum;
@@ -6897,7 +6910,7 @@ function syncWithSheets() {
 
 // SAVE - Додати нового пасажира на сервер
 function savePassengerToServer(passenger) {
-    logAction('savePassenger', passenger.name || 'новий', 1, '');
+    logAction('addPassenger', passenger.name || 'новий', 1, (passenger.phone || '') + (passenger.from ? ' | ' + passenger.from + ' → ' + (passenger.to || '') : ''));
     showLoader('Збереження...', '');
 
     const payload = {
@@ -6990,7 +7003,7 @@ function savePassengerToServer(passenger) {
 // UPDATE - Оновити пасажира на сервері
 function updatePassengerOnServer(passenger, retries) {
     retries = retries !== undefined ? retries : 2;
-    logAction('updatePassenger', passenger.name || '', 1, '');
+    logAction('editPassenger', passenger.name || '', 1, (passenger.phone || '') + (passenger.from ? ' | ' + passenger.from + ' → ' + (passenger.to || '') : ''));
     const pSheet = passenger._sheet || passenger.sheet;
     const pRowNum = passenger._rowNum || passenger.rowNum;
     if (!pSheet || !pRowNum) {

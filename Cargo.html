@@ -1344,7 +1344,7 @@
         .capacity-alert-close { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: #dc2626; opacity: 0.6; }
         .capacity-alert-close:hover { opacity: 1; }
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 4px 20px rgba(239,68,68,0.3); } 50% { box-shadow: 0 4px 30px rgba(239,68,68,0.5); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(239,68,68,0.3); border-color: #ef4444; } 50% { transform: scale(1.03); box-shadow: 0 4px 35px rgba(239,68,68,0.6); border-color: #dc2626; } }
         
         .optimize-result-header { font-size: 18px; font-weight: 700; color: var(--success); text-align: center; margin-bottom: 16px; }
         .optimize-stats { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
@@ -3726,7 +3726,7 @@ function handleDrop(e, targetId) {
     }
 
     saveSettings();
-    logAction('reorder', savedDraggedId + ' → ' + targetId, '', '');
+    logAction('reorder', savedDraggedId + ' → ' + targetId, 1, '');
     setTimeout(() => { render(); }, 0);
     showToast('↕️ Порядок змінено');
 }
@@ -3822,6 +3822,7 @@ function quickAssignVehicle(uid, vehicleId) {
         if (p.status === 'new') p.status = 'work';
         showToast(`🚐 ${veh.name}`);
     } else {
+        logAction('removeVehicle', p.ttn || p.name || uid, 1, p.vehicle || '');
         p.vehicle = '';
         showToast('❌ Авто знято');
     }
@@ -4889,6 +4890,7 @@ function executeRouteStatusAction(uid, status, noteText) {
     if (!sheetName) return showToast('Невідомий аркуш маршруту');
 
     const statusNames = { 'refused': '❌ Відмова', 'deleted': '🗑️ Видалено', 'archived': '📦 Архів' };
+    logAction('routeStatusAction', p.ttn || p.name || uid, 1, status + (noteText ? ' | ' + noteText : ''));
 
     // 1) Оновлюємо головний список локально (optimistic update)
     const mainPkg = packages.find(mp => String(mp.id) === String(p.id));
@@ -4976,6 +4978,7 @@ function inlineRouteSave(uid, field, value) {
 function inlineRouteMarkSave(uid, newStatus) {
     const p = routePassengers.find(x => x._uid === uid) || dispatchData.find(x => x._uid === uid);
     if (!p) return;
+    logAction('setRouteMark', p.ttn || p.name || uid, 1, newStatus);
     p.driverStatus = newStatus;
     p.parcelStatus = newStatus;
 
@@ -5046,9 +5049,8 @@ function deleteFromRouteOnly(uid) {
         ? dispatchData.find(rp => rp._uid === uid)
         : routePassengers.find(rp => rp._uid === uid);
     if (!p) return;
-    logAction('deleteFromRoute', p.ttn || p.name || uid, 1, '');
-
     const sheetName = isDispatch ? (p._dispatchSheet || getDispatchSheetName(filters.routeVehicle)) : (p._routeSheet || currentRouteVehicle?.routeSheet || p._vehicleName);
+    logAction('deleteFromRoute', p.ttn || p.name || uid, 1, sheetName || '');
     if (!sheetName) return showToast('Невідомий аркуш маршруту');
 
     // 1) Оновлюємо локальний стейт одразу (optimistic update)
@@ -5593,7 +5595,7 @@ function moveOneToRoute(id) {
 function archivePackage(id) {
     const p = packages.find(x => x.id === id);
     if (!p) return;
-    logAction('archivePackage', p.ttn || p.name || id, 1, '');
+    logAction('archivePackage', p.ttn || p.name || id, 1, p.vehicle || '');
     const today = new Date().toISOString().split('T')[0];
     if (p.status !== 'archived') { p.prevStatus = p.status || 'new'; }
     p.archiveType = 'archived';
@@ -5748,7 +5750,7 @@ function handleRouteConflict(action) {
 }
 
 function executeCopyToRoute(byVehicle, withVehicle, conflictAction) {
-    logAction('copyToRoute', Object.keys(byVehicle).join(', '), '', conflictAction || '');
+    logAction('copyToRoute', Object.keys(byVehicle).join(', '), withVehicle.length || '', conflictAction || '');
     showToast('📤 Записую в маршрут...');
 
     // Замінюємо direction на назву маршруту замість ua-eu/eu-ua
@@ -5981,6 +5983,7 @@ function bulkRestore() {
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'bulkUpdateStatus',
+                    companyId: getCompanyId(),
                     items: mainPackages,
                     status: 'new'
                 })
@@ -7040,7 +7043,7 @@ function confirmDeletePassenger(uid) {
 
     const p = findPackageByUid(uid);
     if (!p) return;
-    logAction('deletePackage', p.ttn || p.name || uid, 1, '');
+    logAction('deletePackage', p.ttn || p.name || uid, 1, (p.name || '') + (p.address ? ' | ' + p.address : ''));
 
     const pSheet = p._sheet || p.sheet || p._dispatchSheet || (p._isDispatch ? getDispatchSheetName(filters.routeVehicle) : '');
     const pRowNum = p._rowNum || p.rowNum;
@@ -7117,6 +7120,7 @@ function savePackage() {
     }; 
     
     if (isEditing && existingP) {
+        logAction('editPackage', d.ttn || d.name || editingId, 1, (d.phone || '') + (d.address ? ' | ' + d.address : ''));
         if (existingP._isDispatch) {
             // Dispatch посилка — оновлюємо в dispatchData
             const di = dispatchData.findIndex(p => p._uid === editingId);
@@ -7483,6 +7487,7 @@ function bulkSetDriverStatus(newStatus) {
 function inlineSave(uid, field, value) {
     const p = findPackageByUid(uid);
     if (!p) return;
+    logAction('inlineEdit', p.ttn || p.name || uid, 1, field + ': ' + (value || '—'));
 
     // Оновлюємо локально
     p[field] = value;
@@ -7510,6 +7515,7 @@ function inlineSave(uid, field, value) {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'updateField',
+                companyId: getCompanyId(),
                 sheet: p._sheet,
                 rowNum: p._rowNum,
                 field: field,
@@ -7580,7 +7586,7 @@ function restorePackageToOriginal(uid) {
     if (!p) return;
 
     if (!confirm('Відновити лід до початкового стану?\nВсі внесені зміни будуть скинуті.')) return;
-    logAction('restoreToOriginal', p.ttn || p.name || uid, 1, '');
+    logAction('restoreToOriginal', p.ttn || p.name || uid, 1, p.status || '');
 
     // Зберігаємо тільки основні ідентифікатори
     const keepFields = ['id', '_sheet', '_rowNum', 'direction', 'isNew', 'isNew24h', 'dateReg'];
@@ -7601,6 +7607,7 @@ function restorePackageToOriginal(uid) {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 action: 'bulkUpdateStatus',
+                companyId: getCompanyId(),
                 items: [{ sheet: p._sheet, rowNum: p._rowNum }],
                 status: 'new'
             })
@@ -8344,6 +8351,7 @@ function applyBulkParcelStatus(status) {
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     action: 'updateField',
+                    companyId: getCompanyId(),
                     sheet: item.sheet,
                     rowNum: item.rowNum,
                     field: 'parcelStatus',
@@ -8424,7 +8432,7 @@ function applyBulkSmsNote() {
         let done = 0;
         items.forEach(item => {
             fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'updateField', sheet: item.sheet, rowNum: item.rowNum, field: 'smsNote', value: text })
+                body: JSON.stringify({ action: 'updateField', companyId: getCompanyId(), sheet: item.sheet, rowNum: item.rowNum, field: 'smsNote', value: text })
             }).then(r => r.json()).then(() => { done++; if (done >= items.length) hideLoader(); }).catch(() => { done++; if (done >= items.length) hideLoader(); });
         });
     }
@@ -8479,7 +8487,7 @@ function applyBulkDateReceive() {
         let done = 0;
         items.forEach(item => {
             fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: 'updateField', sheet: item.sheet, rowNum: item.rowNum, field: 'dateReceive', value: dateVal })
+                body: JSON.stringify({ action: 'updateField', companyId: getCompanyId(), sheet: item.sheet, rowNum: item.rowNum, field: 'dateReceive', value: dateVal })
             }).then(r => r.json()).then(() => { done++; if (done >= items.length) hideLoader(); }).catch(() => { done++; if (done >= items.length) hideLoader(); });
         });
     }
@@ -8763,7 +8771,7 @@ function syncWithSheets() {
 
 // SAVE - Додати нового пасажира на сервер
 function savePackageToServer(pkg) {
-    logAction('savePackage', pkg.ttn || pkg.name || 'new', 1, '');
+    logAction('addPackage', pkg.ttn || pkg.name || 'новий', 1, (pkg.phone || '') + (pkg.address ? ' | ' + pkg.address : ''));
     showLoader('Збереження...', '');
 
     // Зберігаємо в офлайн буфер на випадок помилки

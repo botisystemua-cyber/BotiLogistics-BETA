@@ -1008,7 +1008,7 @@
             }
         }
         function openRoute(route, routeType) {
-            logAction('openRoute', route, '', routeType);
+            logAction('openRoute', currentSheet, '', routeType === 'passenger' ? 'Пасажири' : 'Посилки');
             var list = document.getElementById('deliveriesList');
             list.innerHTML = '<div class="loading"><div class="spinner"></div><p>Завантаження...</p></div>';
             deliveries = [];
@@ -1807,7 +1807,7 @@
             updateStats();
             var delivery = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!delivery) return;
-            logAction('driverSetStatus', delivery.ttn || delivery.name || delivery.id || '', 1, status + ' | ' + (delivery.address || ''));
+            logAction('driverSetStatus', currentSheet, 1, status + ' | ' + (delivery.name || '') + ' | ' + (delivery.address || '') + (delivery.ttn ? ' | ТТН:' + delivery.ttn : ''));
             var deliveryId = delivery.id || delivery.ttn || delivery.internalNumber || '';
             var logData = {
                 action: 'updateDriverStatus',
@@ -1869,7 +1869,7 @@
             if (!confirm('Ви точно хочете скасувати цю посилку?')) return;
             var delivery = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!delivery) return;
-            logAction('driverCancel', delivery.ttn || delivery.name || delivery.id || '', 1, reason);
+            logAction('driverCancel', currentSheet, 1, (delivery.name || '') + ' | ' + reason + (delivery.ttn ? ' | ТТН:' + delivery.ttn : ''));
             var deliveryId = delivery.id || delivery.ttn || delivery.internalNumber || '';
             var prevStatus = deliveryStatuses[statusKey] || 'pending';
             deliveryStatuses[statusKey] = 'cancelled';
@@ -1920,7 +1920,7 @@
                 ? 'Змінити статус ГОТОВО на ОЧІКУЄ?'
                 : 'Змінити статус СКАСОВАНО на ОЧІКУЄ?';
             if (!confirm(confirmMsg)) return;
-            logAction('driverUndoStatus', '', 1, currentStatus + ' → pending');
+            logAction('driverUndoStatus', currentSheet, 1, currentStatus + ' → pending');
             deliveryStatuses[statusKey] = 'pending';
             saveStatuses();
             renderDeliveries();
@@ -1975,7 +1975,7 @@
             updateStats();
             var passenger = deliveries.find(function(d) { return d._statusKey === statusKey; });
             if (!passenger) return;
-            logAction('driverSetPassengerStatus', passenger.name || passenger.id || '', 1, status + ' | ' + (passenger.from || ''));
+            logAction('driverSetPassengerStatus', currentSheet, 1, status + ' | ' + (passenger.name || '') + ' | ' + (passenger.from || '') + ' → ' + (passenger.to || ''));
             // updateDriverStatus → пише mark + кольори в Sheet + логи
             _statusChanging = true;
             fetch(CONFIG.PASSENGER_API_URL, {
@@ -2301,7 +2301,7 @@
         function openEditDelivery(index) {
             var d = deliveries[index];
             if (!d) return;
-            logAction('driverEditDelivery', d.ttn || d.name || d.id || '', 1, '');
+            logAction('driverEditDelivery', currentSheet, 1, (d.name || '') + (d.ttn ? ' | ТТН:' + d.ttn : '') + (d.address ? ' | ' + d.address : ''));
             editingItem = d;
             editingType = 'delivery';
             openEditOverlay('Редагувати посилку', [
@@ -2398,6 +2398,7 @@
         function openEditPassenger(index) {
             var p = deliveries[index];
             if (!p) return;
+            logAction('driverEditPassenger', currentSheet, 1, (p.name || '') + ' | ' + (p.from || '') + ' → ' + (p.to || ''));
             editingItem = p;
             editingType = 'passenger';
             openEditOverlay('Редагувати пасажира', [
@@ -2444,7 +2445,7 @@
             });
         }
         async function submitAddLead() {
-            logAction('driverAddLead', '', 1, currentRouteType);
+            logAction('driverAddLead', currentSheet, 1, currentRouteType === 'delivery' ? 'Відправка' : 'Пасажир');
             var isDelivery = currentRouteType === 'delivery';
             var body;
             if (isDelivery) {

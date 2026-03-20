@@ -1584,7 +1584,8 @@ var ACTION_LABELS = {
   'openRoute': 'Відкриття маршруту', 'driverSetStatus': 'Водій: зміна статусу',
   'driverCancel': 'Водій: скасування', 'driverUndoStatus': 'Водій: відміна статусу',
   'driverSetPassengerStatus': 'Водій: статус пасажира', 'driverAddLead': 'Водій: новий лід',
-  'driverEditDelivery': 'Водій: редагування'
+  'driverEditDelivery': 'Водій: редагування',
+  'driverEditPassenger': 'Водій: редагування пасажира'
 };
 
 function logActionFromClient(payload) {

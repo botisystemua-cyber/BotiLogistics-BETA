@@ -483,10 +483,10 @@
         .status-group {
             display: flex;
             gap: 2px;
-            flex: 3;
+            flex: 1;
         }
         .status-group .status-btn-card { flex: 1; }
-        .status-buttons-card > .status-btn-card:last-child { flex: 0 0 auto; min-width: 60px; max-width: 80px; }
+        .status-buttons-card > .status-btn-card:last-child { flex: 1; }
         .status-buttons-card {
             display: flex;
             gap: 2px;
@@ -2557,97 +2557,114 @@
             }
         };
         // ==================== ONBOARDING ====================
-        var DRIVER_ONBOARDING = [
-            {
-                icon: '👋', title: 'Вітаємо!',
-                text: 'Це <strong>панель водія</strong>. Тут ви керуєте доставками та пасажирами. Давайте пройдемо коротке навчання!',
-                target: null
-            },
-            {
-                icon: '📋', title: 'Фільтр: Всі рейси',
-                text: 'Показує <strong>всі</strong> записи маршруту. Лічильник відображає загальну кількість.',
-                target: function() { return document.getElementById('filterAll'); },
-                arrow: 'top'
-            },
-            {
-                icon: '🔄', title: 'Фільтр: В процесі',
-                text: 'Фільтрує записи зі статусом <strong>В процесі</strong> — ті, що зараз в роботі.',
-                target: function() { return document.getElementById('filterProgress'); },
-                arrow: 'top'
-            },
-            {
-                icon: '✅', title: 'Фільтр: Готово',
-                text: 'Показує тільки <strong>завершені</strong> доставки або поїздки.',
-                target: function() { return document.getElementById('filterCompleted'); },
-                arrow: 'top'
-            },
-            {
-                icon: '❌', title: 'Фільтр: Скасовані',
-                text: 'Показує <strong>скасовані</strong> записи з причинами відмови.',
-                target: function() { return document.getElementById('filterCancelled'); },
-                arrow: 'top'
-            },
-            {
-                icon: '📦', title: 'Фільтр: Відправки',
-                text: 'Показує <strong>відправки</strong> — записи зі статусом відправлення. Доступно тільки для карго маршрутів.',
-                target: function() { return document.getElementById('filterDispatch'); },
-                arrow: 'top'
-            },
-            {
-                icon: '👆', title: 'Карточка запису',
-                text: 'Кожен запис — це карточка з основною інформацією: <strong>адреса, ТТН, телефон, сума</strong>.',
-                target: function() { return document.querySelector('.delivery-card'); },
-                arrow: 'top'
-            },
-            {
-                icon: '📞', title: 'Дзвінок клієнту',
-                text: 'Натисніть <strong>📞 Дзвонити</strong>, щоб зателефонувати клієнту напряму.',
-                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[0] : null; },
-                arrow: 'top'
-            },
-            {
-                icon: '🗺️', title: 'Навігація',
-                text: 'Кнопка <strong>🗺 Карта</strong> відкриє Google Maps з адресою доставки для навігації.',
-                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[1] : null; },
-                arrow: 'top'
-            },
-            {
-                icon: '📂', title: 'Деталі',
-                text: 'Натисніть <strong>📂 Деталі</strong>, щоб розгорнути повну інформацію по запису.',
-                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[2] : null; },
-                arrow: 'top'
-            },
-            {
-                icon: '🔄', title: 'Зміна статусу',
-                text: 'Кнопки <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong> — змінюють статус запису. Скасування вимагає вказати причину.',
-                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-group') : null; },
-                arrow: 'top'
-            },
-            {
-                icon: '✏️', title: 'Редагування запису',
-                text: 'Кнопка <strong>✏️ Редагувати</strong> — відкриває форму редагування запису. Можна змінити адресу, телефон, суму та інші поля.',
-                target: function() { var c = document.querySelector('.delivery-card'); var btns = c ? c.querySelector('.status-buttons-card') : null; return btns ? btns.querySelector('[onclick*="openEdit"]') : null; },
-                arrow: 'top'
-            },
-            {
-                icon: '🔄', title: 'Оновити дані',
-                text: 'Натисніть <strong>🔄 Оновити</strong>, щоб завантажити свіжі дані з сервера.',
-                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[1] : null; },
-                arrow: 'bottom'
-            },
-            {
-                icon: '➕', title: 'Додати запис',
-                text: 'Кнопка <strong>➕ Додати</strong> для створення нового запису вручну.' + (currentRouteType === 'delivery' ? ' У карго маршрутах запис додається у <strong>📦 Відправки</strong>.' : ''),
-                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[2] : null; },
-                arrow: 'bottom'
-            },
-            {
-                icon: '⚙️', title: 'Налаштування колонок',
-                text: '<strong>⚙️ Колонки</strong> — налаштуйте, які поля відображати на карточках. Приховайте зайве!',
-                target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[3] : null; },
-                arrow: 'bottom'
+        function buildOnboardingSteps() {
+            var isDelivery = currentRouteType === 'delivery';
+            var routeLabel = isDelivery ? 'Посилки' : 'Пасажири';
+            var routeIcon = isDelivery ? '📦' : '👥';
+            var steps = [
+                {
+                    icon: '👋', title: 'Вітаємо!',
+                    text: 'Це <strong>панель водія</strong>. Тут ви керуєте доставками та пасажирами. Давайте пройдемо коротке навчання!',
+                    target: null
+                },
+                {
+                    icon: '📋', title: 'Фільтр: Всі рейси',
+                    text: 'Показує <strong>всі</strong> записи маршруту. Лічильник відображає загальну кількість.',
+                    target: function() { return document.getElementById('filterAll'); },
+                    arrow: 'top'
+                },
+                {
+                    icon: '🔄', title: 'Фільтр: В процесі',
+                    text: 'Фільтрує записи зі статусом <strong>В процесі</strong> — ті, що зараз в роботі.',
+                    target: function() { return document.getElementById('filterProgress'); },
+                    arrow: 'top'
+                },
+                {
+                    icon: '✅', title: 'Фільтр: Готово',
+                    text: 'Показує тільки <strong>завершені</strong> доставки або поїздки.',
+                    target: function() { return document.getElementById('filterCompleted'); },
+                    arrow: 'top'
+                },
+                {
+                    icon: '❌', title: 'Фільтр: Скасовані',
+                    text: 'Показує <strong>скасовані</strong> записи з причинами відмови.',
+                    target: function() { return document.getElementById('filterCancelled'); },
+                    arrow: 'top'
+                }
+            ];
+            if (isDelivery) {
+                steps.push({
+                    icon: '📦', title: 'Фільтр: Відправки',
+                    text: 'Показує <strong>відправки</strong> — записи зі статусом відправлення. Доступно тільки для карго маршрутів.',
+                    target: function() { return document.getElementById('filterDispatch'); },
+                    arrow: 'top'
+                });
             }
-        ];
+            steps.push(
+                {
+                    icon: '👆', title: 'Карточка запису',
+                    text: 'Кожен запис — це карточка з основною інформацією: <strong>адреса, ТТН, телефон, сума</strong>.',
+                    target: function() { return document.querySelector('.delivery-card'); },
+                    arrow: 'top'
+                },
+                {
+                    icon: '📞', title: 'Дзвінок клієнту',
+                    text: 'Натисніть <strong>📞 Дзвонити</strong>, щоб зателефонувати клієнту напряму.',
+                    target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[0] : null; },
+                    arrow: 'top'
+                },
+                {
+                    icon: '🗺️', title: 'Навігація',
+                    text: 'Кнопка <strong>🗺 Карта</strong> відкриє Google Maps з адресою доставки для навігації.',
+                    target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[1] : null; },
+                    arrow: 'top'
+                },
+                {
+                    icon: '📂', title: 'Деталі',
+                    text: 'Натисніть <strong>📂 Деталі</strong>, щоб розгорнути повну інформацію по запису.',
+                    target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelectorAll('.btn-small-card')[2] : null; },
+                    arrow: 'top'
+                },
+                {
+                    icon: '🔄', title: 'Зміна статусу',
+                    text: 'Кнопки <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong> — змінюють статус запису. Скасування вимагає вказати причину.',
+                    target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-group') : null; },
+                    arrow: 'top'
+                },
+                {
+                    icon: '✏️', title: 'Редагування запису',
+                    text: 'Кнопка <strong>✏️ Редагувати</strong> — відкриває форму редагування запису. Можна змінити адресу, телефон, суму та інші поля.',
+                    target: function() { var c = document.querySelector('.delivery-card'); var btns = c ? c.querySelector('.status-buttons-card') : null; return btns ? btns.querySelector('[onclick*="openEdit"]') : null; },
+                    arrow: 'top'
+                },
+                {
+                    icon: routeIcon, title: routeLabel,
+                    text: 'Це ваш поточний вид маршруту — <strong>' + routeLabel + '</strong>. Натисніть, щоб прокрутити список на початок.',
+                    target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[0] : null; },
+                    arrow: 'bottom'
+                },
+                {
+                    icon: '🔄', title: 'Оновити дані',
+                    text: 'Натисніть <strong>🔄 Оновити</strong>, щоб завантажити свіжі дані з сервера.',
+                    target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[1] : null; },
+                    arrow: 'bottom'
+                },
+                {
+                    icon: '➕', title: 'Додати запис',
+                    text: 'Кнопка <strong>➕ Додати</strong> для створення нового запису вручну.' + (isDelivery ? ' У карго маршрутах запис додається у <strong>📦 Відправки</strong>.' : ''),
+                    target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[2] : null; },
+                    arrow: 'bottom'
+                },
+                {
+                    icon: '⚙️', title: 'Налаштування колонок',
+                    text: '<strong>⚙️ Колонки</strong> — налаштуйте, які поля відображати на карточках. Приховайте зайве!',
+                    target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[3] : null; },
+                    arrow: 'bottom'
+                }
+            );
+            return steps;
+        }
+        var DRIVER_ONBOARDING = [];
 
         var onbStep = 0;
         var onbAfterTimer = null;
@@ -2859,6 +2876,7 @@
         function initDriverOnboarding() {
             if (localStorage.getItem('drivers_onboarding_disabled') === 'true') return;
             if (localStorage.getItem('drivers_onboarding_seen') === 'true') return;
+            DRIVER_ONBOARDING = buildOnboardingSteps();
             setTimeout(function() {
                 onbStep = 0;
                 renderOnbStep();

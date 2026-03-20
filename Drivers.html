@@ -2609,8 +2609,14 @@
             },
             {
                 icon: '🔄', title: 'Зміна статусу',
-                text: 'Кнопки статусу: <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong>, <strong>✏️ Редагувати</strong>. Натисніть для зміни.',
+                text: 'Кнопки <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong> — змінюють статус запису. Скасування вимагає вказати причину.',
                 target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-buttons-card') : null; },
+                arrow: 'top'
+            },
+            {
+                icon: '✏️', title: 'Редагування запису',
+                text: 'Кнопка <strong>✏️ Редагувати</strong> — відкриває форму редагування запису. Можна змінити адресу, телефон, суму та інші поля.',
+                target: function() { var c = document.querySelector('.delivery-card'); var btns = c ? c.querySelector('.status-buttons-card') : null; return btns ? btns.querySelector('[onclick*="openEdit"]') : null; },
                 arrow: 'top'
             },
             {
@@ -2621,7 +2627,7 @@
             },
             {
                 icon: '➕', title: 'Додати запис',
-                text: 'Кнопка <strong>➕ Додати</strong> для створення нового запису вручну.',
+                text: 'Кнопка <strong>➕ Додати</strong> для створення нового запису вручну.' + (currentRouteType === 'delivery' ? ' У карго маршрутах запис додається у <strong>📦 Відправки</strong>.' : ''),
                 target: function() { var nav = document.getElementById('bottomNav'); return nav ? nav.querySelectorAll('.bottom-nav-item')[2] : null; },
                 arrow: 'bottom'
             },

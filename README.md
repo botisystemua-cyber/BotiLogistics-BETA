@@ -148,3 +148,9 @@ PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmS
 | `script-cargo.gs` | `Cargo.html` | `API_URL` |
 | `script-marshrut-cargo.gs` | `Cargo.html` | `ROUTE_API_URL` |
 | `script-marshrut-cargo.gs` | `Drivers.html` | `CONFIG.DELIVERY_API_URL` |
+
+---
+
+## Відомі баги / нотатки
+
+- **Drivers.html — пасажирські маршрути**: у пасажирів немає функції "Відправки" (dispatch). Фільтр "Відправки" та кнопка "Додати → Відправки" стосуються тільки карго маршрутів. Кнопка навігації в карточці пасажира — "Карта" (пункт призначення), а не "Відправка".

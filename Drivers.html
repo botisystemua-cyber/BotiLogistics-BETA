@@ -480,6 +480,12 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.12);
             background: linear-gradient(135deg, #EFEFEF 0%, #E5E5E5 100%);
         }
+        .status-group {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+        }
+        .status-group .status-btn-card { flex: 1; }
         .status-buttons-card {
             display: flex;
             gap: 2px;
@@ -1586,9 +1592,11 @@
                         '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
-                        '<button class="status-btn-card status-in-progress-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
-                        '<button class="status-btn-card status-completed-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
-                        '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
+                        '<span class="status-group">' +
+                            '<button class="status-btn-card status-in-progress-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
+                            '<button class="status-btn-card status-completed-btn" onclick="setDeliveryStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
+                            '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
+                        '</span>' +
                         '<button class="status-btn-card" onclick="openEditDelivery(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
@@ -1700,14 +1708,15 @@
                     '</div>' +
                     '<div class="card-buttons">' +
                         '<button class="btn-small-card" onclick="callNumber(\'' + safePhone + '\')">&#9742; Дзвонити</button>' +
-                        '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'from\')">&#128663; Відправка</button>' +
-                        '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'to\')">&#127937; Прибуття</button>' +
+                        '<button class="btn-small-card" onclick="navigatePassenger(' + globalIndex + ',\'to\')">&#128506; Карта</button>' +
                         '<button class="btn-small-card" onclick="toggleExpand(\'' + uid + '\')">&#128194; Деталі</button>' +
                     '</div>' +
                     '<div class="status-buttons-card">' +
-                        '<button class="status-btn-card status-in-progress-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
-                        '<button class="status-btn-card status-completed-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
-                        '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
+                        '<span class="status-group">' +
+                            '<button class="status-btn-card status-in-progress-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'in-progress\')">&#128260;</button>' +
+                            '<button class="status-btn-card status-completed-btn" onclick="setPassengerStatus(\'' + safeStatusKey + '\',\'completed\')">&#9989;</button>' +
+                            '<button class="status-btn-card status-cancelled-btn" onclick="showCancelReason(\'' + uid + '\',\'' + safeStatusKey + '\')">&#10060;</button>' +
+                        '</span>' +
                         '<button class="status-btn-card" onclick="openEditPassenger(' + globalIndex + ')" style="background:#1a3a5e;color:white;border-color:#1a3a5e;">&#9998;</button>' +
                     '</div>' +
                     '<div class="card-expandable" id="expand-' + uid + '">' +
@@ -2610,7 +2619,7 @@
             {
                 icon: '🔄', title: 'Зміна статусу',
                 text: 'Кнопки <strong>🔄 В процесі</strong>, <strong>✅ Готово</strong>, <strong>❌ Скасувати</strong> — змінюють статус запису. Скасування вимагає вказати причину.',
-                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-buttons-card') : null; },
+                target: function() { var c = document.querySelector('.delivery-card'); return c ? c.querySelector('.status-group') : null; },
                 arrow: 'top'
             },
             {

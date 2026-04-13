@@ -96,15 +96,19 @@ function handleLogin(p) {
     return { success: false, error: 'Невірний пароль' };
   }
 
-  // Перевіряємо роль якщо вказана (менеджер натиснув на картку менеджера)
+  // Ієрархія ролей: Власник > Менеджер > Водій
+  // Власник може увійти як будь-яка роль, Менеджер — як Менеджер або Водій
   if (expectedRole && user.role !== expectedRole) {
-    return { success: false, error: 'Ваша роль: ' + user.role + '. Оберіть правильний вхід.' };
+    var hierarchy = { 'Власник': 3, 'Менеджер': 2, 'Водій': 1 };
+    if ((hierarchy[user.role] || 0) < (hierarchy[expectedRole] || 0)) {
+      return { success: false, error: 'Ваша роль: ' + user.role + '. Оберіть правильний вхід.' };
+    }
   }
 
   return {
     success: true,
     name: user.email, // ім'я = email
-    role: user.role,
+    role: expectedRole || user.role,
     companyName: user.company,
     companyId: user.companyId
   };

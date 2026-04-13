@@ -47,14 +47,14 @@ URL:    https://script.google.com/macros/s/AKfycbw9EZi_03T0nvJ5WdJzl9rfHImjE6A4k
 
 ### CRM Пасажири
 ```
-URL:    https://script.google.com/macros/s/AKfycbzqxOYFeVq7aBPL48auCLDInBrwdqdELkVPdQzfwZIVtZ4NhOX21jHRrTJA-pj8SeFy_Q/exec
+URL:    https://script.google.com/macros/s/AKfycbwr_CgMtGzKdMj0H5JRp2Y3xEaVjYg78s5A9pT_qfsysEVQrl0FBSNJiEB1WiFx2pIW6Q/exec
 Скрипт: script-passengers.gs
 Де:     Passengers.html → API_URL
 ```
 
 ### Маршрути Пасажирів
 ```
-URL:    https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-mdtcaXXeDcta6nuCILD5Nj7uaWCPCteQGGD/exec
+URL:    https://script.google.com/macros/s/AKfycbxWaPrmjKqNdAAZib73hG-aJXQYXyJC-lxwxFQS15pgFp7Xhpw6Ibcb3nnbRB38y98S/exec
 Скрипт: script-marshrut-passengers.gs
 Де:     Passengers.html → ROUTE_API_URL
         Drivers.html → CONFIG.PASSENGER_API_URL
@@ -62,14 +62,14 @@ URL:    https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-
 
 ### CRM Посилки (Карго)
 ```
-URL:    https://script.google.com/macros/s/AKfycbxtifGpKxKX185uBoTM3h_KebaGppdV_n30PhGGkDGr1HgH6DYGaPN3-IGJoUp-f31tAA/exec
+URL:    https://script.google.com/macros/s/AKfycbwNTUVFhk4nD4X7LB_JIc6rUXkjgj6w0dhHLHTCE73PV-JczFiGTM8ZyB_QtqBiOg1ugw/exec
 Скрипт: script-cargo.gs
 Де:     Cargo.html → API_URL
 ```
 
 ### Маршрути Посилок (Карго)
 ```
-URL:    https://script.google.com/macros/s/AKfycbx4JV7tK_GeQPCnHFpCxVXg6LccS4QHPPxR6lxTWCK2wTJthccwIzWbNVddGWJwOGxG/exec
+URL:    https://script.google.com/macros/s/AKfycbzjP4grKvDrqUPq5Y_NqX5nMMJPKncggWfbTKjI_-cPKEv_aE9xuxZaW2PW8RrJsAqm/exec
 Скрипт: script-marshrut-cargo.gs
 Де:     Cargo.html → ROUTE_API_URL
         Drivers.html → CONFIG.DELIVERY_API_URL
@@ -77,8 +77,8 @@ URL:    https://script.google.com/macros/s/AKfycbx4JV7tK_GeQPCnHFpCxVXg6LccS4QHP
 
 ### Drivers.html (водій) — використовує 2 API
 ```
-DELIVERY_API_URL:  https://script.google.com/macros/s/AKfycbxIWqEOOWiHEec6-y-_JWNCYNKnAEtU1X0La_4kMZuk8fe_ueFq2vHub1K2Zm-qe7ho/exec  (маршрути карго)
-PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxFUb1L_RVBU_C2hbWbmSdNKnESk7jv-mdtcaXXeDcta6nuCILD5Nj7uaWCPCteQGGD/exec  (маршрути пасажирів)
+DELIVERY_API_URL:  https://script.google.com/macros/s/AKfycbzjP4grKvDrqUPq5Y_NqX5nMMJPKncggWfbTKjI_-cPKEv_aE9xuxZaW2PW8RrJsAqm/exec  (маршрути карго)
+PASSENGER_API_URL: https://script.google.com/macros/s/AKfycbxWaPrmjKqNdAAZib73hG-aJXQYXyJC-lxwxFQS15pgFp7Xhpw6Ibcb3nnbRB38y98S/exec  (маршрути пасажирів)
 ```
 
 ---
